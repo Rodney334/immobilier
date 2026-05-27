@@ -52,7 +52,7 @@ export function Input({
             "focus:outline-none focus:ring-2",
             error
               ? "border-danger focus:ring-danger/25 focus:border-danger"
-              : "border-[#E5E7EB] hover:border-primary/30 focus:ring-secondary/30 focus:border-secondary/60",
+              : "border-border-custom hover:border-primary/30 focus:ring-secondary/30 focus:border-secondary/60",
             isPassword ? "pr-10" : "",
             className,
           ]
@@ -60,11 +60,7 @@ export function Input({
             .join(" ")}
           aria-invalid={error ? "true" : undefined}
           aria-describedby={
-            error
-              ? `${inputId}-error`
-              : hint
-              ? `${inputId}-hint`
-              : undefined
+            error ? `${inputId}-error` : hint ? `${inputId}-hint` : undefined
           }
           {...props}
         />
@@ -77,7 +73,9 @@ export function Input({
             className="absolute right-3 top-1/2 -translate-y-1/2
                        text-primary/40 hover:text-primary/70 transition-colors"
             aria-label={
-              showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"
+              showPassword
+                ? "Masquer le mot de passe"
+                : "Afficher le mot de passe"
             }
             tabIndex={-1}
           >

@@ -62,7 +62,7 @@ function NavLink({ item, isActive }: NavLinkProps) {
         "text-[14px] font-medium transition-colors duration-150",
         isActive
           ? "bg-white text-secondary"
-          : "text-white hover:text-[#F8F9FB] hover:bg-white/5",
+          : "text-white hover:text-neutral hover:bg-white/5",
       ].join(" ")}
     >
       <Icon size={18} strokeWidth={isActive ? 2.5 : 1.75} aria-hidden="true" />
@@ -88,7 +88,7 @@ export function Sidebar() {
 
   return (
     <aside
-      className="fixed left-0 top-0 h-screen w-[240px] bg-primary flex flex-col z-40"
+      className="fixed left-0 top-0 h-screen w-60 bg-primary flex flex-col z-40"
       aria-label="Navigation principale"
     >
       {/* ── Header / Logo ─────────────────────────────────────────── */}

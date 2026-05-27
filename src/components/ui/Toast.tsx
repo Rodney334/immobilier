@@ -40,7 +40,9 @@ const ToastContext = createContext<ToastContextValue | null>(null);
 export function useToast(): ToastContextValue {
   const ctx = useContext(ToastContext);
   if (!ctx) {
-    throw new Error("useToast doit être utilisé à l'intérieur de <ToastProvider>");
+    throw new Error(
+      "useToast doit être utilisé à l'intérieur de <ToastProvider>",
+    );
   }
   return ctx;
 }
@@ -118,10 +120,10 @@ function ToastItem({
       aria-live="polite"
       className={[
         "flex items-start gap-3",
-        "w-[360px] max-w-[calc(100vw-2.5rem)]",
+        "w-90 max-w-[calc(100vw-2.5rem)]",
         "bg-white rounded-lg shadow-lg",
         // Bordure générale fine + bord gauche épais coloré
-        "border border-[#E5E7EB] border-l-4",
+        "border border-border-custom border-l-4",
         leftBorder,
         "px-4 py-3.5",
       ].join(" ")}
@@ -172,7 +174,7 @@ function Toaster() {
   return (
     <div
       aria-label="Notifications"
-      className="fixed top-5 right-5 z-[9999] flex flex-col gap-2.5"
+      className="fixed top-5 right-5 z-9999 flex flex-col gap-2.5"
     >
       {toasts.map((t) => (
         <ToastItem key={t.id} {...t} onDismiss={dismiss} />

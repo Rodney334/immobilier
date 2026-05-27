@@ -31,7 +31,7 @@ export function EmptyState({
   onAction,
 }: EmptyStateProps) {
   return (
-    <div className="bg-white border border-[#E5E7EB] rounded-lg p-8 text-center flex flex-col items-center gap-4">
+    <div className="bg-white border border-border-custom rounded-lg p-8 text-center flex flex-col items-center gap-4">
       {/* Icône dans cercle subtil */}
       <div
         className="w-14 h-14 rounded-full bg-primary/5 flex items-center justify-center"
