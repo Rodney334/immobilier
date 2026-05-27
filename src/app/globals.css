@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+@theme {
+  /* 1. Couleurs personnalisées */
+  --color-primary: #1E2A38;
+  --color-secondary: #D4A373;
+  --color-success: #2A9D8F;
+  --color-danger: #E76F51;
+  --color-neutral: #F8F9FB;
+  --color-surface: #FFFFFF;
+  --color-border-custom: #E5E7EB;
+
+  /* 2. Échelle Typographique (Pratique pour raccourcir vos classes) */
+  --font-size-display: 2rem;       /* 32px */
+  --font-size-h1: 1.5rem;          /* 24px */
+  --font-size-h2: 1.25rem;         /* 20px */
+  --font-size-h3: 1rem;            /* 16px */
+  --font-size-body: 0.875rem;      /* 14px */
+  --font-size-caption: 0.75rem;    /* 12px */
+  --font-size-label: 0.75rem;      /* 12px */
+
+  /* 3. Radius personnalisé pour la Modal */
+  --radius-modal: 16px;
+}
+
+/* Styles globaux pour appliquer vos choix par défaut au projet */
+@layer base {
+  body {
+    background-color: var(--color-neutral);
+    color: var(--color-primary);
+    font-size: var(--font-size-body);
+    line-height: 1.6;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+}
+
+/* @import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+} */
