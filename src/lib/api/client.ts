@@ -43,7 +43,7 @@ let isRefreshing = false;
 type RefreshCallback = (token: string | null) => void;
 let refreshQueue: RefreshCallback[] = [];
 
-async function refreshAccessToken(): Promise<string | null> {
+export async function refreshAccessToken(): Promise<string | null> {
   const refreshToken = tokenManager.getRefresh();
   if (!refreshToken) return null;
 
@@ -257,10 +257,15 @@ export const api = {
   /**
    * Télécharger un fichier binaire (PDF, etc.)
    * Retourne un Blob pour que l'appelant puisse l'ouvrir ou le sauvegarder.
+   * Gère automatiquement le refresh du token sur 401 (même logique que apiRequest).
    */
-  async download(path: string, options?: RequestOptions): Promise<Blob> {
+  async download(
+    path: string,
+    options?: RequestOptions & { skipRefresh?: boolean },
+  ): Promise<Blob> {
     const {
       skipAuth = false,
+      skipRefresh = false,
       headers: extraHeaders,
       ...fetchOptions
     } = options ?? {};
@@ -278,6 +283,58 @@ export const api = {
       ...fetchOptions,
       headers,
     });
+
+    // ── Gestion du 401 : refresh automatique ─────────────────────────────────
+    if (response.status === 401 && !skipAuth && !skipRefresh) {
+      if (isRefreshing) {
+        // Attendre la fin du refresh en cours
+        return new Promise<Blob>((resolve, reject) => {
+          refreshQueue.push(async (newToken) => {
+            if (!newToken) {
+              reject(
+                new ApiError(401, "Session expirée. Veuillez vous reconnecter."),
+              );
+              return;
+            }
+            try {
+              const retryRes = await fetch(`${BASE_URL}${path}`, {
+                method: "GET",
+                ...fetchOptions,
+                headers: { ...headers, Authorization: `Bearer ${newToken}` },
+              });
+              if (!retryRes.ok) {
+                reject(
+                  new ApiError(retryRes.status, "Échec du téléchargement du fichier"),
+                );
+              } else {
+                resolve(retryRes.blob());
+              }
+            } catch (e) {
+              reject(e);
+            }
+          });
+        });
+      }
+
+      isRefreshing = true;
+      const newToken = await refreshAccessToken();
+      isRefreshing = false;
+
+      const queue = [...refreshQueue];
+      refreshQueue = [];
+      queue.forEach((cb) => cb(newToken));
+
+      if (!newToken) {
+        tokenManager.clear();
+        if (typeof window !== "undefined") {
+          window.location.href = "/login";
+        }
+        throw new ApiError(401, "Session expirée. Veuillez vous reconnecter.");
+      }
+
+      // Relancer avec le nouveau token
+      return this.download(path, { ...options, skipRefresh: true });
+    }
 
     if (!response.ok) {
       throw new ApiError(response.status, "Échec du téléchargement du fichier");

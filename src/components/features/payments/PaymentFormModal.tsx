@@ -21,7 +21,7 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
   { value: "CASH", label: "Especes" },
   { value: "BANK_TRANSFER", label: "Virement bancaire" },
   { value: "MOBILE_MONEY", label: "Mobile Money" },
-  { value: "CHECK", label: "Cheque" },
+  { value: "CHEQUE", label: "Cheque" },
   { value: "OTHER", label: "Autre" },
 ];
 
@@ -31,9 +31,7 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="h-10 px-5 bg-primary text-white rounded-lg text-[14px] font-medium
-                 hover:bg-[#263447] disabled:opacity-60 disabled:cursor-not-allowed
-                 transition-colors duration-150 flex items-center gap-2"
+      className="h-10 px-5 bg-primary text-white rounded-lg text-[14px] font-medium hover:bg-[#263447] disabled:opacity-60 disabled:cursor-not-allowed transition-colors duration-150 flex items-center gap-2"
     >
       {pending && (
         <Loader2 size={14} className="animate-spin" aria-hidden="true" />
@@ -128,9 +126,7 @@ export function PaymentFormModal({ isOpen, onClose, onSaved }: Props) {
             <select
               name="leaseId"
               required
-              className="w-full h-11 px-3 rounded-lg border border-border-custom bg-white
-                         text-[14px] text-primary focus:outline-none focus:ring-2
-                         focus:ring-primary/20 focus:border-primary/40 transition-colors"
+              className="w-full h-11 px-3 rounded-lg border border-border-custom bg-white text-[14px] text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors"
             >
               <option value="">Selectionner un contrat...</option>
               {leases.map((l) => (
@@ -154,10 +150,7 @@ export function PaymentFormModal({ isOpen, onClose, onSaved }: Props) {
               step="1"
               required
               placeholder="ex : 150000"
-              className="w-full h-11 px-3 pr-14 rounded-lg border border-border-custom bg-white
-                         text-[14px] text-primary placeholder:text-primary/30
-                         focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40
-                         transition-colors tabular-nums"
+              className="w-full h-11 px-3 pr-14 rounded-lg border border-border-custom bg-white text-[14px] text-primary placeholder:text-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors tabular-nums"
             />
             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] font-medium text-primary/40 pointer-events-none">
               XOF
@@ -180,9 +173,7 @@ export function PaymentFormModal({ isOpen, onClose, onSaved }: Props) {
             </label>
             <select
               name="paymentMethod"
-              className="w-full h-11 px-3 rounded-lg border border-border-custom bg-white
-                         text-[14px] text-primary focus:outline-none focus:ring-2
-                         focus:ring-primary/20 focus:border-primary/40 transition-colors"
+              className="w-full h-11 px-3 rounded-lg border border-border-custom bg-white text-[14px] text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors"
             >
               <option value="">Non specifie</option>
               {PAYMENT_METHODS.map((m) => (
@@ -208,9 +199,7 @@ export function PaymentFormModal({ isOpen, onClose, onSaved }: Props) {
           <button
             type="button"
             onClick={onClose}
-            className="h-10 px-5 rounded-lg text-[14px] font-medium text-primary/60
-                       hover:text-primary border border-border-custom hover:border-primary/30
-                       transition-colors duration-150"
+            className="h-10 px-5 rounded-lg text-[14px] font-medium text-primary/60 hover:text-primary border border-border-custom hover:border-primary/30 transition-colors duration-150"
           >
             Annuler
           </button>

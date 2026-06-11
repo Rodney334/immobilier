@@ -9,8 +9,11 @@ import {
   AlertTriangle,
   ChevronLeft,
   ChevronRight,
+  MoreVertical,
+  CheckCircle,
 } from "lucide-react";
 import { paymentService } from "@/lib/services/payment.service";
+import { useToast } from "@/components/ui/Toast";
 import { PaymentDetailPanel } from "@/components/features/payments/PaymentDetailPanel";
 import { PaymentFormModal } from "@/components/features/payments/PaymentFormModal";
 import { Modal } from "@/components/ui/Modal";
@@ -60,16 +63,86 @@ function formatDate(iso: string) {
   });
 }
 
+// ─── Row actions menu ─────────────────────────────────────────────────────────
+
+function PaymentRowActions({
+  payment,
+  onEdit,
+  onMarkPaid,
+  onDelete,
+}: {
+  payment: Payment;
+  onEdit: () => void;
+  onMarkPaid: () => void;
+  onDelete: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const alreadyRecorded = payment.status === "RECORDED";
+  return (
+    <div className="relative" onClick={(e) => e.stopPropagation()}>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="w-7 h-7 rounded-md flex items-center justify-center text-primary/30 hover:text-primary hover:bg-primary/6 transition-colors"
+      >
+        <MoreVertical size={14} />
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 top-8 z-20 w-48 bg-white rounded-lg shadow-lg border border-border-custom py-1 text-[13px]">
+            <button
+              onClick={() => {
+                setOpen(false);
+                onEdit();
+              }}
+              className="w-full text-left px-4 py-2 hover:bg-primary/4 text-primary/70 hover:text-primary transition-colors"
+            >
+              Modifier
+            </button>
+            {!alreadyRecorded && (
+              <button
+                onClick={() => {
+                  setOpen(false);
+                  onMarkPaid();
+                }}
+                className="w-full text-left px-4 py-2 hover:bg-success/6 text-success transition-colors flex items-center gap-2"
+              >
+                <CheckCircle size={12} /> Marquer comme payé
+              </button>
+            )}
+            <div className="my-1 border-t border-border-custom" />
+            <button
+              onClick={() => {
+                setOpen(false);
+                onDelete();
+              }}
+              className="w-full text-left px-4 py-2 hover:bg-danger/6 text-danger transition-colors"
+            >
+              Supprimer
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 // ─── Table row ────────────────────────────────────────────────────────────────
 
 function PaymentRow({
   payment,
   selected,
   onClick,
+  onEdit,
+  onMarkPaid,
+  onDelete,
 }: {
   payment: Payment;
   selected: boolean;
   onClick: () => void;
+  onEdit: () => void;
+  onMarkPaid: () => void;
+  onDelete: () => void;
 }) {
   const cfg = STATUS_CONFIG[payment.status];
   const tenant = payment.lease?.tenant;
@@ -77,7 +150,7 @@ function PaymentRow({
     ? (tenant.fullName ?? `${tenant.firstName} ${tenant.lastName}`)
     : "—";
   const initials = tenant
-    ? `${tenant.firstName[0]}${tenant.lastName[0]}`.toUpperCase()
+    ? `${tenant.firstName && tenant.firstName[0]}${tenant.lastName && tenant.lastName[0]}`.toUpperCase()
     : "?";
 
   return (
@@ -114,10 +187,18 @@ function PaymentRow({
         {payment.reference ?? "—"}
       </td>
       <td className="px-4 py-3.5 text-[12px] text-primary/40 tabular-nums whitespace-nowrap">
-        {formatDate(payment.paymentDate)}
+        {formatDate(payment.paymentDate!)}
       </td>
       <td className="px-4 py-3.5">
         <Badge variant={cfg.variant}>{cfg.label}</Badge>
+      </td>
+      <td className="px-3 py-3.5">
+        <PaymentRowActions
+          payment={payment}
+          onEdit={onEdit}
+          onMarkPaid={onMarkPaid}
+          onDelete={onDelete}
+        />
       </td>
     </tr>
   );
@@ -144,8 +225,7 @@ function PaginationBar({
         <button
           onClick={() => onPage(page - 1)}
           disabled={page <= 1}
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-primary/50
-                     hover:text-primary hover:bg-primary/6 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          className="w-8 h-8 rounded-lg flex items-center justify-center text-primary/50 hover:text-primary hover:bg-primary/6 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           aria-label="Page précédente"
         >
           <ChevronLeft size={15} />
@@ -156,8 +236,7 @@ function PaginationBar({
         <button
           onClick={() => onPage(page + 1)}
           disabled={page >= totalPages}
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-primary/50
-                     hover:text-primary hover:bg-primary/6 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          className="w-8 h-8 rounded-lg flex items-center justify-center text-primary/50 hover:text-primary hover:bg-primary/6 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           aria-label="Page suivante"
         >
           <ChevronRight size={15} />
@@ -172,6 +251,7 @@ function PaginationBar({
 const PAGE_LIMIT = 15;
 
 export function PaymentsClient() {
+  const { toast } = useToast();
   const [payments, setPayments] = useState<Payment[]>([]);
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
   const [loading, setLoading] = useState(true);
@@ -238,6 +318,28 @@ export function PaymentsClient() {
     load();
   }
 
+  async function handleMarkPaid(p: Payment) {
+    try {
+      const res = await paymentService.update(p.id, { status: "RECORDED" });
+      const updated = res.data;
+      setPayments((prev) =>
+        prev.map((x) => (x.id === updated.id ? updated : x)),
+      );
+      if (selected?.id === updated.id) setSelected(updated);
+      toast({
+        variant: "success",
+        title: "Paiement marqué comme payé",
+        duration: 3000,
+      });
+    } catch {
+      toast({
+        variant: "danger",
+        title: "Échec de la mise à jour",
+        duration: 4000,
+      });
+    }
+  }
+
   function handlePaymentUpdate(p: Payment) {
     setPayments((prev) => prev.map((x) => (x.id === p.id ? p : x)));
     if (selected?.id === p.id) setSelected(p);
@@ -287,15 +389,12 @@ export function PaymentsClient() {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Rechercher un locataire…"
-                  className="pl-9 pr-4 h-9 w-60 rounded-lg border border-border-custom bg-white text-[13px]
-                             text-primary placeholder:text-primary/30 focus:outline-none focus:ring-2
-                             focus:ring-primary/20 focus:border-primary/40 transition-colors"
+                  className="pl-9 pr-4 h-9 w-60 rounded-lg border border-border-custom bg-white text-[13px] text-primary placeholder:text-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors"
                 />
               </div>
               <button
                 onClick={() => setFormOpen(true)}
-                className="flex items-center gap-2 h-9 px-4 bg-primary text-white rounded-lg
-                           text-[13px] font-medium hover:bg-[#263447] transition-colors"
+                className="flex items-center gap-2 h-9 px-4 bg-primary text-white rounded-lg text-[13px] font-medium hover:bg-[#263447] transition-colors"
               >
                 <Plus size={15} /> Enregistrer un paiement
               </button>
@@ -363,6 +462,7 @@ export function PaymentsClient() {
                       "Référence",
                       "Date",
                       "Statut",
+                      "",
                     ].map((h, i) => (
                       <th
                         key={i}
@@ -382,6 +482,9 @@ export function PaymentsClient() {
                       onClick={() =>
                         setSelected((prev) => (prev?.id === p.id ? null : p))
                       }
+                      onEdit={() => setSelected(p)}
+                      onMarkPaid={() => handleMarkPaid(p)}
+                      onDelete={() => setDeleteTarget(p)}
                     />
                   ))}
                 </tbody>
@@ -426,8 +529,7 @@ export function PaymentsClient() {
                 setDeleteTarget(null);
                 setDeleteError(null);
               }}
-              className="h-10 px-5 rounded-lg text-[14px] font-medium text-primary/60
-                         hover:text-primary border border-border-custom transition-colors"
+              className="h-10 px-5 rounded-lg text-[14px] font-medium text-primary/60 hover:text-primary border border-border-custom transition-colors"
             >
               Annuler
             </button>
@@ -435,8 +537,7 @@ export function PaymentsClient() {
               type="button"
               onClick={confirmDelete}
               disabled={deleting}
-              className="h-10 px-5 bg-danger text-white rounded-lg text-[14px] font-medium
-                         hover:bg-danger/90 disabled:opacity-60 transition-colors flex items-center gap-2"
+              className="h-10 px-5 bg-danger text-white rounded-lg text-[14px] font-medium hover:bg-danger/90 disabled:opacity-60 transition-colors flex items-center gap-2"
             >
               {deleting && <Loader2 size={14} className="animate-spin" />}
               Supprimer définitivement
@@ -449,8 +550,9 @@ export function PaymentsClient() {
             Vous êtes sur le point de supprimer le paiement de{" "}
             <span className="font-semibold text-primary">
               {deleteTarget
-                ? new Intl.NumberFormat("fr-FR").format(parseFloat(deleteTarget.amount)) +
-                  " XOF"
+                ? new Intl.NumberFormat("fr-FR").format(
+                    parseFloat(deleteTarget.amount),
+                  ) + " XOF"
                 : ""}
             </span>
             . Cette action est irréversible.

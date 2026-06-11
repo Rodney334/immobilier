@@ -7,12 +7,7 @@ import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
 import { propertyService } from "@/lib/services/property.service";
 import { neighborhoodService } from "@/lib/services/neighborhood.service";
-import type {
-  Property,
-  PropertyType,
-  Neighborhood,
-  CreatePropertyPayload,
-} from "@/types";
+import type { Property, Neighborhood, CreatePropertyPayload } from "@/types";
 
 type FormState = { error: string | null; success: boolean };
 
@@ -23,13 +18,14 @@ type Props = {
   onSaved: (p: Property) => void;
 };
 
-const PROPERTY_TYPES: { value: PropertyType; label: string }[] = [
-  { value: "Apartment", label: "Appartement" },
-  { value: "House", label: "Maison" },
-  { value: "Commercial", label: "Commercial" },
-  { value: "Office", label: "Bureau" },
-  { value: "Warehouse", label: "Entrepot" },
-  { value: "Other", label: "Autre" },
+const PROPERTY_TYPES: { value: string; label: string }[] = [
+  { value: "IMMEUBLE", label: "Immeuble" },
+  { value: "VILLA", label: "Villa" },
+  { value: "MAISON", label: "Maison" },
+  { value: "BUREAU", label: "Bureau" },
+  { value: "ENTREPOT", label: "Entrepot" },
+  { value: "COMMERCIAL", label: "Commercial" },
+  { value: "AUTRE", label: "Autre" },
 ];
 
 function SubmitButton({ label }: { label: string }) {
@@ -38,9 +34,7 @@ function SubmitButton({ label }: { label: string }) {
     <button
       type="submit"
       disabled={pending}
-      className="h-10 px-5 bg-primary text-white rounded-lg text-[14px] font-medium
-                 hover:bg-[#263447] disabled:opacity-60 disabled:cursor-not-allowed
-                 transition-colors duration-150 flex items-center gap-2"
+      className="h-10 px-5 bg-primary text-white rounded-lg text-[14px] font-medium hover:bg-[#263447] disabled:opacity-60 disabled:cursor-not-allowed transition-colors duration-150 flex items-center gap-2"
     >
       {pending && (
         <Loader2 size={14} className="animate-spin" aria-hidden="true" />
@@ -50,7 +44,12 @@ function SubmitButton({ label }: { label: string }) {
   );
 }
 
-export function PropertyFormModal({ property, isOpen, onClose, onSaved }: Props) {
+export function PropertyFormModal({
+  property,
+  isOpen,
+  onClose,
+  onSaved,
+}: Props) {
   const isEdit = !!property;
 
   const [neighborhoods, setNeighborhoods] = useState<Neighborhood[]>([]);
@@ -69,31 +68,28 @@ export function PropertyFormModal({ property, isOpen, onClose, onSaved }: Props)
   const [state, formAction] = useActionState(
     async (_prev: FormState, formData: FormData): Promise<FormState> => {
       const name = (formData.get("name") as string).trim();
-      const address = (formData.get("address") as string).trim();
-      const type = formData.get("type") as PropertyType;
+      const type = (formData.get("type") as string).trim();
       const neighborhoodId = (formData.get("neighborhoodId") as string).trim();
-      const totalUnits = parseInt(formData.get("totalUnits") as string, 10);
+      const address = (formData.get("address") as string).trim();
+      const commune = (formData.get("commune") as string).trim();
+      const landmark = (formData.get("landmark") as string).trim();
       const description = (formData.get("description") as string).trim();
 
-      if (!name || !address || !type || !neighborhoodId) {
+      if (!name || !type || !neighborhoodId) {
         return {
-          error: "Veuillez remplir tous les champs obligatoires.",
-          success: false,
-        };
-      }
-      if (isNaN(totalUnits) || totalUnits < 1) {
-        return {
-          error: "Le nombre de locaux doit etre au moins 1.",
+          error:
+            "Veuillez remplir tous les champs obligatoires (Nom, Type, Quartier).",
           success: false,
         };
       }
 
       const payload: CreatePropertyPayload = {
         name,
-        address,
         type,
         neighborhoodId,
-        totalUnits,
+        address: address || undefined,
+        commune: commune || undefined,
+        landmark: landmark || undefined,
         description: description || undefined,
       };
 
@@ -120,7 +116,7 @@ export function PropertyFormModal({ property, isOpen, onClose, onSaved }: Props)
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={isEdit ? "Modifier le bien" : "Nouveau bien immobilier"}
+      title={isEdit ? "Modifier la propriété" : "Ajouter une propriété"}
     >
       <form action={formAction} className="space-y-4">
         {state.error && (
@@ -134,77 +130,78 @@ export function PropertyFormModal({ property, isOpen, onClose, onSaved }: Props)
 
         <Input
           name="name"
-          label="Nom du bien"
+          label="Nom de la propriété"
           placeholder="ex : Residence Les Palmiers"
           defaultValue={property?.name}
           required
         />
 
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <label className="block text-[12px] font-medium uppercase tracking-[0.06em] text-primary/60">
+              Type <span className="text-danger">*</span>
+            </label>
+            <select
+              name="type"
+              defaultValue={property?.type ?? ""}
+              required
+              className="w-full h-11 px-3 rounded-lg border border-border-custom bg-white text-[14px] text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors duration-150"
+            >
+              <option value="" disabled>
+                Selectionner un type
+              </option>
+              {PROPERTY_TYPES.map((t) => (
+                <option key={t.value} value={t.value}>
+                  {t.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="block text-[12px] font-medium uppercase tracking-[0.06em] text-primary/60">
+              Quartier <span className="text-danger">*</span>
+            </label>
+            <select
+              name="neighborhoodId"
+              defaultValue={property?.neighborhoodId ?? ""}
+              required
+              disabled={loadingNbh}
+              className="w-full h-11 px-3 rounded-lg border border-border-custom bg-white text-[14px] text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 disabled:opacity-50 transition-colors duration-150"
+            >
+              <option value="" disabled>
+                {loadingNbh ? "Chargement..." : "Selectionner un quartier"}
+              </option>
+              {neighborhoods.map((n) => (
+                <option key={n.id} value={n.id}>
+                  {n.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
         <Input
           name="address"
           label="Adresse"
-          placeholder="ex : Rue des Cocotiers, Cotonou"
+          placeholder="ex : Godomey echangeur"
           defaultValue={property?.address}
-          required
         />
 
-        <div className="space-y-1.5">
-          <label className="block text-[12px] font-medium uppercase tracking-[0.06em] text-primary/60">
-            Type <span className="text-danger">*</span>
-          </label>
-          <select
-            name="type"
-            defaultValue={property?.type ?? ""}
-            required
-            className="w-full h-11 px-3 rounded-lg border border-border-custom bg-white
-                       text-[14px] text-primary focus:outline-none focus:ring-2
-                       focus:ring-primary/20 focus:border-primary/40 transition-colors duration-150"
-          >
-            <option value="" disabled>
-              Selectionner un type
-            </option>
-            {PROPERTY_TYPES.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
-              </option>
-            ))}
-          </select>
+        <div className="grid grid-cols-2 gap-3">
+          <Input
+            name="commune"
+            label="Commune"
+            placeholder="ex : Abomey-Calavi"
+            defaultValue={property?.commune}
+          />
+          <Input
+            name="landmark"
+            label="Repere"
+            placeholder="ex : Pres du carrefour Toyota"
+            defaultValue={property?.landmark}
+          />
         </div>
-
-        <div className="space-y-1.5">
-          <label className="block text-[12px] font-medium uppercase tracking-[0.06em] text-primary/60">
-            Quartier <span className="text-danger">*</span>
-          </label>
-          <select
-            name="neighborhoodId"
-            defaultValue={property?.neighborhoodId ?? ""}
-            required
-            disabled={loadingNbh}
-            className="w-full h-11 px-3 rounded-lg border border-border-custom bg-white
-                       text-[14px] text-primary focus:outline-none focus:ring-2
-                       focus:ring-primary/20 focus:border-primary/40
-                       disabled:opacity-50 transition-colors duration-150"
-          >
-            <option value="" disabled>
-              {loadingNbh ? "Chargement..." : "Selectionner un quartier"}
-            </option>
-            {neighborhoods.map((n) => (
-              <option key={n.id} value={n.id}>
-                {n.name} - {n.city}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <Input
-          name="totalUnits"
-          type="number"
-          label="Nombre de locaux"
-          placeholder="ex : 12"
-          defaultValue={property?.totalUnits?.toString()}
-          hint="Nombre total de locaux / unites dans ce bien"
-          required
-        />
 
         <div className="space-y-1.5">
           <label className="block text-[12px] font-medium uppercase tracking-[0.06em] text-primary/60">
@@ -215,10 +212,7 @@ export function PropertyFormModal({ property, isOpen, onClose, onSaved }: Props)
             rows={3}
             defaultValue={property?.description}
             placeholder="Informations complementaires sur le bien..."
-            className="w-full px-3 py-2.5 rounded-lg border border-border-custom bg-white
-                       text-[14px] text-primary placeholder:text-primary/30
-                       focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40
-                       resize-none transition-colors duration-150"
+            className="w-full px-3 py-2.5 rounded-lg border border-border-custom bg-white text-[14px] text-primary placeholder:text-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 resize-none transition-colors duration-150"
           />
         </div>
 
@@ -226,9 +220,7 @@ export function PropertyFormModal({ property, isOpen, onClose, onSaved }: Props)
           <button
             type="button"
             onClick={onClose}
-            className="h-10 px-5 rounded-lg text-[14px] font-medium text-primary/60
-                       hover:text-primary border border-border-custom hover:border-primary/30
-                       transition-colors duration-150"
+            className="h-10 px-5 rounded-lg text-[14px] font-medium text-primary/60 hover:text-primary border border-border-custom hover:border-primary/30 transition-colors duration-150"
           >
             Annuler
           </button>

@@ -92,7 +92,8 @@ export function TenantDetailPanel({
 
   const config = STATUS_CONFIG[tenant.status];
   const fullName = tenant.fullName ?? `${tenant.firstName} ${tenant.lastName}`;
-  const initials = `${tenant.firstName[0]}${tenant.lastName[0]}`.toUpperCase();
+  const initials =
+    `${tenant.firstName![0]}${tenant.lastName![0]}`.toUpperCase();
   const isArchived = tenant.isArchived || tenant.status === "BLACKLISTED";
 
   async function handleArchiveToggle() {
@@ -111,8 +112,7 @@ export function TenantDetailPanel({
 
   return (
     <aside
-      className="flex flex-col w-105 shrink-0 bg-surface border-l border-border-custom
-                 h-screen sticky top-0 overflow-hidden"
+      className="flex flex-col w-105 shrink-0 bg-surface border-l border-border-custom h-screen sticky top-0 overflow-hidden"
       aria-label={`Détails : ${fullName}`}
     >
       {/* Header */}
@@ -134,8 +134,7 @@ export function TenantDetailPanel({
         </div>
         <button
           onClick={onClose}
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-primary/40
-                     hover:text-primary hover:bg-primary/6 transition-colors shrink-0"
+          className="w-8 h-8 rounded-lg flex items-center justify-center text-primary/40 hover:text-primary hover:bg-primary/6 transition-colors shrink-0"
           aria-label="Fermer"
         >
           <X size={16} aria-hidden="true" />
@@ -146,9 +145,7 @@ export function TenantDetailPanel({
       <div className="flex flex-wrap items-center gap-2 px-5 py-3 border-b border-border-custom shrink-0">
         <button
           onClick={() => onEdit(tenant)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium
-                     text-primary border border-border-custom hover:border-primary/30 hover:bg-primary/4
-                     transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium text-primary border border-border-custom hover:border-primary/30 hover:bg-primary/4 transition-colors"
         >
           <Pencil size={13} aria-hidden="true" /> Modifier
         </button>
@@ -176,9 +173,7 @@ export function TenantDetailPanel({
 
         <button
           onClick={() => onDelete(tenant)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium
-                     text-danger border border-danger/20 hover:border-danger/40 hover:bg-danger/5
-                     transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium text-danger border border-danger/20 hover:border-danger/40 hover:bg-danger/5 transition-colors"
         >
           <Trash2 size={13} aria-hidden="true" /> Supprimer
         </button>
@@ -188,24 +183,20 @@ export function TenantDetailPanel({
       <div className="flex-1 overflow-y-auto px-5">
         <DetailRow icon={User} label="Nom complet" value={fullName} />
         <DetailRow icon={Mail} label="Email" value={tenant.email} />
-        <DetailRow icon={Phone} label="Téléphone" value={tenant.phoneNumber} />
+        <DetailRow icon={Phone} label="Téléphone" value={tenant.phone} />
         <DetailRow
           icon={CreditCard}
           label="Pièce d'identité"
           value={
-            tenant.idType
-              ? `${ID_TYPE_LABELS[tenant.idType] ?? tenant.idType}${tenant.idNumber ? ` · ${tenant.idNumber}` : ""}`
+            tenant.identityType
+              ? `${ID_TYPE_LABELS[tenant.identityType] ?? tenant.identityType}${tenant.identityNumber ? ` · ${tenant.identityNumber}` : ""}`
               : undefined
           }
         />
         <DetailRow
           icon={MapPin}
           label="Adresse"
-          value={
-            [tenant.address, tenant.city, tenant.country]
-              .filter(Boolean)
-              .join(", ") || undefined
-          }
+          value={[tenant.address].filter(Boolean).join(", ") || undefined}
         />
         <DetailRow
           icon={Calendar}

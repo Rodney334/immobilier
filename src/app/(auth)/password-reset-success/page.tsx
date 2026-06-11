@@ -25,9 +25,7 @@ export default function PasswordResetSuccessPage() {
 
       <Link
         href="/login"
-        className="inline-flex items-center justify-center w-full h-12
-                   bg-primary text-white rounded-lg text-[15px] font-medium
-                   hover:bg-[#263447] transition-colors duration-150"
+        className="inline-flex items-center justify-center w-full h-12 bg-primary text-white rounded-lg text-[15px] font-medium hover:bg-[#263447] transition-colors duration-150"
       >
         Se connecter
       </Link>

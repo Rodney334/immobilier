@@ -9,6 +9,8 @@ import {
   AlertTriangle,
   ChevronLeft,
   ChevronRight,
+  MoreVertical,
+  Download,
 } from "lucide-react";
 import { leaseService } from "@/lib/services/lease.service";
 import { useToast } from "@/components/ui/Toast";
@@ -20,7 +22,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import type {
   Lease,
   LeaseStatus,
-  PaymentFrequency,
+  LeasePeriodicity,
   PaginationMeta,
 } from "@/types";
 
@@ -38,15 +40,13 @@ const STATUS_CONFIG: Record<
   DRAFT: { label: "Brouillon", variant: "neutral" },
   EXPIRED: { label: "Expiré", variant: "neutral" },
   SUSPENDED: { label: "Suspendu", variant: "warning" },
-  TERMINATED: { label: "Clôturé", variant: "info" },
+  TERMINATED: { label: "Clôturé", variant: "neutral" },
 };
 
-const FREQ_LABELS: Record<PaymentFrequency, string> = {
-  monthly: "Mensuel",
-  "bi-weekly": "Bimensuel",
-  weekly: "Hebdo",
-  quarterly: "Trimestriel",
-  annual: "Annuel",
+const FREQ_LABELS: Record<LeasePeriodicity, string> = {
+  MONTHLY: "Mensuel",
+  QUARTERLY: "Trimestriel",
+  YEARLY: "Annuel",
 };
 
 function formatDate(iso: string) {
@@ -63,23 +63,90 @@ function daysUntil(iso: string) {
   return Math.ceil((new Date(iso).getTime() - Date.now()) / 86_400_000);
 }
 
+// ─── Row actions menu ─────────────────────────────────────────────────────────
+
+function LeaseRowActions({
+  lease,
+  onViewDetails,
+  onTerminate,
+  onDownload,
+}: {
+  lease: Lease;
+  onViewDetails: () => void;
+  onTerminate: () => void;
+  onDownload: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="relative" onClick={(e) => e.stopPropagation()}>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="w-7 h-7 rounded-md flex items-center justify-center text-primary/30 hover:text-primary hover:bg-primary/6 transition-colors"
+      >
+        <MoreVertical size={14} />
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 top-8 z-20 w-48 bg-white rounded-lg shadow-lg border border-border-custom py-1 text-[13px]">
+            <button
+              onClick={() => {
+                setOpen(false);
+                onViewDetails();
+              }}
+              className="w-full text-left px-4 py-2 hover:bg-primary/4 text-primary/70 hover:text-primary transition-colors"
+            >
+              Voir les details
+            </button>
+            {lease.status === "ACTIVE" && (
+              <button
+                onClick={() => {
+                  setOpen(false);
+                  onTerminate();
+                }}
+                className="w-full text-left px-4 py-2 hover:bg-danger/6 text-danger transition-colors"
+              >
+                Resilier
+              </button>
+            )}
+            <div className="my-1 border-t border-border-custom" />
+            <button
+              onClick={() => {
+                setOpen(false);
+                onDownload();
+              }}
+              className="w-full text-left px-4 py-2 hover:bg-primary/4 text-primary/70 hover:text-primary transition-colors flex items-center gap-2"
+            >
+              <Download size={12} /> Telecharger PDF
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 // ─── Table row ────────────────────────────────────────────────────────────────
 
 function LeaseRow({
   lease,
   selected,
   onClick,
+  onTerminate,
+  onDownload,
 }: {
   lease: Lease;
   selected: boolean;
   onClick: () => void;
+  onTerminate: () => void;
+  onDownload: () => void;
 }) {
   const cfg = STATUS_CONFIG[lease.status];
   const tenantName =
     lease.tenant?.fullName ??
     (lease.tenant ? `${lease.tenant.firstName} ${lease.tenant.lastName}` : "—");
   const unitLabel = lease.unit ? `Local ${lease.unit.unitNumber}` : "—";
-  const daysLeft = daysUntil(lease.endDate);
+  const daysLeft = lease.endDate ? daysUntil(lease.endDate) : Infinity;
   const nearExpiry =
     lease.status === "ACTIVE" && daysLeft <= 30 && daysLeft >= 0;
 
@@ -102,10 +169,12 @@ function LeaseRow({
         <p className="text-[11px] text-primary/40">{unitLabel}</p>
       </td>
       <td className="px-4 py-3.5 text-[13px] tabular-nums text-primary/80">
-        {formatXOF(lease.rentAmount)}
+        {formatXOF(Number(lease.monthlyRent))}
       </td>
       <td className="px-4 py-3.5 text-[12px] text-primary/50">
-        {FREQ_LABELS[lease.paymentFrequency]}
+        {lease.periodicity
+          ? (FREQ_LABELS[lease.periodicity] ?? lease.periodicity)
+          : "-"}
       </td>
       <td className="px-4 py-3.5 text-[12px] text-primary/50 tabular-nums whitespace-nowrap">
         {formatDate(lease.startDate)}
@@ -114,7 +183,7 @@ function LeaseRow({
         <p
           className={`text-[12px] tabular-nums ${nearExpiry ? "text-secondary font-semibold" : "text-primary/50"}`}
         >
-          {formatDate(lease.endDate)}
+          {lease.endDate ? formatDate(lease.endDate) : "—"}
         </p>
         {nearExpiry && (
           <p className="text-[11px] text-secondary/80">{daysLeft}j restants</p>
@@ -122,6 +191,14 @@ function LeaseRow({
       </td>
       <td className="px-4 py-3.5">
         <Badge variant={cfg.variant}>{cfg.label}</Badge>
+      </td>
+      <td className="px-3 py-3.5">
+        <LeaseRowActions
+          lease={lease}
+          onViewDetails={onClick}
+          onTerminate={onTerminate}
+          onDownload={onDownload}
+        />
       </td>
     </tr>
   );
@@ -148,8 +225,7 @@ function PaginationBar({
         <button
           onClick={() => onPage(page - 1)}
           disabled={page <= 1}
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-primary/50
-                     hover:text-primary hover:bg-primary/6 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          className="w-8 h-8 rounded-lg flex items-center justify-center text-primary/50 hover:text-primary hover:bg-primary/6 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
         >
           <ChevronLeft size={15} />
         </button>
@@ -159,8 +235,7 @@ function PaginationBar({
         <button
           onClick={() => onPage(page + 1)}
           disabled={page >= totalPages}
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-primary/50
-                     hover:text-primary hover:bg-primary/6 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          className="w-8 h-8 rounded-lg flex items-center justify-center text-primary/50 hover:text-primary hover:bg-primary/6 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
         >
           <ChevronRight size={15} />
         </button>
@@ -222,14 +297,24 @@ export function LeasesClient() {
         page,
         limit: PAGE_LIMIT,
         status: statusFilter === "all" ? undefined : statusFilter,
+        search: debouncedQ || undefined,
       });
-      setLeases(res.data);
-      setPagination(res.meta ?? null);
+      // Normalise la réponse : gère les cas { data: [...] } et { data: { items: [...] } }
+      const list: Lease[] = Array.isArray(res.data)
+        ? res.data
+        : ((res as unknown as { data: { data: Lease[] } }).data?.data ?? []);
+      const meta =
+        res.meta ??
+        (res as unknown as { pagination: typeof res.meta }).pagination ??
+        null;
+      setLeases(list);
+      setPagination(meta);
 
       // Warning toast — affiché une seule fois par session de page
       if (!toastShown) {
-        const expiring = res.data.filter((l) => {
+        const expiring = list.filter((l) => {
           if (l.status !== "ACTIVE") return false;
+          if (!l.endDate) return false;
           const d = daysUntil(l.endDate);
           return d >= 0 && d <= 30;
         });
@@ -304,9 +389,7 @@ export function LeasesClient() {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Rechercher…"
-                  className="pl-9 pr-4 h-9 w-48 rounded-lg border border-border-custom bg-white text-[13px]
-                             text-primary placeholder:text-primary/30 focus:outline-none focus:ring-2
-                             focus:ring-primary/20 focus:border-primary/40 transition-colors"
+                  className="pl-9 pr-4 h-9 w-48 rounded-lg border border-border-custom bg-white text-[13px] text-primary placeholder:text-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors"
                 />
               </div>
               <button
@@ -314,8 +397,7 @@ export function LeasesClient() {
                   setEditTarget(null);
                   setFormOpen(true);
                 }}
-                className="flex items-center gap-2 h-9 px-4 bg-primary text-white rounded-lg
-                           text-[13px] font-medium hover:bg-[#263447] transition-colors"
+                className="flex items-center gap-2 h-9 px-4 bg-primary text-white rounded-lg text-[13px] font-medium hover:bg-[#263447] transition-colors"
               >
                 <Plus size={15} /> Nouveau contrat
               </button>
@@ -341,10 +423,7 @@ export function LeasesClient() {
           </div>
 
           {error && (
-            <div
-              className="mx-6 mt-4 flex items-center gap-2 px-4 py-3 rounded-lg bg-danger/8
-                            border border-danger/20 text-[13px] text-danger shrink-0"
-            >
+            <div className="mx-6 mt-4 flex items-center gap-2 px-4 py-3 rounded-lg bg-danger/8 border border-danger/20 text-[13px] text-danger shrink-0">
               <AlertTriangle size={14} /> {error}
             </div>
           )}
@@ -385,13 +464,14 @@ export function LeasesClient() {
                     {[
                       "Locataire / Local",
                       "Loyer",
-                      "Fréquence",
-                      "Début",
+                      "Frequence",
+                      "Debut",
                       "Fin",
                       "Statut",
-                    ].map((h) => (
+                      "",
+                    ].map((h, i) => (
                       <th
-                        key={h}
+                        key={i}
                         className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-primary/40"
                       >
                         {h}
@@ -408,6 +488,31 @@ export function LeasesClient() {
                       onClick={() =>
                         setSelected((p) => (p?.id === l.id ? null : l))
                       }
+                      onTerminate={() => setTerminateTarget(l)}
+                      onDownload={() => {
+                        toast({
+                          variant: "warning",
+                          title: "Telechargement en cours...",
+                          duration: 3000,
+                        });
+                        leaseService
+                          .downloadContractPdf(l.id)
+                          .then((blob) => {
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement("a");
+                            a.href = url;
+                            a.download = `contrat-${l.id}.pdf`;
+                            a.click();
+                            URL.revokeObjectURL(url);
+                          })
+                          .catch(() =>
+                            toast({
+                              variant: "danger",
+                              title: "Echec du telechargement",
+                              duration: 4000,
+                            }),
+                          );
+                      }}
                     />
                   ))}
                 </tbody>
@@ -420,7 +525,6 @@ export function LeasesClient() {
           )}
         </div>
 
-        {/* Right panel */}
         {selected && (
           <LeaseDetailPanel
             lease={selected}

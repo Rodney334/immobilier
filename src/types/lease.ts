@@ -11,12 +11,11 @@ export type LeaseStatus =
   | "EXPIRED"
   | "ARCHIVED";
 
-export type PaymentFrequency =
-  | "monthly"
-  | "bi-weekly"
-  | "weekly"
-  | "quarterly"
-  | "annual";
+// Valeurs acceptées par l'API (periodicity)
+export type LeasePeriodicity = "MONTHLY" | "QUARTERLY" | "YEARLY";
+
+// Alias rétro-compatible
+export type PaymentFrequency = LeasePeriodicity;
 
 // ─── Entité principale ────────────────────────────────────────────────────────
 
@@ -26,12 +25,15 @@ export type Lease = {
   tenant?: Tenant;
   unitId: string;
   unit?: Unit;
+  contractNumber?: string;
   startDate: string;
-  endDate: string;
-  rentAmount: number;
-  depositAmount?: number;
-  paymentFrequency: PaymentFrequency;
+  endDate?: string;
+  monthlyRent: string;       // string — champ API
+  depositAmount?: string;    // string — champ API
+  periodicity?: LeasePeriodicity;
+  billingDay?: number;
   status: LeaseStatus;
+  notes?: string;
   terminationDate?: string;
   terminationReason?: string;
   createdAt: string;
@@ -41,19 +43,24 @@ export type Lease = {
 // ─── Payloads ─────────────────────────────────────────────────────────────────
 
 export type CreateLeasePayload = {
-  tenantId: string;
   unitId: string;
+  tenantId: string;
+  contractNumber?: string;
   startDate: string;
-  endDate: string;
-  rentAmount: number;
-  depositAmount?: number;
-  paymentFrequency: PaymentFrequency;
+  endDate?: string;
+  monthlyRent: string;       // string requis par l'API (ex: "150000")
+  depositAmount?: string;    // string optionnel (ex: "150000")
+  billingDay?: number;
+  periodicity?: LeasePeriodicity;
+  status?: LeaseStatus;
+  terminationReason?: string;
+  notes?: string;
 };
 
 export type UpdateLeasePayload = Partial<
   Pick<
     CreateLeasePayload,
-    "rentAmount" | "endDate" | "depositAmount" | "paymentFrequency"
+    "monthlyRent" | "endDate" | "depositAmount" | "periodicity" | "billingDay" | "notes"
   >
 >;
 
@@ -75,4 +82,5 @@ export type LeaseFilterParams = {
   status?: LeaseStatus;
   tenant?: string;
   unit?: string;
+  search?: string;
 };

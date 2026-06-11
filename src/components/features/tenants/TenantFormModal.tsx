@@ -6,7 +6,7 @@ import { Loader2 } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
 import { tenantService } from "@/lib/services/tenant.service";
-import type { Tenant, IdType, CreateTenantPayload } from "@/types";
+import type { Tenant, CreateTenantPayload } from "@/types";
 
 type FormState = { error: string | null; success: boolean };
 
@@ -17,8 +17,8 @@ type Props = {
   onSaved: (t: Tenant) => void;
 };
 
-const ID_TYPES: { value: IdType; label: string }[] = [
-  { value: "NationalId", label: "Carte d identite nationale" },
+const ID_TYPES: { value: string; label: string }[] = [
+  { value: "CIP", label: "Carte d identite nationale (CIP)" },
   { value: "Passport", label: "Passeport" },
   { value: "DriverLicense", label: "Permis de conduire" },
   { value: "ResidencePermit", label: "Titre de sejour" },
@@ -31,9 +31,7 @@ function SubmitButton({ label }: { label: string }) {
     <button
       type="submit"
       disabled={pending}
-      className="h-10 px-5 bg-primary text-white rounded-lg text-[14px] font-medium
-                 hover:bg-[#263447] disabled:opacity-60 disabled:cursor-not-allowed
-                 transition-colors duration-150 flex items-center gap-2"
+      className="h-10 px-5 bg-primary text-white rounded-lg text-[14px] font-medium hover:bg-[#263447] disabled:opacity-60 disabled:cursor-not-allowed transition-colors duration-150 flex items-center gap-2"
     >
       {pending && (
         <Loader2 size={14} className="animate-spin" aria-hidden="true" />
@@ -51,12 +49,12 @@ export function TenantFormModal({ tenant, isOpen, onClose, onSaved }: Props) {
       const firstName = (formData.get("firstName") as string).trim();
       const lastName = (formData.get("lastName") as string).trim();
       const email = (formData.get("email") as string).trim();
-      const phoneNumber = (formData.get("phoneNumber") as string).trim();
-      const idType = formData.get("idType") as IdType | "";
-      const idNumber = (formData.get("idNumber") as string).trim();
+      const phone = (formData.get("phone") as string).trim();
+      const identityType = (formData.get("identityType") as string).trim();
+      const identityNumber = (formData.get("identityNumber") as string).trim();
       const address = (formData.get("address") as string).trim();
-      const city = (formData.get("city") as string).trim();
-      const country = (formData.get("country") as string).trim();
+      const emergencyContact = (formData.get("emergencyContact") as string).trim();
+      const notes = (formData.get("notes") as string).trim();
 
       if (!firstName || !lastName) {
         return {
@@ -65,16 +63,19 @@ export function TenantFormModal({ tenant, isOpen, onClose, onSaved }: Props) {
         };
       }
 
+      const fullName = `${firstName} ${lastName}`.trim();
+
       const payload: CreateTenantPayload = {
+        fullName,
         firstName,
         lastName,
         email: email || undefined,
-        phoneNumber: phoneNumber || undefined,
-        idType: idType || undefined,
-        idNumber: idNumber || undefined,
+        phone: phone || undefined,
+        identityType: identityType || undefined,
+        identityNumber: identityNumber || undefined,
         address: address || undefined,
-        city: city || undefined,
-        country: country || undefined,
+        emergencyContact: emergencyContact || undefined,
+        notes: notes || undefined,
       };
 
       try {
@@ -139,11 +140,11 @@ export function TenantFormModal({ tenant, isOpen, onClose, onSaved }: Props) {
         />
 
         <Input
-          name="phoneNumber"
+          name="phone"
           type="tel"
           label="Telephone (optionnel)"
-          placeholder="+229 01 23 45 67"
-          defaultValue={tenant?.phoneNumber}
+          placeholder="+229 97 00 00 00"
+          defaultValue={tenant?.phone}
         />
 
         <div className="grid grid-cols-2 gap-3">
@@ -152,11 +153,9 @@ export function TenantFormModal({ tenant, isOpen, onClose, onSaved }: Props) {
               Type de piece d identite
             </label>
             <select
-              name="idType"
-              defaultValue={tenant?.idType ?? ""}
-              className="w-full h-11 px-3 rounded-lg border border-border-custom bg-white
-                         text-[14px] text-primary focus:outline-none focus:ring-2
-                         focus:ring-primary/20 focus:border-primary/40 transition-colors"
+              name="identityType"
+              defaultValue={tenant?.identityType ?? ""}
+              className="w-full h-11 px-3 rounded-lg border border-border-custom bg-white text-[14px] text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors"
             >
               <option value="">Aucune</option>
               {ID_TYPES.map((t) => (
@@ -167,32 +166,32 @@ export function TenantFormModal({ tenant, isOpen, onClose, onSaved }: Props) {
             </select>
           </div>
           <Input
-            name="idNumber"
+            name="identityNumber"
             label="Numero de piece"
-            placeholder="ex : AB123456"
-            defaultValue={tenant?.idNumber}
+            placeholder="ex : BJ123456"
+            defaultValue={tenant?.identityNumber}
           />
         </div>
 
         <Input
           name="address"
           label="Adresse (optionnel)"
-          placeholder="ex : Rue des Manguiers"
+          placeholder="ex : Cotonou, Zogbo"
           defaultValue={tenant?.address}
         />
 
         <div className="grid grid-cols-2 gap-3">
           <Input
-            name="city"
-            label="Ville (optionnel)"
-            placeholder="Cotonou"
-            defaultValue={tenant?.city}
+            name="emergencyContact"
+            label="Contact urgence (optionnel)"
+            placeholder="+229 96 00 00 00"
+            defaultValue={tenant?.emergencyContact}
           />
           <Input
-            name="country"
-            label="Pays (optionnel)"
-            placeholder="Benin"
-            defaultValue={tenant?.country}
+            name="notes"
+            label="Notes (optionnel)"
+            placeholder="ex : Client fidele"
+            defaultValue={tenant?.notes}
           />
         </div>
 
@@ -200,9 +199,7 @@ export function TenantFormModal({ tenant, isOpen, onClose, onSaved }: Props) {
           <button
             type="button"
             onClick={onClose}
-            className="h-10 px-5 rounded-lg text-[14px] font-medium text-primary/60
-                       hover:text-primary border border-border-custom hover:border-primary/30
-                       transition-colors duration-150"
+            className="h-10 px-5 rounded-lg text-[14px] font-medium text-primary/60 hover:text-primary border border-border-custom hover:border-primary/30 transition-colors duration-150"
           >
             Annuler
           </button>

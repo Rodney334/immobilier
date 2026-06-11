@@ -390,8 +390,7 @@ export function ReportsClient() {
           <select
             value={year}
             onChange={(e) => setYear(Number(e.target.value))}
-            className="h-9 px-3 rounded-lg border border-border-custom bg-white text-[13px] text-primary
-                       focus:outline-none focus:ring-2 focus:ring-primary/20 transition-colors"
+            className="h-9 px-3 rounded-lg border border-border-custom bg-white text-[13px] text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-colors"
           >
             {[currentYear, currentYear - 1, currentYear - 2].map((y) => (
               <option key={y} value={y}>
@@ -402,8 +401,7 @@ export function ReportsClient() {
           <button
             onClick={load}
             disabled={loading}
-            className="w-9 h-9 flex items-center justify-center rounded-lg border border-border-custom
-                       text-primary/50 hover:text-primary hover:bg-primary/4 disabled:opacity-50 transition-colors"
+            className="w-9 h-9 flex items-center justify-center rounded-lg border border-border-custom text-primary/50 hover:text-primary hover:bg-primary/4 disabled:opacity-50 transition-colors"
             aria-label="Actualiser"
           >
             <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
@@ -411,8 +409,7 @@ export function ReportsClient() {
           <button
             onClick={handleDownloadPdf}
             disabled={downloading || loading}
-            className="flex items-center gap-2 h-9 px-4 bg-primary text-white rounded-lg
-                       text-[13px] font-medium hover:bg-[#263447] disabled:opacity-60 transition-colors"
+            className="flex items-center gap-2 h-9 px-4 bg-primary text-white rounded-lg text-[13px] font-medium hover:bg-[#263447] disabled:opacity-60 transition-colors"
           >
             {downloading ? (
               <Loader2 size={14} className="animate-spin" />

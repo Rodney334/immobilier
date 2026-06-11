@@ -167,9 +167,7 @@ export function SettingsClient() {
             </div>
             <div>
               <label
-                className="flex items-center gap-2 px-4 py-2 rounded-lg border border-border-custom
-                           text-[13px] font-medium text-primary cursor-pointer
-                           hover:bg-primary/4 hover:border-primary/30 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg border border-border-custom text-[13px] font-medium text-primary cursor-pointer hover:bg-primary/4 hover:border-primary/30 transition-colors"
               >
                 <Camera size={14} />
                 Changer la photo
@@ -226,8 +224,7 @@ export function SettingsClient() {
               <button
                 type="submit"
                 disabled={profileLoading}
-                className="flex items-center gap-2 h-10 px-5 bg-primary text-white rounded-lg
-                           text-[13px] font-medium hover:bg-[#263447] disabled:opacity-60 transition-colors"
+                className="flex items-center gap-2 h-10 px-5 bg-primary text-white rounded-lg text-[13px] font-medium hover:bg-[#263447] disabled:opacity-60 transition-colors"
               >
                 {profileLoading && <Loader2 size={14} className="animate-spin" />}
                 Enregistrer
@@ -288,9 +285,7 @@ export function SettingsClient() {
               <button
                 onClick={handlePasswordReset}
                 disabled={pwLoading}
-                className="flex items-center gap-2 h-9 px-4 rounded-lg border border-border-custom
-                           text-[13px] font-medium text-primary hover:bg-primary/4 hover:border-primary/30
-                           disabled:opacity-60 transition-colors"
+                className="flex items-center gap-2 h-9 px-4 rounded-lg border border-border-custom text-[13px] font-medium text-primary hover:bg-primary/4 hover:border-primary/30 disabled:opacity-60 transition-colors"
               >
                 {pwLoading && <Loader2 size={13} className="animate-spin" />}
                 Envoyer le lien de réinitialisation

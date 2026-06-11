@@ -3,8 +3,7 @@
 export type Neighborhood = {
   id: string;
   name: string;
-  city: string;
-  country: string;
+  code: string;
   description?: string;
   createdAt: string;
   updatedAt: string;
@@ -14,8 +13,6 @@ export type Neighborhood = {
 
 export type CreateNeighborhoodPayload = {
   name: string;
-  city: string;
-  country: string;
   description?: string;
 };
 

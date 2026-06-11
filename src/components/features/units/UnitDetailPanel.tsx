@@ -6,8 +6,6 @@ import {
   DoorOpen,
   Building2,
   Ruler,
-  BedDouble,
-  Bath,
   Wallet,
   Calendar,
   Pencil,
@@ -115,8 +113,7 @@ export function UnitDetailPanel({
 
   return (
     <aside
-      className="flex flex-col w-105 shrink-0 bg-surface border-l border-border-custom
-                 h-screen sticky top-0 overflow-hidden"
+      className="flex flex-col w-105 shrink-0 bg-surface border-l border-border-custom h-screen sticky top-0 overflow-hidden"
       aria-label={`Détails : Local ${unit.unitNumber}`}
     >
       {/* Header */}
@@ -145,8 +142,7 @@ export function UnitDetailPanel({
         </div>
         <button
           onClick={onClose}
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-primary/40
-                     hover:text-primary hover:bg-primary/6 transition-colors shrink-0"
+          className="w-8 h-8 rounded-lg flex items-center justify-center text-primary/40 hover:text-primary hover:bg-primary/6 transition-colors shrink-0"
           aria-label="Fermer"
         >
           <X size={16} aria-hidden="true" />
@@ -157,9 +153,7 @@ export function UnitDetailPanel({
       <div className="flex flex-wrap items-center gap-2 px-5 py-3 border-b border-border-custom shrink-0">
         <button
           onClick={() => onEdit(unit)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium
-                     text-primary border border-border-custom hover:border-primary/30 hover:bg-primary/4
-                     transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium text-primary border border-border-custom hover:border-primary/30 hover:bg-primary/4 transition-colors"
         >
           <Pencil size={13} aria-hidden="true" /> Modifier
         </button>
@@ -187,9 +181,7 @@ export function UnitDetailPanel({
 
         <button
           onClick={() => onDelete(unit)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium
-                     text-danger border border-danger/20 hover:border-danger/40 hover:bg-danger/5
-                     transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium text-danger border border-danger/20 hover:border-danger/40 hover:bg-danger/5 transition-colors"
         >
           <Trash2 size={13} aria-hidden="true" /> Supprimer
         </button>
@@ -205,21 +197,19 @@ export function UnitDetailPanel({
         <DetailRow
           icon={DoorOpen}
           label="Type"
-          value={TYPE_LABELS[unit.type] ?? unit.type}
+          value={TYPE_LABELS[unit.type!] ?? unit.type}
         />
         <DetailRow
           icon={Ruler}
           label="Surface"
           value={unit.area ? `${unit.area} m²` : undefined}
         />
-        <DetailRow icon={BedDouble} label="Chambres" value={unit.rooms} />
-        <DetailRow icon={Bath} label="Salles de bain" value={unit.bathrooms} />
         <DetailRow
           icon={Wallet}
           label="Loyer mensuel"
           value={
             <span className="font-semibold tabular-nums">
-              {fmt.format(unit.baseRent)} XOF
+              {fmt.format(Number(unit.baseRent))} XOF
             </span>
           }
         />
@@ -237,8 +227,3 @@ export function UnitDetailPanel({
     </aside>
   );
 }
-//         />
-//       </div>
-//     </aside>
-//   );
-// }

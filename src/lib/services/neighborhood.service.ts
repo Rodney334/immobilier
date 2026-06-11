@@ -1,7 +1,6 @@
 import { api } from '@/lib/api/client';
 import type {
   ApiResponse,
-  PaginatedResponse,
   Neighborhood,
   NeighborhoodFilterParams,
   CreateNeighborhoodPayload,
@@ -21,10 +20,13 @@ function buildQS(params?: Record<string, unknown>): string {
 }
 
 export const neighborhoodService = {
+  /**
+   * L'API retourne { success, message, data: Neighborhood[] } sans pagination.
+   */
   getAll(
     params?: NeighborhoodFilterParams,
-  ): Promise<PaginatedResponse<Neighborhood>> {
-    return api.get<PaginatedResponse<Neighborhood>>(
+  ): Promise<ApiResponse<Neighborhood[]>> {
+    return api.get<ApiResponse<Neighborhood[]>>(
       `${BASE}/${buildQS(params)}`,
     );
   },

@@ -16,11 +16,7 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="w-full h-12 bg-primary text-white rounded-lg text-[15px] font-medium
-                 hover:bg-[#263447] active:bg-[#16202C]
-                 disabled:opacity-60 disabled:cursor-not-allowed
-                 transition-colors duration-150
-                 flex items-center justify-center gap-2"
+      className="w-full h-12 bg-primary text-white rounded-lg text-[15px] font-medium hover:bg-[#263447] active:bg-[#16202C] disabled:opacity-60 disabled:cursor-not-allowed transition-colors duration-150 flex items-center justify-center gap-2"
     >
       {pending && <Loader2 size={16} className="animate-spin" aria-hidden="true" />}
       Enregistrer le mot de passe
@@ -86,9 +82,7 @@ export function ChangePasswordForm({ token }: { token: string }) {
         </div>
         <a
           href="/forgot-password"
-          className="inline-flex items-center justify-center w-full h-12
-                     bg-primary text-white rounded-lg text-[15px] font-medium
-                     hover:bg-[#263447] transition-colors duration-150"
+          className="inline-flex items-center justify-center w-full h-12 bg-primary text-white rounded-lg text-[15px] font-medium hover:bg-[#263447] transition-colors duration-150"
         >
           Demander un nouveau lien
         </a>
@@ -111,8 +105,7 @@ export function ChangePasswordForm({ token }: { token: string }) {
         {state.error && (
           <div
             role="alert"
-            className="px-4 py-3 rounded-lg bg-danger/8 border border-danger/20
-                       text-[13px] text-danger leading-snug"
+            className="px-4 py-3 rounded-lg bg-danger/8 border border-danger/20 text-[13px] text-danger leading-snug"
           >
             {state.error}
           </div>

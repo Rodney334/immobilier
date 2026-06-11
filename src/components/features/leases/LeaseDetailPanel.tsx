@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { leaseService } from "@/lib/services/lease.service";
 import { Badge } from "@/components/ui/Badge";
-import type { Lease, LeaseStatus, PaymentFrequency } from "@/types";
+import type { Lease, LeaseStatus, LeasePeriodicity } from "@/types";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -32,15 +32,13 @@ const STATUS_CONFIG: Record<
   DRAFT: { label: "Brouillon", variant: "neutral" },
   EXPIRED: { label: "Expiré", variant: "neutral" },
   SUSPENDED: { label: "Suspendu", variant: "warning" },
-  TERMINATED: { label: "Clôturé", variant: "info" },
+  TERMINATED: { label: "Clôturé", variant: "neutral" },
 };
 
-const FREQ_LABELS: Record<PaymentFrequency, string> = {
-  monthly: "Mensuel",
-  "bi-weekly": "Bimensuel",
-  weekly: "Hebdomadaire",
-  quarterly: "Trimestriel",
-  annual: "Annuel",
+const FREQ_LABELS: Record<LeasePeriodicity, string> = {
+  MONTHLY: "Mensuel",
+  QUARTERLY: "Trimestriel",
+  YEARLY: "Annuel",
 };
 
 function formatDate(iso: string) {
@@ -148,7 +146,7 @@ export function LeaseDetailPanel({
   const unitLabel = lease.unit
     ? `Local ${lease.unit.unitNumber}`
     : lease.unitId;
-  const daysLeft = daysUntil(lease.endDate);
+  const daysLeft = lease.endDate ? daysUntil(lease.endDate) : Infinity;
   const isActive = lease.status === "ACTIVE";
 
   async function handleDownloadPdf() {
@@ -181,8 +179,7 @@ export function LeaseDetailPanel({
 
   return (
     <aside
-      className="flex flex-col w-105 shrink-0 bg-surface border-l border-border-custom
-                 h-screen sticky top-0 overflow-hidden"
+      className="flex flex-col w-105 shrink-0 bg-surface border-l border-border-custom h-screen sticky top-0 overflow-hidden"
       aria-label={`Contrat : ${tenantName}`}
     >
       {/* Header */}
@@ -203,8 +200,7 @@ export function LeaseDetailPanel({
         </div>
         <button
           onClick={onClose}
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-primary/40
-                     hover:text-primary hover:bg-primary/6 transition-colors shrink-0"
+          className="w-8 h-8 rounded-lg flex items-center justify-center text-primary/40 hover:text-primary hover:bg-primary/6 transition-colors shrink-0"
         >
           <X size={16} />
         </button>
@@ -236,7 +232,7 @@ export function LeaseDetailPanel({
               label="Loyer mensuel"
               value={
                 <span className="tabular-nums">
-                  {formatXOF(lease.rentAmount)}
+                  {formatXOF(Number(lease.monthlyRent))}
                 </span>
               }
             />
@@ -246,15 +242,15 @@ export function LeaseDetailPanel({
                 label="Caution"
                 value={
                   <span className="tabular-nums">
-                    {formatXOF(lease.depositAmount)}
+                    {formatXOF(Number(lease.depositAmount))}
                   </span>
                 }
               />
             )}
             <DetailRow
               icon={RefreshCw}
-              label="Fréquence"
-              value={FREQ_LABELS[lease.paymentFrequency]}
+              label="Périodicité"
+              value={lease.periodicity ? (FREQ_LABELS[lease.periodicity] ?? lease.periodicity) : "-"}
             />
             <DetailRow
               icon={Calendar}
@@ -272,8 +268,8 @@ export function LeaseDetailPanel({
                       : ""
                   }
                 >
-                  {formatDate(lease.endDate)}
-                  {isActive && daysLeft > 0 && ` (${daysLeft} j)`}
+                  {lease.endDate ? formatDate(lease.endDate) : '—'}
+                  {isActive && daysLeft > 0 && daysLeft !== Infinity && ` (${daysLeft} j)`}
                 </span>
               }
             />

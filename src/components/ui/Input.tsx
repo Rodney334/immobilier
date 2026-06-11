@@ -70,8 +70,7 @@ export function Input({
           <button
             type="button"
             onClick={() => setShowPassword((v) => !v)}
-            className="absolute right-3 top-1/2 -translate-y-1/2
-                       text-primary/40 hover:text-primary/70 transition-colors"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-primary/40 hover:text-primary/70 transition-colors"
             aria-label={
               showPassword
                 ? "Masquer le mot de passe"

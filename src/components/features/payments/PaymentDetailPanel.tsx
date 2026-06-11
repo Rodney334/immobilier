@@ -101,9 +101,9 @@ export function PaymentDetailPanel({
 
   const config = STATUS_CONFIG[payment.status];
   const tenantName = payment.lease?.tenant?.fullName || "Locataire inconnu";
-  const initials =
-    `${payment.lease?.tenant?.firstName[0]}${payment.lease?.tenant?.lastName[0]}`.toUpperCase() ||
-    "?";
+  const initials = payment.lease?.tenant
+    ? `${payment.lease.tenant.firstName?.[0] ?? ''}${payment.lease.tenant.lastName?.[0] ?? ''}`.toUpperCase() || '?'
+    : '?';
 
   const canCancel =
     payment.status === "RECORDED" || payment.status === "REVERSED";
@@ -149,8 +149,7 @@ export function PaymentDetailPanel({
   return (
     <>
       <aside
-        className="flex flex-col w-105 shrink-0 bg-surface border-l border-border-custom
-                   h-screen sticky top-0 overflow-hidden"
+        className="flex flex-col w-105 shrink-0 bg-surface border-l border-border-custom h-screen sticky top-0 overflow-hidden"
         aria-label={`Détails du paiement`}
       >
         {/* Header */}
@@ -175,8 +174,7 @@ export function PaymentDetailPanel({
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-primary/40
-                       hover:text-primary hover:bg-primary/6 transition-colors shrink-0"
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-primary/40 hover:text-primary hover:bg-primary/6 transition-colors shrink-0"
             aria-label="Fermer"
           >
             <X size={16} aria-hidden="true" />
@@ -189,9 +187,7 @@ export function PaymentDetailPanel({
             <button
               onClick={handleDownloadReceipt}
               disabled={downloading}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium
-                         text-primary border border-border-custom hover:border-primary/30 hover:bg-primary/4
-                         transition-colors disabled:opacity-50"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium text-primary border border-border-custom hover:border-primary/30 hover:bg-primary/4 transition-colors disabled:opacity-50"
             >
               {downloading ? (
                 <Loader2
@@ -213,8 +209,7 @@ export function PaymentDetailPanel({
                 setCancelError(null);
                 setCancelOpen(true);
               }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium
-                         text-secondary border border-secondary/20 hover:bg-secondary/5 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium text-secondary border border-secondary/20 hover:bg-secondary/5 transition-colors"
             >
               <Ban size={13} aria-hidden="true" /> Annuler
             </button>
@@ -222,9 +217,7 @@ export function PaymentDetailPanel({
 
           <button
             onClick={() => onDelete(payment)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium
-                       text-danger border border-danger/20 hover:border-danger/40 hover:bg-danger/5
-                       transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium text-danger border border-danger/20 hover:border-danger/40 hover:bg-danger/5 transition-colors"
           >
             <Trash2 size={13} aria-hidden="true" /> Supprimer
           </button>
@@ -245,7 +238,7 @@ export function PaymentDetailPanel({
           <DetailRow
             icon={Calendar}
             label="Date de paiement"
-            value={formatDate(payment.paymentDate)}
+            value={payment.paymentDate ? formatDate(payment.paymentDate) : undefined}
           />
           <DetailRow
             icon={CreditCard}
@@ -272,8 +265,7 @@ export function PaymentDetailPanel({
                 {payment.allocations.map((alloc) => (
                   <div
                     key={alloc.id}
-                    className="flex items-center justify-between px-3 py-2 rounded-lg bg-primary/3
-                               border border-border-custom"
+                    className="flex items-center justify-between px-3 py-2 rounded-lg bg-primary/3 border border-border-custom"
                   >
                     <span className="text-[12px] text-primary/60 font-mono truncate">
                       {alloc.rentScheduleId.slice(0, 8)}…
@@ -299,8 +291,7 @@ export function PaymentDetailPanel({
             <button
               type="button"
               onClick={() => setCancelOpen(false)}
-              className="h-10 px-5 rounded-lg text-[14px] font-medium text-primary/60
-                         hover:text-primary border border-border-custom transition-colors"
+              className="h-10 px-5 rounded-lg text-[14px] font-medium text-primary/60 hover:text-primary border border-border-custom transition-colors"
             >
               Retour
             </button>
@@ -308,8 +299,7 @@ export function PaymentDetailPanel({
               type="button"
               onClick={handleCancel}
               disabled={cancelling}
-              className="h-10 px-5 bg-secondary text-white rounded-lg text-[14px] font-medium
-                         hover:bg-secondary/90 disabled:opacity-60 transition-colors flex items-center gap-2"
+              className="h-10 px-5 bg-secondary text-white rounded-lg text-[14px] font-medium hover:bg-secondary/90 disabled:opacity-60 transition-colors flex items-center gap-2"
             >
               {cancelling && <Loader2 size={14} className="animate-spin" />}
               Confirmer l&apos;annulation
@@ -337,10 +327,7 @@ export function PaymentDetailPanel({
               onChange={(e) => setCancelReason(e.target.value)}
               placeholder="Expliquez la raison de l'annulation…"
               rows={3}
-              className="w-full px-3 py-2.5 rounded-lg border border-border-custom bg-white
-                         text-[14px] text-primary placeholder:text-primary/30
-                         focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40
-                         transition-colors resize-none"
+              className="w-full px-3 py-2.5 rounded-lg border border-border-custom bg-white text-[14px] text-primary placeholder:text-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors resize-none"
             />
             {cancelError && (
               <p className="text-[12px] text-danger">{cancelError}</p>

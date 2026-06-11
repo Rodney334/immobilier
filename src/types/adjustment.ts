@@ -1,27 +1,27 @@
-// ─── Énumérations ─────────────────────────────────────────────────────────────
-
-export type AdjustmentType = 'discount' | 'penalty' | 'correction' | 'revision';
-
-// ─── Entité principale ────────────────────────────────────────────────────────
+// Valeurs exactes de l'API (enum backend)
+export type AdjustmentType = 'DISCOUNT' | 'PENALTY' | 'CORRECTION' | 'RENT_REVISION' | 'WAIVER';
+export type AdjustmentValueMode = 'FIXED' | 'PERCENTAGE';
 
 export type Adjustment = {
   id: string;
-  scheduleId: string;
+  scheduleId?: string;
+  leaseId?: string;
   type: AdjustmentType;
-  /** Montant positif (pénalité) ou négatif (remise) en XOF */
   amount: number;
+  valueMode?: AdjustmentValueMode;
   reason: string;
+  label?: string;
   appliedDate: string;
   createdAt: string;
   updatedAt: string;
 };
 
-// ─── Payloads ─────────────────────────────────────────────────────────────────
-
 export type CreateAdjustmentPayload = {
-  scheduleId: string;
+  scheduleId?: string;
+  leaseId?: string;
   type: AdjustmentType;
   amount: number;
+  valueMode?: AdjustmentValueMode;
   reason: string;
   appliedDate: string;
 };
@@ -32,10 +32,11 @@ export type UpdateAdjustmentPayload = {
   appliedDate?: string;
 };
 
-// ─── Paramètres de filtre ─────────────────────────────────────────────────────
-
 export type AdjustmentFilterParams = {
   page?: number;
   limit?: number;
   type?: AdjustmentType;
+  lease?: string;
+  dateFrom?: string;
+  dateTo?: string;
 };

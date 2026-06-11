@@ -9,6 +9,7 @@ import {
   AlertTriangle,
   ChevronLeft,
   ChevronRight,
+  MoreVertical,
 } from "lucide-react";
 import { unitService } from "@/lib/services/unit.service";
 import { UnitDetailPanel } from "@/components/features/units/UnitDetailPanel";
@@ -58,16 +59,85 @@ function formatDate(iso: string) {
   });
 }
 
+// ─── Row actions menu ─────────────────────────────────────────────────────────
+
+function UnitRowActions({
+  unit,
+  onEdit,
+  onMarkVacant,
+  onDelete,
+}: {
+  unit: Unit;
+  onEdit: () => void;
+  onMarkVacant: () => void;
+  onDelete: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="relative" onClick={(e) => e.stopPropagation()}>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="w-7 h-7 rounded-md flex items-center justify-center text-primary/30 hover:text-primary hover:bg-primary/6 transition-colors"
+      >
+        <MoreVertical size={14} />
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 top-8 z-20 w-48 bg-white rounded-lg shadow-lg border border-border-custom py-1 text-[13px]">
+            <button
+              onClick={() => {
+                setOpen(false);
+                onEdit();
+              }}
+              className="w-full text-left px-4 py-2 hover:bg-primary/4 text-primary/70 hover:text-primary transition-colors"
+            >
+              Modifier
+            </button>
+            {unit.status === "OCCUPIED" && (
+              <button
+                onClick={() => {
+                  setOpen(false);
+                  onMarkVacant();
+                }}
+                className="w-full text-left px-4 py-2 hover:bg-primary/4 text-primary/70 hover:text-primary transition-colors"
+              >
+                Marquer vacant
+              </button>
+            )}
+            <div className="my-1 border-t border-border-custom" />
+            <button
+              onClick={() => {
+                setOpen(false);
+                onDelete();
+              }}
+              className="w-full text-left px-4 py-2 hover:bg-danger/6 text-danger transition-colors"
+            >
+              Supprimer
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 // ─── Table row ────────────────────────────────────────────────────────────────
 
 function UnitRow({
   unit,
   selected,
   onClick,
+  onEdit,
+  onMarkVacant,
+  onDelete,
 }: {
   unit: Unit;
   selected: boolean;
   onClick: () => void;
+  onEdit: () => void;
+  onMarkVacant: () => void;
+  onDelete: () => void;
 }) {
   const cfg = STATUS_CONFIG[unit.status];
 
@@ -103,19 +173,27 @@ function UnitRow({
         </div>
       </td>
       <td className="px-4 py-3.5">
-        <Badge variant="neutral">{TYPE_LABELS[unit.type] ?? unit.type}</Badge>
+        <Badge variant="neutral">{TYPE_LABELS[unit.type!] ?? unit.type}</Badge>
       </td>
       <td className="px-4 py-3.5 text-[13px] text-primary/60">
         {unit.area ? `${unit.area} m²` : "—"}
       </td>
       <td className="px-4 py-3.5 text-[13px] font-medium text-primary tabular-nums whitespace-nowrap">
-        {fmt.format(unit.baseRent)} XOF
+        {fmt.format(Number(unit.baseRent))} XOF
       </td>
       <td className="px-4 py-3.5">
         <Badge variant={cfg.variant}>{cfg.label}</Badge>
       </td>
       <td className="px-4 py-3.5 text-[12px] text-primary/40 tabular-nums whitespace-nowrap">
         {formatDate(unit.createdAt)}
+      </td>
+      <td className="px-3 py-3.5">
+        <UnitRowActions
+          unit={unit}
+          onEdit={onEdit}
+          onMarkVacant={onMarkVacant}
+          onDelete={onDelete}
+        />
       </td>
     </tr>
   );
@@ -142,8 +220,7 @@ function PaginationBar({
         <button
           onClick={() => onPage(page - 1)}
           disabled={page <= 1}
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-primary/50
-                     hover:text-primary hover:bg-primary/6 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          className="w-8 h-8 rounded-lg flex items-center justify-center text-primary/50 hover:text-primary hover:bg-primary/6 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           aria-label="Page précédente"
         >
           <ChevronLeft size={15} />
@@ -154,8 +231,7 @@ function PaginationBar({
         <button
           onClick={() => onPage(page + 1)}
           disabled={page >= totalPages}
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-primary/50
-                     hover:text-primary hover:bg-primary/6 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          className="w-8 h-8 rounded-lg flex items-center justify-center text-primary/50 hover:text-primary hover:bg-primary/6 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           aria-label="Page suivante"
         >
           <ChevronRight size={15} />
@@ -230,6 +306,15 @@ export function UnitsClient() {
     if (selected?.id === u.id) setSelected(u);
   }
 
+  async function handleMarkVacant(u: Unit) {
+    try {
+      const res = await unitService.update(u.id, { status: "AVAILABLE" });
+      handleStatusChange(res.data);
+    } catch {
+      // silencieux
+    }
+  }
+
   async function confirmDelete() {
     if (!deleteTarget) return;
     setDeleting(true);
@@ -267,8 +352,7 @@ export function UnitsClient() {
                   setEditTarget(null);
                   setFormOpen(true);
                 }}
-                className="flex items-center gap-2 h-9 px-4 bg-primary text-white rounded-lg
-                           text-[13px] font-medium hover:bg-[#263447] transition-colors"
+                className="flex items-center gap-2 h-9 px-4 bg-primary text-white rounded-lg text-[13px] font-medium hover:bg-[#263447] transition-colors"
               >
                 <Plus size={15} /> Nouveau local
               </button>
@@ -339,6 +423,7 @@ export function UnitsClient() {
                       "Loyer",
                       "Statut",
                       "Créé le",
+                      "",
                     ].map((h, i) => (
                       <th
                         key={i}
@@ -358,6 +443,12 @@ export function UnitsClient() {
                       onClick={() =>
                         setSelected((prev) => (prev?.id === u.id ? null : u))
                       }
+                      onEdit={() => {
+                        setEditTarget(u);
+                        setFormOpen(true);
+                      }}
+                      onMarkVacant={() => handleMarkVacant(u)}
+                      onDelete={() => setDeleteTarget(u)}
                     />
                   ))}
                 </tbody>
@@ -385,6 +476,7 @@ export function UnitsClient() {
       </div>
 
       <UnitFormModal
+        key={formOpen ? (editTarget?.id ?? "new") : "closed"}
         isOpen={formOpen}
         unit={editTarget}
         onClose={() => {
@@ -409,8 +501,7 @@ export function UnitsClient() {
                 setDeleteTarget(null);
                 setDeleteError(null);
               }}
-              className="h-10 px-5 rounded-lg text-[14px] font-medium text-primary/60
-                         hover:text-primary border border-border-custom transition-colors"
+              className="h-10 px-5 rounded-lg text-[14px] font-medium text-primary/60 hover:text-primary border border-border-custom transition-colors"
             >
               Annuler
             </button>
@@ -418,8 +509,7 @@ export function UnitsClient() {
               type="button"
               onClick={confirmDelete}
               disabled={deleting}
-              className="h-10 px-5 bg-danger text-white rounded-lg text-[14px] font-medium
-                         hover:bg-danger/90 disabled:opacity-60 transition-colors flex items-center gap-2"
+              className="h-10 px-5 bg-danger text-white rounded-lg text-[14px] font-medium hover:bg-danger/90 disabled:opacity-60 transition-colors flex items-center gap-2"
             >
               {deleting && <Loader2 size={14} className="animate-spin" />}
               Supprimer définitivement

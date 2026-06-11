@@ -54,8 +54,7 @@ export function Modal({
   return (
     /* ── Backdrop ─────────────────────────────────────────────────────── */
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4
-                 bg-primary/40 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-primary/40 backdrop-blur-sm"
       onClick={onClose}
       aria-modal="true"
       role="dialog"
@@ -64,8 +63,7 @@ export function Modal({
       {/* ── Panneau ──────────────────────────────────────────────────────── */}
       <div
         style={{ maxWidth }}
-        className="relative w-full bg-white rounded-[16px] shadow-xl
-                   flex flex-col max-h-[90vh]"
+        className="relative w-full bg-white rounded-[16px] shadow-xl flex flex-col max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header (fixe) */}
@@ -80,8 +78,7 @@ export function Modal({
           <button
             type="button"
             onClick={onClose}
-            className="text-primary/35 hover:text-primary transition-colors
-                       rounded-md p-1 -mr-1"
+            className="text-primary/35 hover:text-primary transition-colors rounded-md p-1 -mr-1"
             aria-label="Fermer"
           >
             <X size={18} aria-hidden="true" />

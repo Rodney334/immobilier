@@ -1,7 +1,5 @@
 import type { Neighborhood } from './neighborhood';
 
-// ─── Énumérations ─────────────────────────────────────────────────────────────
-
 export type PropertyType =
   | 'Apartment'
   | 'House'
@@ -10,35 +8,44 @@ export type PropertyType =
   | 'Warehouse'
   | 'Other';
 
-// ─── Entité principale ────────────────────────────────────────────────────────
-
 export type Property = {
   id: string;
   name: string;
-  address: string;
+  code?: string;
+  address?: string;
   neighborhoodId: string;
   neighborhood?: Neighborhood;
-  type: PropertyType;
-  totalUnits: number;
+  type: string;
+  totalUnits?: number;
+  usageDestination?: string;
+  department?: string;
+  commune?: string;
+  arrondissement?: string;
+  quartier?: string;
+  landmark?: string;
   description?: string;
+  isActive?: boolean;
   createdAt: string;
   updatedAt: string;
 };
 
-// ─── Payloads ─────────────────────────────────────────────────────────────────
-
 export type CreatePropertyPayload = {
   name: string;
-  address: string;
   neighborhoodId: string;
-  type: PropertyType;
-  totalUnits: number;
+  type: string;
+  code?: string;
+  address?: string;
+  usageDestination?: string;
+  department?: string;
+  commune?: string;
+  arrondissement?: string;
+  quartier?: string;
+  landmark?: string;
   description?: string;
+  isActive?: boolean;
 };
 
 export type UpdatePropertyPayload = Partial<CreatePropertyPayload>;
-
-// ─── Paramètres de filtre ─────────────────────────────────────────────────────
 
 export type PropertyFilterParams = {
   page?: number;

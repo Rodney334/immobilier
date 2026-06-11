@@ -1,35 +1,37 @@
 import type { Tenant } from './tenant';
-import type { Payment } from './payment';
+import type { Lease } from './lease';
+
+// ─── Énumérations ─────────────────────────────────────────────────────────────
+
+export type ReceiptStatus = 'GENERATED' | 'PENDING' | 'CANCELLED';
 
 // ─── Entité principale ────────────────────────────────────────────────────────
 
 export type Receipt = {
   id: string;
   paymentId: string;
-  payment?: Payment;
+  leaseId?: string;
+  lease?: Lease;
   tenantId: string;
   tenant?: Tenant;
-  amount: number;
-  receiptDate: string;
-  receiptNumber: string;
+  amount: string;            // string comme les autres montants
+  receiptDate?: string;
+  issuedAt?: string;         // alias possible côté API
+  receiptNumber?: string;
+  status: ReceiptStatus;
+  notes?: string;
   createdAt: string;
   updatedAt: string;
 };
 
 // ─── Payloads ─────────────────────────────────────────────────────────────────
 
-export type CreateReceiptPayload = {
-  paymentId: string;
-  tenantId: string;
-  amount: number;
-  receiptDate: string;
-  receiptNumber: string;
+export type UpdateReceiptPayload = {
+  notes?: string;
 };
 
-export type UpdateReceiptPayload = {
-  amount?: number;
-  receiptDate?: string;
-  receiptNumber?: string;
+export type CancelReceiptPayload = {
+  reason?: string;
 };
 
 // ─── Paramètres de filtre ─────────────────────────────────────────────────────
@@ -37,5 +39,9 @@ export type UpdateReceiptPayload = {
 export type ReceiptFilterParams = {
   page?: number;
   limit?: number;
+  status?: ReceiptStatus;
   tenant?: string;
+  search?: string;
+  month?: number;    // 1-12
+  year?: number;
 };

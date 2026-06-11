@@ -117,8 +117,7 @@ export function Sidebar() {
         <div className="flex items-center gap-3">
           {/* Avatar initiales */}
           <div
-            className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center
-                        text-white text-[11px] font-bold shrink-0 select-none"
+            className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-white text-[11px] font-bold shrink-0 select-none"
             aria-hidden="true"
           >
             AD

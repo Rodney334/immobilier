@@ -1,122 +1,46 @@
+import type { Tenant } from './tenant';
+
 // ─── Énumérations ─────────────────────────────────────────────────────────────
 
-export type PaymentStatus = "RECORDED" | "REVERSED" | "CANCELLED" | "failed";
+export type PaymentStatus = 'RECORDED' | 'CANCELLED' | 'REVERSED' | 'failed';
 
-/** L'API retourne les méthodes en MAJUSCULES */
 export type PaymentMethod =
-  | "MOBILE_MONEY"
-  | "BANK_TRANSFER"
-  | "CASH"
-  | "CHECK"
-  | "OTHER";
+  | 'CASH'
+  | 'BANK_TRANSFER'
+  | 'MOBILE_MONEY'
+  | 'MTN_MOMO'
+  | 'MOOV_MONEY'
+  | 'CHEQUE'
+  | 'CARD'
+  | 'OTHER';
 
-// ─── Sous-types embarqués ─────────────────────────────────────────────────────
+// ─── Entités ──────────────────────────────────────────────────────────────────
 
-/** Locataire tel qu'il est embarqué dans un paiement */
-export type PaymentTenant = {
-  id: string;
-  firstName: string;
-  lastName: string;
-  fullName?: string;
-  phone?: string;
-  email?: string;
-  status: string;
-};
-
-/** Échéance embarquée dans une allocation */
-export type PaymentRentSchedule = {
-  id: string;
-  leaseId: string;
-  dueDate: string;
-  dueMonth: number;
-  dueYear: number;
-  amountDue: string;
-  amountPaid: string;
-  balance: string;
-  status: string;
-  notes?: string | null;
-  createdAt: string;
-  updatedAt: string;
-};
-
-/** Allocation (ventilation du paiement sur une échéance) */
 export type PaymentAllocation = {
   id: string;
   paymentId: string;
   rentScheduleId: string;
-  /** Montant alloué — l'API retourne une chaîne décimale */
   allocatedAmount: string;
-  rentSchedule?: PaymentRentSchedule;
-  createdAt: string;
-};
-
-/** Reçu embarqué dans un paiement */
-export type PaymentReceipt = {
-  id: string;
-  leaseId: string;
-  paymentId: string;
-  receiptNumber: string;
-  issueDate: string;
-  /** L'API retourne une chaîne décimale */
-  amount: string;
-  status: string;
-  fileUrl: string | null;
-  notes: string | null;
-  generatedById: string;
   createdAt: string;
   updatedAt: string;
 };
 
-/** Bail embarqué dans un paiement */
-export type PaymentLease = {
-  id: string;
-  unitId: string;
-  tenantId: string;
-  contractNumber?: string;
-  startDate: string;
-  endDate: string;
-  monthlyRent: string;
-  depositAmount?: string;
-  billingDay?: number;
-  periodicity?: string;
-  status: string;
-  terminationReason?: string | null;
-  notes?: string | null;
-  unit?: {
-    id: string;
-    unitNumber: string;
-    label?: string;
-    type?: string;
-    floor?: string;
-    status?: string;
-    property?: {
-      id: string;
-      name: string;
-      address?: string;
-    };
-  };
-  tenant?: PaymentTenant;
-};
-
-// ─── Entité principale ────────────────────────────────────────────────────────
-
 export type Payment = {
   id: string;
   leaseId: string;
-  lease?: PaymentLease;
-  paymentDate: string;
-  /** L'API retourne une chaîne décimale ex : "400000.00" */
-  amount: string;
-  status: PaymentStatus;
-  paymentMethod?: PaymentMethod;
+  lease?: {
+    id: string;
+    tenant?: Tenant;
+  };
+  amount: string;               // L'API retourne le montant en string
+  paymentMethod?: string;       // camelCase tel que retourné par l'API
+  paymentDate?: string;         // Date ISO du paiement
   reference?: string;
   receiptNumber?: string;
-  notes?: string | null;
-  createdById?: string;
-  cancelledAt?: string | null;
-  cancellationNote?: string | null;
+  notes?: string;
+  status: PaymentStatus;
   allocations?: PaymentAllocation[];
-  receipts?: PaymentReceipt[];
+  cancelledAt?: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -126,42 +50,38 @@ export type Payment = {
 export type CreatePaymentPayload = {
   leaseId: string;
   amount: number;
-  paymentDate: string;
-  paymentMethod?: PaymentMethod;
-  reference?: string;
+  method: PaymentMethod;
+  paidAt?: string;
   notes?: string;
 };
 
-export type UpdatePaymentPayload = {
+export type UpdatePaymentPayload = Partial<CreatePaymentPayload> & {
   status?: PaymentStatus;
-  reference?: string;
-  paymentMethod?: PaymentMethod;
 };
 
 export type CancelPaymentPayload = {
   reason: string;
 };
 
-export type AllocationInput = {
-  rentScheduleId: string;
-  amount: number;
-};
-
 export type CreatePaymentWithAllocationsPayload = {
   leaseId: string;
   amount: number;
-  paymentDate: string;
-  paymentMethod?: PaymentMethod;
-  reference?: string;
-  allocations: AllocationInput[];
+  method: PaymentMethod;
+  paidAt?: string;
+  notes?: string;
+  allocations: Array<{
+    rentScheduleId: string;
+    amount: number;
+  }>;
 };
 
 export type AutoAllocatePaymentPayload = {
   leaseId: string;
   amount: number;
-  paymentDate: string;
-  paymentMethod?: PaymentMethod;
+  paymentDate?: string;        // date du paiement (format YYYY-MM-DD)
+  paymentMethod?: PaymentMethod | string;  // méthode de paiement
   reference?: string;
+  notes?: string;
 };
 
 // ─── Paramètres de filtre ─────────────────────────────────────────────────────
@@ -170,6 +90,7 @@ export type PaymentFilterParams = {
   page?: number;
   limit?: number;
   status?: PaymentStatus;
-  tenant?: string;
   lease?: string;
+  tenant?: string;
+  search?: string;
 };

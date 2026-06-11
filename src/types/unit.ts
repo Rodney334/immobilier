@@ -20,12 +20,15 @@ export type Unit = {
   propertyId: string;
   property?: Property;
   unitNumber: string;
-  type: UnitType;
-  area?: number;
-  rooms?: number;
-  bathrooms?: number;
+  label?: string;
+  description?: string;
+  type?: string;
+  floor?: string;
+  area?: string;
   baseRent: number;
+  currency?: string;
   status: UnitStatus;
+  commissionedAt?: string;
   isArchived: boolean;
   createdAt: string;
   updatedAt: string;
@@ -35,17 +38,19 @@ export type Unit = {
 
 export type CreateUnitPayload = {
   propertyId: string;
-  unitNumber: string;
-  type: UnitType;
-  area?: number;
-  rooms?: number;
-  bathrooms?: number;
-  rentAmount: number;
+  unitNumber?: string; // optionnel — auto-généré par l'API
+  label?: string;
+  description?: string;
+  type?: string;
+  floor?: string;
+  area?: string; // string requis par l'API (ex: "35.50")
+  baseRent: string; // string requis par l'API (ex: "150000")
+  currency?: string;
+  status?: UnitStatus;
+  commissionedAt?: string;
 };
 
-export type UpdateUnitPayload = Partial<
-  Omit<CreateUnitPayload, "propertyId"> & { status: UnitStatus }
->;
+export type UpdateUnitPayload = Partial<Omit<CreateUnitPayload, "propertyId">>;
 
 // ─── Paramètres de filtre ─────────────────────────────────────────────────────
 

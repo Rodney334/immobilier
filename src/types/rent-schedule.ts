@@ -1,10 +1,7 @@
 import type { Lease } from './lease';
 
-// ─── Énumérations ─────────────────────────────────────────────────────────────
-
-export type RentScheduleStatus = 'paid' | 'pending' | 'overdue' | 'cancelled';
-
-// ─── Entité principale ────────────────────────────────────────────────────────
+// Valeurs exactes de l'API (enum backend)
+export type RentScheduleStatus = 'PAID' | 'PARTIALLY_PAID' | 'PENDING' | 'OVERDUE' | 'CANCELLED';
 
 export type RentSchedule = {
   id: string;
@@ -12,6 +9,10 @@ export type RentSchedule = {
   lease?: Lease;
   dueDate: string;
   amount: number;
+  amountDue?: number;
+  amountPaid?: number;
+  balance?: number;
+  // Aliases pour compatibilite selon version API
   paidAmount?: number;
   remainingAmount?: number;
   status: RentScheduleStatus;
@@ -19,8 +20,6 @@ export type RentSchedule = {
   createdAt: string;
   updatedAt: string;
 };
-
-// ─── Payloads ─────────────────────────────────────────────────────────────────
 
 export type CreateRentSchedulePayload = {
   leaseId: string;
@@ -35,11 +34,12 @@ export type UpdateRentSchedulePayload = {
   description?: string;
 };
 
-// ─── Paramètres de filtre ─────────────────────────────────────────────────────
-
 export type RentScheduleFilterParams = {
   page?: number;
   limit?: number;
   status?: RentScheduleStatus;
   lease?: string;
+  month?: number;
+  year?: number;
+  property?: string;
 };

@@ -7,7 +7,7 @@ import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
 import { unitService } from "@/lib/services/unit.service";
 import { propertyService } from "@/lib/services/property.service";
-import type { Unit, UnitType, Property, CreateUnitPayload } from "@/types";
+import type { Unit, Property, CreateUnitPayload } from "@/types";
 
 type FormState = { error: string | null; success: boolean };
 
@@ -18,14 +18,14 @@ type Props = {
   onSaved: (u: Unit) => void;
 };
 
-const UNIT_TYPES: { value: UnitType; label: string }[] = [
-  { value: "Studio", label: "Studio" },
-  { value: "Apartment", label: "Appartement" },
-  { value: "House", label: "Maison" },
-  { value: "Office", label: "Bureau" },
-  { value: "Shop", label: "Commerce" },
-  { value: "Warehouse", label: "Entrepot" },
-  { value: "Other", label: "Autre" },
+const UNIT_TYPES: { value: string; label: string }[] = [
+  { value: "BOUTIQUE", label: "Boutique" },
+  { value: "APPARTEMENT", label: "Appartement" },
+  { value: "BUREAU", label: "Bureau" },
+  { value: "STUDIO", label: "Studio" },
+  { value: "VILLA", label: "Villa" },
+  { value: "ENTREPOT", label: "Entrepôt" },
+  { value: "AUTRE", label: "Autre" },
 ];
 
 function SubmitButton({ label }: { label: string }) {
@@ -34,9 +34,7 @@ function SubmitButton({ label }: { label: string }) {
     <button
       type="submit"
       disabled={pending}
-      className="h-10 px-5 bg-primary text-white rounded-lg text-[14px] font-medium
-                 hover:bg-[#263447] disabled:opacity-60 disabled:cursor-not-allowed
-                 transition-colors flex items-center gap-2"
+      className="h-10 px-5 bg-primary text-white rounded-lg text-[14px] font-medium hover:bg-[#263447] disabled:opacity-60 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
     >
       {pending && <Loader2 size={14} className="animate-spin" />}
       {label}
@@ -63,44 +61,38 @@ export function UnitFormModal({ unit, isOpen, onClose, onSaved }: Props) {
     async (_prev: FormState, formData: FormData): Promise<FormState> => {
       const propertyId = formData.get("propertyId") as string;
       const unitNumber = (formData.get("unitNumber") as string).trim();
-      const type = formData.get("type") as UnitType;
-      const area = formData.get("area") as string;
-      const rooms = formData.get("rooms") as string;
-      const bathrooms = formData.get("bathrooms") as string;
-      const rentAmount = parseFloat(formData.get("rentAmount") as string);
+      const label = (formData.get("label") as string).trim();
+      const type = (formData.get("type") as string).trim();
+      const floor = (formData.get("floor") as string).trim();
+      const area = (formData.get("area") as string).trim();
+      const baseRent = (formData.get("baseRent") as string).trim();
 
       if (!isEdit && !propertyId) {
         return { error: "Veuillez selectionner une propriete.", success: false };
       }
-      if (!unitNumber) {
-        return { error: "Le numero de local est obligatoire.", success: false };
-      }
-      if (!type) {
-        return { error: "Le type est obligatoire.", success: false };
-      }
-      if (isNaN(rentAmount) || rentAmount <= 0) {
-        return { error: "Le loyer doit etre superieur a 0.", success: false };
+      if (!baseRent || isNaN(Number(baseRent)) || Number(baseRent) <= 0) {
+        return { error: "Le loyer de base doit etre superieur a 0.", success: false };
       }
 
       const payload: CreateUnitPayload = {
         propertyId: propertyId || unit!.propertyId,
-        unitNumber,
-        type,
-        rentAmount,
-        area: area ? parseFloat(area) : undefined,
-        rooms: rooms ? parseInt(rooms, 10) : undefined,
-        bathrooms: bathrooms ? parseInt(bathrooms, 10) : undefined,
+        unitNumber: unitNumber || undefined,   // omis si vide → auto-généré
+        label: label || undefined,
+        type: type || undefined,
+        floor: floor || undefined,
+        area: area || undefined,               // string ("35.50")
+        baseRent,                              // string ("150000")
       };
 
       try {
         const res = isEdit
           ? await unitService.update(unit!.id, {
               unitNumber: payload.unitNumber,
+              label: payload.label,
               type: payload.type,
-              rentAmount: payload.rentAmount,
+              floor: payload.floor,
               area: payload.area,
-              rooms: payload.rooms,
-              bathrooms: payload.bathrooms,
+              baseRent: payload.baseRent,
             })
           : await unitService.create(payload);
         onSaved(res.data);
@@ -148,9 +140,7 @@ export function UnitFormModal({ unit, isOpen, onClose, onSaved }: Props) {
               required={!isEdit}
               disabled={isEdit}
               defaultValue={unit?.propertyId ?? ""}
-              className="w-full h-11 px-3 rounded-lg border border-border-custom bg-white
-                         text-[14px] text-primary focus:outline-none focus:ring-2
-                         focus:ring-primary/20 focus:border-primary/40 disabled:opacity-50 transition-colors"
+              className="w-full h-11 px-3 rounded-lg border border-border-custom bg-white text-[14px] text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 disabled:opacity-50 transition-colors"
             >
               <option value="" disabled>
                 Selectionner une propriete
@@ -167,26 +157,21 @@ export function UnitFormModal({ unit, isOpen, onClose, onSaved }: Props) {
         <div className="grid grid-cols-2 gap-3">
           <Input
             name="unitNumber"
-            label="Numero de local *"
-            placeholder="ex : A01"
+            label="Numero de local"
+            placeholder="ex : L-001 (optionnel)"
             defaultValue={unit?.unitNumber}
-            required
+            hint="Laissez vide pour auto-generation"
           />
           <div className="space-y-1.5">
             <label className="block text-[12px] font-medium uppercase tracking-[0.06em] text-primary/60">
-              Type <span className="text-danger">*</span>
+              Type
             </label>
             <select
               name="type"
-              required
               defaultValue={unit?.type ?? ""}
-              className="w-full h-11 px-3 rounded-lg border border-border-custom bg-white
-                         text-[14px] text-primary focus:outline-none focus:ring-2
-                         focus:ring-primary/20 focus:border-primary/40 transition-colors"
+              className="w-full h-11 px-3 rounded-lg border border-border-custom bg-white text-[14px] text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors"
             >
-              <option value="" disabled>
-                Selectionner
-              </option>
+              <option value="">Selectionner (optionnel)</option>
               {UNIT_TYPES.map((t) => (
                 <option key={t.value} value={t.value}>
                   {t.label}
@@ -197,45 +182,44 @@ export function UnitFormModal({ unit, isOpen, onClose, onSaved }: Props) {
         </div>
 
         <Input
-          name="rentAmount"
-          type="number"
-          label="Loyer mensuel (XOF) *"
-          placeholder="ex : 75000"
-          defaultValue={unit?.baseRent?.toString()}
-          required
+          name="label"
+          label="Libellé"
+          placeholder="ex : Boutique façade"
+          defaultValue={unit?.label}
+          hint="Nom descriptif du local (optionnel)"
         />
 
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           <Input
-            name="area"
+            name="baseRent"
             type="number"
-            label="Surface (m2)"
-            placeholder="ex : 45"
-            defaultValue={unit?.area?.toString()}
+            label="Loyer de base (XOF) *"
+            placeholder="ex : 75000"
+            defaultValue={unit?.baseRent}
+            required
           />
           <Input
-            name="rooms"
-            type="number"
-            label="Chambres"
-            placeholder="ex : 2"
-            defaultValue={unit?.rooms?.toString()}
-          />
-          <Input
-            name="bathrooms"
-            type="number"
-            label="Salles de bain"
-            placeholder="ex : 1"
-            defaultValue={unit?.bathrooms?.toString()}
+            name="floor"
+            label="Étage"
+            placeholder="ex : RDC, 1er"
+            defaultValue={unit?.floor}
           />
         </div>
+
+        <Input
+          name="area"
+          type="number"
+          label="Surface (m2)"
+          placeholder="ex : 35.50"
+          defaultValue={unit?.area}
+          hint="En mètres carrés (optionnel)"
+        />
 
         <div className="flex items-center justify-end gap-3 pt-4 mt-2 border-t border-border-custom">
           <button
             type="button"
             onClick={onClose}
-            className="h-10 px-5 rounded-lg text-[14px] font-medium text-primary/60
-                       hover:text-primary border border-border-custom hover:border-primary/30
-                       transition-colors duration-150"
+            className="h-10 px-5 rounded-lg text-[14px] font-medium text-primary/60 hover:text-primary border border-border-custom hover:border-primary/30 transition-colors duration-150"
           >
             Annuler
           </button>

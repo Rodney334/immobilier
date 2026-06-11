@@ -1,51 +1,57 @@
-// ─── Énumérations ─────────────────────────────────────────────────────────────
+// --- Enumerations ---
 
 export type TenantStatus = "ACTIVE" | "INACTIVE" | "BLACKLISTED";
 
-export type IdType =
-  | "Passport"
-  | "NationalId"
-  | "DriverLicense"
-  | "ResidencePermit"
-  | "Other";
+export type IdentityType = string; // CIP, Passport, DriverLicense, etc.
 
-// ─── Entité principale ────────────────────────────────────────────────────────
+// kept for backward compat
+export type IdType = IdentityType;
+
+// --- Entite principale ---
 
 export type Tenant = {
   id: string;
-  firstName: string;
-  lastName: string;
-  fullName?: string;
+  firstName?: string;
+  lastName?: string;
+  fullName: string;
+  phone?: string;
+  secondaryPhone?: string;
   email?: string;
-  phoneNumber?: string;
-  idNumber?: string;
-  idType?: IdType;
   address?: string;
-  city?: string;
-  country?: string;
+  profession?: string;          // occupation / métier
+  identityNumber?: string;      // NPI ou numéro de pièce d'identité
+  identityType?: string;
+  emergencyContact?: string;
+  notes?: string;
+  // Blacklist
+  blacklistReason?: string;     // motif de mise en liste noire
+  blacklistedAt?: string;       // date ISO de mise en liste noire
   status: TenantStatus;
-  isArchived: boolean;
+  isArchived?: boolean;
   createdAt: string;
   updatedAt: string;
 };
 
-// ─── Payloads ─────────────────────────────────────────────────────────────────
+// --- Payloads ---
 
 export type CreateTenantPayload = {
-  firstName: string;
-  lastName: string;
+  fullName: string;            // obligatoire
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  secondaryPhone?: string;
   email?: string;
-  phoneNumber?: string;
-  idNumber?: string;
-  idType?: IdType;
   address?: string;
-  city?: string;
-  country?: string;
+  identityNumber?: string;
+  identityType?: string;
+  emergencyContact?: string;
+  notes?: string;
+  status?: TenantStatus;
 };
 
 export type UpdateTenantPayload = Partial<CreateTenantPayload>;
 
-// ─── Paramètres de filtre ─────────────────────────────────────────────────────
+// --- Parametres de filtre ---
 
 export type TenantFilterParams = {
   page?: number;

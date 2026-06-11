@@ -11,9 +11,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
 
       {/* ── Panneau gauche — Hero ─────────────────────────────────────────── */}
       <div
-        className="hidden lg:flex lg:w-[50%] xl:w-[55%]
-                   bg-primary flex-col justify-between
-                   px-12 py-10 relative overflow-hidden"
+        className="hidden lg:flex lg:w-[50%] xl:w-[55%] bg-primary flex-col justify-between px-12 py-10 relative overflow-hidden"
       >
         {/* Logo */}
         <div>

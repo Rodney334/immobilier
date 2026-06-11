@@ -12,16 +12,14 @@ import type {
   Lease,
   Tenant,
   Unit,
-  PaymentFrequency,
+  LeasePeriodicity,
   CreateLeasePayload,
 } from "@/types";
 
-const FREQUENCIES: { value: PaymentFrequency; label: string }[] = [
-  { value: "monthly", label: "Mensuel" },
-  { value: "bi-weekly", label: "Bimensuel" },
-  { value: "weekly", label: "Hebdomadaire" },
-  { value: "quarterly", label: "Trimestriel" },
-  { value: "annual", label: "Annuel" },
+const PERIODICITIES: { value: LeasePeriodicity; label: string }[] = [
+  { value: "MONTHLY", label: "Mensuel" },
+  { value: "QUARTERLY", label: "Trimestriel" },
+  { value: "YEARLY", label: "Annuel" },
 ];
 
 type FormState = { error: string | null; success: boolean };
@@ -39,9 +37,7 @@ function SubmitButton({ label }: { label: string }) {
     <button
       type="submit"
       disabled={pending}
-      className="h-10 px-5 bg-primary text-white rounded-lg text-[14px] font-medium
-                 hover:bg-[#263447] disabled:opacity-60 disabled:cursor-not-allowed
-                 transition-colors flex items-center gap-2"
+      className="h-10 px-5 bg-primary text-white rounded-lg text-[14px] font-medium hover:bg-[#263447] disabled:opacity-60 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
     >
       {pending && <Loader2 size={14} className="animate-spin" />}
       {label}
@@ -75,10 +71,7 @@ function SelectField({
         required={required}
         disabled={disabled}
         defaultValue={defaultValue ?? ""}
-        className="w-full h-11 px-3 rounded-lg border border-border-custom bg-white
-                   text-[14px] text-primary focus:outline-none focus:ring-2
-                   focus:ring-primary/20 focus:border-primary/40
-                   disabled:opacity-50 transition-colors"
+        className="w-full h-11 px-3 rounded-lg border border-border-custom bg-white text-[14px] text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 disabled:opacity-50 transition-colors"
       >
         {children}
       </select>
@@ -114,26 +107,25 @@ export function LeaseFormModal({ lease, isOpen, onClose, onSaved }: Props) {
       const tenantId = formData.get("tenantId") as string;
       const unitId = formData.get("unitId") as string;
       const startDate = formData.get("startDate") as string;
-      const endDate = formData.get("endDate") as string;
-      const rentAmount = parseFloat(formData.get("rentAmount") as string);
-      const depositAmount = parseFloat(formData.get("depositAmount") as string);
-      const paymentFrequency = formData.get(
-        "paymentFrequency",
-      ) as PaymentFrequency;
+      const endDate = (formData.get("endDate") as string).trim();
+      const monthlyRent = (formData.get("monthlyRent") as string).trim();
+      const depositAmount = (formData.get("depositAmount") as string).trim();
+      const periodicity = formData.get("periodicity") as LeasePeriodicity | "";
+      const billingDay = (formData.get("billingDay") as string).trim();
 
-      if (!tenantId || !unitId || !startDate || !endDate || !paymentFrequency) {
+      if (!tenantId || !unitId || !startDate) {
         return {
-          error: "Veuillez remplir tous les champs obligatoires.",
+          error: "Locataire, local et date de debut sont obligatoires.",
           success: false,
         };
       }
-      if (isNaN(rentAmount) || rentAmount <= 0) {
+      if (!monthlyRent || isNaN(Number(monthlyRent)) || Number(monthlyRent) <= 0) {
         return {
           error: "Le montant du loyer doit etre superieur a 0.",
           success: false,
         };
       }
-      if (new Date(endDate) <= new Date(startDate)) {
+      if (endDate && new Date(endDate) <= new Date(startDate)) {
         return {
           error: "La date de fin doit etre posterieure a la date de debut.",
           success: false,
@@ -143,23 +135,22 @@ export function LeaseFormModal({ lease, isOpen, onClose, onSaved }: Props) {
       const payload: CreateLeasePayload = {
         tenantId,
         unitId,
-        startDate,
-        endDate,
-        rentAmount,
-        paymentFrequency,
-        depositAmount:
-          isNaN(depositAmount) || depositAmount <= 0
-            ? undefined
-            : depositAmount,
+        startDate: new Date(startDate).toISOString(),
+        endDate: endDate ? new Date(endDate).toISOString() : undefined,
+        monthlyRent,
+        depositAmount: depositAmount && Number(depositAmount) > 0 ? depositAmount : undefined,
+        periodicity: periodicity || undefined,
+        billingDay: billingDay ? parseInt(billingDay, 10) : undefined,
+        status: "ACTIVE",
       };
 
       try {
         const res = isEdit
           ? await leaseService.update(lease!.id, {
-              rentAmount,
-              paymentFrequency,
+              monthlyRent: payload.monthlyRent,
+              periodicity: payload.periodicity,
               depositAmount: payload.depositAmount,
-              endDate,
+              endDate: payload.endDate,
             })
           : await leaseService.create(payload);
         onSaved(res.data);
@@ -243,20 +234,19 @@ export function LeaseFormModal({ lease, isOpen, onClose, onSaved }: Props) {
           <Input
             name="endDate"
             type="date"
-            label="Date de fin"
-            required
+            label="Date de fin (optionnel)"
             defaultValue={lease?.endDate?.slice(0, 10)}
           />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <Input
-            name="rentAmount"
+            name="monthlyRent"
             type="number"
-            label="Loyer (XOF)"
+            label="Loyer mensuel (XOF)"
             required
             placeholder="ex : 75000"
-            defaultValue={lease?.rentAmount?.toString()}
+            defaultValue={lease?.monthlyRent}
             hint="Montant en francs CFA"
           />
           <Input
@@ -264,33 +254,38 @@ export function LeaseFormModal({ lease, isOpen, onClose, onSaved }: Props) {
             type="number"
             label="Caution (XOF, optionnel)"
             placeholder="ex : 150000"
-            defaultValue={lease?.depositAmount?.toString()}
+            defaultValue={lease?.depositAmount}
           />
         </div>
 
-        <SelectField
-          name="paymentFrequency"
-          label="Frequence de paiement"
-          required
-          defaultValue={lease?.paymentFrequency ?? ""}
-        >
-          <option value="" disabled>
-            Selectionner une frequence
-          </option>
-          {FREQUENCIES.map((f) => (
-            <option key={f.value} value={f.value}>
-              {f.label}
-            </option>
-          ))}
-        </SelectField>
+        <div className="grid grid-cols-2 gap-3">
+          <SelectField
+            name="periodicity"
+            label="Periodicite"
+            defaultValue={lease?.periodicity ?? ""}
+          >
+            <option value="">Selectionner (optionnel)</option>
+            {PERIODICITIES.map((f) => (
+              <option key={f.value} value={f.value}>
+                {f.label}
+              </option>
+            ))}
+          </SelectField>
+          <Input
+            name="billingDay"
+            type="number"
+            label="Jour de facturation"
+            placeholder="ex : 5"
+            defaultValue={lease?.billingDay?.toString()}
+            hint="Jour du mois (1-31)"
+          />
+        </div>
 
         <div className="flex items-center justify-end gap-3 pt-4 mt-2 border-t border-border-custom">
           <button
             type="button"
             onClick={onClose}
-            className="h-10 px-5 rounded-lg text-[14px] font-medium text-primary/60
-                       hover:text-primary border border-border-custom hover:border-primary/30
-                       transition-colors duration-150"
+            className="h-10 px-5 rounded-lg text-[14px] font-medium text-primary/60 hover:text-primary border border-border-custom hover:border-primary/30 transition-colors duration-150"
           >
             Annuler
           </button>

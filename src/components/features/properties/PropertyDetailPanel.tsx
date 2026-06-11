@@ -98,7 +98,7 @@ function UnitRow({ unit }: { unit: Unit }) {
         <p className="text-[13px] font-medium text-primary">
           Local {unit.unitNumber}
           <span className="ml-1.5 text-[11px] font-normal text-primary/40">
-            {UNIT_TYPE_LABELS[unit.type] ?? unit.type}
+            {UNIT_TYPE_LABELS[unit.type!] ?? unit.type}
             {unit.area ? ` · ${unit.area} m²` : ""}
           </span>
         </p>
@@ -154,8 +154,7 @@ export function PropertyDetailPanel({
 
   return (
     <aside
-      className="flex flex-col w-105 shrink-0 bg-surface border-l border-border-custom
-                 h-screen sticky top-0 overflow-hidden"
+      className="flex flex-col w-105 shrink-0 bg-surface border-l border-border-custom h-screen sticky top-0 overflow-hidden"
       aria-label={`Détails : ${property.name}`}
     >
       {/* ── Header ── */}
@@ -182,9 +181,7 @@ export function PropertyDetailPanel({
         </div>
         <button
           onClick={onClose}
-          className="w-8 h-8 rounded-lg flex items-center justify-center
-                     text-primary/40 hover:text-primary hover:bg-primary/6
-                     transition-colors duration-150 shrink-0"
+          className="w-8 h-8 rounded-lg flex items-center justify-center text-primary/40 hover:text-primary hover:bg-primary/6 transition-colors duration-150 shrink-0"
           aria-label="Fermer"
         >
           <X size={16} aria-hidden="true" />
@@ -195,20 +192,14 @@ export function PropertyDetailPanel({
       <div className="flex items-center gap-2 px-5 py-3 border-b border-border-custom shrink-0">
         <button
           onClick={() => onEdit(property)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg
-                     text-[13px] font-medium text-primary
-                     border border-border-custom hover:border-primary/30 hover:bg-primary/4
-                     transition-colors duration-150"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium text-primary border border-border-custom hover:border-primary/30 hover:bg-primary/4 transition-colors duration-150"
         >
           <Pencil size={13} aria-hidden="true" />
           Modifier
         </button>
         <button
           onClick={() => onDelete(property)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg
-                     text-[13px] font-medium text-danger
-                     border border-danger/20 hover:border-danger/40 hover:bg-danger/5
-                     transition-colors duration-150"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium text-danger border border-danger/20 hover:border-danger/40 hover:bg-danger/5 transition-colors duration-150"
         >
           <Trash2 size={13} aria-hidden="true" />
           Supprimer
@@ -261,7 +252,7 @@ export function PropertyDetailPanel({
               label="Quartier"
               value={
                 property.neighborhood ? (
-                  `${property.neighborhood.name} — ${property.neighborhood.city}`
+                  property.neighborhood.name
                 ) : (
                   <span className="text-primary/30">—</span>
                 )
@@ -270,7 +261,7 @@ export function PropertyDetailPanel({
             <DetailRow
               icon={DoorOpen}
               label="Locaux"
-              value={`${property.totalUnits} local${property.totalUnits > 1 ? "aux" : ""} au total`}
+              value={`${property.totalUnits} local${property.totalUnits! > 1 ? "aux" : ""} au total`}
             />
             <DetailRow
               icon={Calendar}

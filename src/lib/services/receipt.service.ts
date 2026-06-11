@@ -4,8 +4,8 @@ import type {
   PaginatedResponse,
   Receipt,
   ReceiptFilterParams,
-  CreateReceiptPayload,
   UpdateReceiptPayload,
+  CancelReceiptPayload,
 } from '@/types';
 
 const BASE = '/api/v1/receipts';
@@ -21,30 +21,23 @@ function buildQS(params?: Record<string, unknown>): string {
 }
 
 export const receiptService = {
-  getAll(
-    params?: ReceiptFilterParams,
-  ): Promise<PaginatedResponse<Receipt>> {
-    return api.get<PaginatedResponse<Receipt>>(
-      `${BASE}/${buildQS(params)}`,
-    );
+  getAll(params?: ReceiptFilterParams): Promise<PaginatedResponse<Receipt>> {
+    return api.get<PaginatedResponse<Receipt>>(`${BASE}/${buildQS(params)}`);
   },
 
   getById(id: string): Promise<ApiResponse<Receipt>> {
     return api.get<ApiResponse<Receipt>>(`${BASE}/${id}`);
   },
 
-  create(payload: CreateReceiptPayload): Promise<ApiResponse<Receipt>> {
-    return api.post<ApiResponse<Receipt>>(`${BASE}/`, payload);
+  update(id: string, payload: UpdateReceiptPayload): Promise<ApiResponse<Receipt>> {
+    return api.patch<ApiResponse<Receipt>>(`${BASE}/${id}`, payload);
   },
 
-  update(
-    id: string,
-    payload: UpdateReceiptPayload,
-  ): Promise<ApiResponse<Receipt>> {
-    return api.put<ApiResponse<Receipt>>(`${BASE}/${id}`, payload);
+  cancel(id: string, payload?: CancelReceiptPayload): Promise<ApiResponse<Receipt>> {
+    return api.patch<ApiResponse<Receipt>>(`${BASE}/${id}/cancel`, payload ?? {});
   },
 
-  delete(id: string): Promise<ApiResponse<null>> {
-    return api.delete<ApiResponse<null>>(`${BASE}/${id}`);
+  downloadPdf(id: string): Promise<Blob> {
+    return api.download(`${BASE}/${id}/pdf`);
   },
 };

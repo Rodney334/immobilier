@@ -25,11 +25,7 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="w-full h-12 bg-primary text-white rounded-lg text-[15px] font-medium
-                 hover:bg-[#263447] active:bg-[#16202C]
-                 disabled:opacity-60 disabled:cursor-not-allowed
-                 transition-colors duration-150
-                 flex items-center justify-center gap-2"
+      className="w-full h-12 bg-primary text-white rounded-lg text-[15px] font-medium hover:bg-[#263447] active:bg-[#16202C] disabled:opacity-60 disabled:cursor-not-allowed transition-colors duration-150 flex items-center justify-center gap-2"
     >
       {pending && (
         <Loader2 size={16} className="animate-spin" aria-hidden="true" />
@@ -92,8 +88,7 @@ export function LoginForm() {
         {state.error && (
           <div
             role="alert"
-            className="px-4 py-3 rounded-lg bg-danger/8 border border-danger/20
-                       text-[13px] text-danger leading-snug"
+            className="px-4 py-3 rounded-lg bg-danger/8 border border-danger/20 text-[13px] text-danger leading-snug"
           >
             {state.error}
           </div>
@@ -120,8 +115,7 @@ export function LoginForm() {
           <div className="flex justify-end">
             <Link
               href="/forgot-password"
-              className="text-[13px] text-secondary hover:text-[#C8935E]
-                         transition-colors"
+              className="text-[13px] text-secondary hover:text-[#C8935E] transition-colors"
             >
               Mot de passe oublié&nbsp;?
             </Link>
@@ -140,10 +134,7 @@ export function LoginForm() {
         {/* Google SSO — TODO: brancher OAuth */}
         <button
           type="button"
-          className="w-full h-11 flex items-center justify-center gap-3
-                     border border-border-custom rounded-lg
-                     text-[14px] text-primary font-medium
-                     hover:bg-primary/4 transition-colors duration-150"
+          className="w-full h-11 flex items-center justify-center gap-3 border border-border-custom rounded-lg text-[14px] text-primary font-medium hover:bg-primary/4 transition-colors duration-150"
         >
           {/* Icône Google */}
           <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">

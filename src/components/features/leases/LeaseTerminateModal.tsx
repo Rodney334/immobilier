@@ -23,8 +23,7 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="h-10 px-5 bg-danger text-white rounded-lg text-[14px] font-medium
-                 hover:bg-danger/90 disabled:opacity-60 transition-colors flex items-center gap-2"
+      className="h-10 px-5 bg-danger text-white rounded-lg text-[14px] font-medium hover:bg-danger/90 disabled:opacity-60 transition-colors flex items-center gap-2"
     >
       {pending && <Loader2 size={14} className="animate-spin" />}
       Résilier le contrat
@@ -77,8 +76,7 @@ export function LeaseTerminateModal({ lease, isOpen, onClose, onDone }: Props) {
           <button
             type="button"
             onClick={onClose}
-            className="h-10 px-5 rounded-lg text-[14px] font-medium text-primary/60
-                       hover:text-primary border border-border-custom transition-colors"
+            className="h-10 px-5 rounded-lg text-[14px] font-medium text-primary/60 hover:text-primary border border-border-custom transition-colors"
           >
             Annuler
           </button>
@@ -98,8 +96,7 @@ export function LeaseTerminateModal({ lease, isOpen, onClose, onDone }: Props) {
         {state.error && (
           <div
             role="alert"
-            className="flex items-center gap-2 px-4 py-3 rounded-lg bg-danger/8
-                                       border border-danger/20 text-[13px] text-danger"
+            className="flex items-center gap-2 px-4 py-3 rounded-lg bg-danger/8 border border-danger/20 text-[13px] text-danger"
           >
             <AlertTriangle size={14} /> {state.error}
           </div>
@@ -121,9 +118,7 @@ export function LeaseTerminateModal({ lease, isOpen, onClose, onDone }: Props) {
             name="reason"
             rows={3}
             placeholder="Ex : Fin de bail, départ anticipé, non-paiement…"
-            className="w-full px-3 py-2.5 rounded-lg border border-border-custom bg-white text-[14px]
-                       text-primary placeholder:text-primary/30 focus:outline-none focus:ring-2
-                       focus:ring-primary/20 focus:border-primary/40 resize-none transition-colors"
+            className="w-full px-3 py-2.5 rounded-lg border border-border-custom bg-white text-[14px] text-primary placeholder:text-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 resize-none transition-colors"
           />
         </div>
       </form>
