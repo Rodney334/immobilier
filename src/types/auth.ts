@@ -1,4 +1,4 @@
-import type { User } from './user';
+import type { User } from "./user";
 
 // ─── Payloads de requête ──────────────────────────────────────────────────────
 
@@ -19,7 +19,7 @@ export type RegisterPayload = {
 
 export type VerifyEmailPayload = {
   email: string;
-  verificationCode: string;
+  token: string;
 };
 
 export type ResendVerificationPayload = {

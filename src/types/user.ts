@@ -3,7 +3,7 @@
 /**
  * L'API retourne les rôles en minuscules : "admin", "manager", "user".
  */
-export type UserRole = 'admin' | 'manager' | 'user';
+export type UserRole = "admin" | "user";
 
 // ─── Entité principale ────────────────────────────────────────────────────────
 
@@ -14,6 +14,8 @@ export type UserRole = 'admin' | 'manager' | 'user';
 export type User = {
   /** Identifiant MongoDB (_id) */
   _id: string;
+  /** Alias de _id, injecté automatiquement par normalizeIds() dans client.ts */
+  id?: string;
   name: string;
   email: string;
   phoneNumber?: string;
@@ -40,7 +42,7 @@ export type UpdateUserPayload = {
 };
 
 export type PromoteUserPayload = {
-  newRole: UserRole;
+  role: UserRole;
 };
 
 // ─── Paramètres de filtre ─────────────────────────────────────────────────────
@@ -49,4 +51,6 @@ export type UserFilterParams = {
   page?: number;
   limit?: number;
   search?: string;
+  role?: UserRole;
+  isArchived?: boolean;
 };

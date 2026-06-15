@@ -1,18 +1,18 @@
-import type { Tenant } from './tenant';
+import type { Tenant } from "./tenant";
 
 // ─── Énumérations ─────────────────────────────────────────────────────────────
 
-export type PaymentStatus = 'RECORDED' | 'CANCELLED' | 'REVERSED' | 'failed';
+export type PaymentStatus = "RECORDED" | "CANCELLED" | "REVERSED" | "failed";
 
 export type PaymentMethod =
-  | 'CASH'
-  | 'BANK_TRANSFER'
-  | 'MOBILE_MONEY'
-  | 'MTN_MOMO'
-  | 'MOOV_MONEY'
-  | 'CHEQUE'
-  | 'CARD'
-  | 'OTHER';
+  | "CASH"
+  | "BANK_TRANSFER"
+  | "MOBILE_MONEY"
+  | "MTN_MOMO"
+  | "MOOV_MONEY"
+  | "CHEQUE"
+  | "CARD"
+  | "OTHER";
 
 // ─── Entités ──────────────────────────────────────────────────────────────────
 
@@ -32,9 +32,9 @@ export type Payment = {
     id: string;
     tenant?: Tenant;
   };
-  amount: string;               // L'API retourne le montant en string
-  paymentMethod?: string;       // camelCase tel que retourné par l'API
-  paymentDate?: string;         // Date ISO du paiement
+  amount: string; // L'API retourne le montant en string
+  paymentMethod?: string; // camelCase tel que retourné par l'API
+  paymentDate?: string; // Date ISO du paiement
   reference?: string;
   receiptNumber?: string;
   notes?: string;
@@ -77,9 +77,9 @@ export type CreatePaymentWithAllocationsPayload = {
 
 export type AutoAllocatePaymentPayload = {
   leaseId: string;
-  amount: number;
-  paymentDate?: string;        // date du paiement (format YYYY-MM-DD)
-  paymentMethod?: PaymentMethod | string;  // méthode de paiement
+  amount: string;
+  paymentDate?: string; // date du paiement (format YYYY-MM-DD)
+  paymentMethod?: PaymentMethod | string; // méthode de paiement
   reference?: string;
   notes?: string;
 };

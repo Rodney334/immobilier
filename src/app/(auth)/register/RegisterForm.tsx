@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/Input';
 import { authService } from '@/lib/services/auth.service';
 import { ApiError } from '@/types';
 
-type FormState = { error: string | null; success: boolean };
+type FormState = { error: string | null; success: boolean; email: string };
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -53,22 +53,24 @@ export function RegisterForm() {
           password,
           phoneNumber: phone || undefined,
         });
-        return { error: null, success: true };
+        return { error: null, success: true, email };
       } catch (err) {
         const message =
           err instanceof ApiError
             ? err.message
             : 'Une erreur est survenue. Veuillez réessayer.';
-        return { error: message, success: false };
+        return { error: message, success: false, email: '' };
       }
     },
-    { error: null, success: false },
+    { error: null, success: false, email: '' },
   );
 
-  // Après inscription → vérifier l'email
+  // Après inscription → page "vérifiez votre email" avec l'adresse pour le renvoi
   useEffect(() => {
-    if (state.success) router.push('/check-email');
-  }, [state.success, router]);
+    if (state.success && state.email) {
+      router.push(`/check-email?email=${encodeURIComponent(state.email)}`);
+    }
+  }, [state.success, state.email, router]);
 
   return (
     <div className="space-y-8">

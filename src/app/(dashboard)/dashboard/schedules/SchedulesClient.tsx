@@ -289,9 +289,9 @@ export function SchedulesClient() {
             )}
             Marquer les retards
           </button>
-          <button className="flex items-center gap-2 h-9 px-4 bg-primary text-white rounded-lg text-[13px] font-medium hover:bg-[#263447] transition-colors">
+          {/* <button className="flex items-center gap-2 h-9 px-4 bg-primary text-white rounded-lg text-[13px] font-medium hover:bg-[#263447] transition-colors">
             <Plus size={15} /> Creer une echeance
-          </button>
+          </button> */}
         </div>
       </div>
 

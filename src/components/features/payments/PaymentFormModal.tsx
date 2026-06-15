@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useActionState, useState } from "react";
+// Note : useEffect est conservé pour charger les baux à l'ouverture du modal.
 import { useFormStatus } from "react-dom";
 import { Loader2 } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
@@ -21,7 +22,10 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
   { value: "CASH", label: "Especes" },
   { value: "BANK_TRANSFER", label: "Virement bancaire" },
   { value: "MOBILE_MONEY", label: "Mobile Money" },
+  { value: "MTN_MOMO", label: "MTN MoMo" },
+  { value: "MOOV_MONEY", label: "MOOV Money" },
   { value: "CHEQUE", label: "Cheque" },
+  { value: "CARD", label: "Card" },
   { value: "OTHER", label: "Autre" },
 ];
 
@@ -73,18 +77,25 @@ export function PaymentFormModal({ isOpen, onClose, onSaved }: Props) {
       }
 
       if (!paymentDate) {
-        return { error: "La date de paiement est obligatoire.", success: false };
+        return {
+          error: "La date de paiement est obligatoire.",
+          success: false,
+        };
       }
 
       try {
         const res = await paymentService.autoAllocate({
           leaseId,
-          amount,
+          amount: amountStr,
           paymentDate,
           paymentMethod: paymentMethod || undefined,
           reference: reference || undefined,
         });
         onSaved(res.data);
+        // Fermer directement depuis l'action plutôt que via un useEffect qui lirait
+        // state.success — ce dernier reste "true" d'une ouverture à l'autre et
+        // provoquerait la fermeture immédiate du modal lors d'une deuxième soumission.
+        onClose();
         return { error: null, success: true };
       } catch (err: unknown) {
         const msg =
@@ -94,10 +105,6 @@ export function PaymentFormModal({ isOpen, onClose, onSaved }: Props) {
     },
     { error: null, success: false },
   );
-
-  useEffect(() => {
-    if (state.success) onClose();
-  }, [state.success, onClose]);
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -131,7 +138,7 @@ export function PaymentFormModal({ isOpen, onClose, onSaved }: Props) {
               <option value="">Selectionner un contrat...</option>
               {leases.map((l) => (
                 <option key={l.id} value={l.id}>
-                  {l.id}
+                  {l.contractNumber}
                 </option>
               ))}
             </select>

@@ -15,10 +15,15 @@ import {
   Ban,
 } from "lucide-react";
 import { receiptService } from "@/lib/services/receipt.service";
+import { paymentService } from "@/lib/services/payment.service";
 import { useToast } from "@/components/ui/Toast";
 import { Modal } from "@/components/ui/Modal";
 import { EmptyState } from "@/components/ui/EmptyState";
-import type { Receipt as ReceiptType, ReceiptStatus, PaginationMeta } from "@/types";
+import type {
+  Receipt as ReceiptType,
+  ReceiptStatus,
+  PaginationMeta,
+} from "@/types";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -26,21 +31,29 @@ const STATUS_CONFIG: Record<
   ReceiptStatus,
   { label: string; dot: string; row: string }
 > = {
-  GENERATED: { label: "Genere",    dot: "bg-success",   row: "" },
-  PENDING:   { label: "En cours",  dot: "bg-secondary", row: "bg-secondary/8" },
-  CANCELLED: { label: "Annule",    dot: "bg-danger",     row: "bg-danger/6" },
+  GENERATED: { label: "Genere", dot: "bg-success", row: "" },
+  CANCELLED: { label: "Annule", dot: "bg-danger", row: "bg-danger/6" },
 };
 
 const STATUS_FILTERS: { value: ReceiptStatus | "all"; label: string }[] = [
-  { value: "all",       label: "Tous" },
+  { value: "all", label: "Tous" },
   { value: "GENERATED", label: "Genere" },
-  { value: "PENDING",   label: "En cours" },
   { value: "CANCELLED", label: "Annule" },
 ];
 
 const MONTHS_FR = [
-  "Janvier","Fevrier","Mars","Avril","Mai","Juin",
-  "Juillet","Aout","Septembre","Octobre","Novembre","Decembre",
+  "Janvier",
+  "Fevrier",
+  "Mars",
+  "Avril",
+  "Mai",
+  "Juin",
+  "Juillet",
+  "Aout",
+  "Septembre",
+  "Octobre",
+  "Novembre",
+  "Decembre",
 ];
 
 function formatAmount(v: string | number) {
@@ -48,7 +61,9 @@ function formatAmount(v: string | number) {
 }
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("fr-FR", {
-    day: "2-digit", month: "2-digit", year: "numeric",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
   });
 }
 
@@ -83,7 +98,10 @@ function ReceiptRowActions({
   const isCancelled = receipt.status === "CANCELLED";
 
   return (
-    <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+    <div
+      className="flex items-center gap-1"
+      onClick={(e) => e.stopPropagation()}
+    >
       {/* Download rapide */}
       {!isCancelled && (
         <button
@@ -105,31 +123,46 @@ function ReceiptRowActions({
         </button>
         {open && (
           <>
-            <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-            <div className="absolute right-0 top-8 z-20 w-52 bg-white rounded-lg shadow-lg border border-[#E5E7EB] py-1 text-[13px]">
+            <div
+              className="fixed inset-0 z-10"
+              onClick={() => setOpen(false)}
+            />
+            <div className="absolute right-0 top-8 z-20 w-52 bg-white rounded-lg shadow-lg border border-border-custom py-1 text-[13px]">
               <button
-                onClick={() => { setOpen(false); onViewDetails(); }}
+                onClick={() => {
+                  setOpen(false);
+                  onViewDetails();
+                }}
                 className="w-full text-left px-4 py-2 hover:bg-primary/4 text-primary/70 hover:text-primary transition-colors flex items-center gap-2"
               >
                 <Eye size={13} /> Voir les details
               </button>
               <button
-                onClick={() => { setOpen(false); onEditNotes(); }}
+                onClick={() => {
+                  setOpen(false);
+                  onEditNotes();
+                }}
                 className="w-full text-left px-4 py-2 hover:bg-primary/4 text-primary/70 hover:text-primary transition-colors flex items-center gap-2"
               >
                 <FileEdit size={13} /> Modifier les notes
               </button>
               <button
-                onClick={() => { setOpen(false); onDownload(); }}
+                onClick={() => {
+                  setOpen(false);
+                  onDownload();
+                }}
                 className="w-full text-left px-4 py-2 hover:bg-primary/4 text-primary/70 hover:text-primary transition-colors flex items-center gap-2"
               >
                 <Download size={13} /> Telecharger PDF
               </button>
               {!isCancelled && (
                 <>
-                  <div className="my-1 border-t border-[#E5E7EB]" />
+                  <div className="my-1 border-t border-border-custom" />
                   <button
-                    onClick={() => { setOpen(false); onCancel(); }}
+                    onClick={() => {
+                      setOpen(false);
+                      onCancel();
+                    }}
                     className="w-full text-left px-4 py-2 hover:bg-danger/6 text-danger transition-colors flex items-center gap-2"
                   >
                     <Ban size={13} /> Annuler le recu
@@ -162,8 +195,10 @@ function ReceiptDetailPanel({
   const cfg = STATUS_CONFIG[receipt.status];
   const tenantName =
     (receipt.tenant?.fullName ??
-    `${receipt.tenant?.firstName ?? ""} ${receipt.tenant?.lastName ?? ""}`.trim()) || "—";
-  const contractRef = receipt.lease?.contractNumber ?? receipt.leaseId?.slice(-8) ?? "—";
+      `${receipt.tenant?.firstName ?? ""} ${receipt.tenant?.lastName ?? ""}`.trim()) ||
+    "—";
+  const contractRef =
+    receipt.lease?.contractNumber ?? receipt.leaseId?.slice(-8) ?? "—";
   const date = receipt.receiptDate ?? receipt.issuedAt ?? receipt.createdAt;
 
   return (
@@ -223,17 +258,22 @@ function ReceiptDetailPanel({
       <div className="flex-1 overflow-y-auto px-5 py-2">
         {[
           { label: "Numero de recu", value: receipt.receiptNumber ?? "—" },
-          { label: "Locataire",      value: tenantName },
-          { label: "Contrat",        value: contractRef },
-          { label: "Montant",        value: formatAmount(receipt.amount) },
-          { label: "Date d emission",value: date ? formatDate(date) : "—" },
-          { label: "Statut",         value: cfg.label },
-          { label: "Notes",          value: receipt.notes || "—" },
-          { label: "Cree le",        value: formatDate(receipt.createdAt) },
+          { label: "Locataire", value: tenantName },
+          { label: "Contrat", value: contractRef },
+          { label: "Montant", value: formatAmount(receipt.amount) },
+          { label: "Date d emission", value: date ? formatDate(date) : "—" },
+          { label: "Statut", value: cfg.label },
+          { label: "Notes", value: receipt.notes || "—" },
+          { label: "Cree le", value: formatDate(receipt.createdAt) },
         ].map(({ label, value }) => (
-          <div key={label} className="flex items-start gap-3 py-3 border-b border-border-custom last:border-0">
+          <div
+            key={label}
+            className="flex items-start gap-3 py-3 border-b border-border-custom last:border-0"
+          >
             <div className="min-w-0 flex-1">
-              <p className="text-[11px] font-medium uppercase tracking-[0.06em] text-primary/35 mb-0.5">{label}</p>
+              <p className="text-[11px] font-medium uppercase tracking-[0.06em] text-primary/35 mb-0.5">
+                {label}
+              </p>
               <p className="text-[13px] text-primary">{value}</p>
             </div>
           </div>
@@ -245,7 +285,13 @@ function ReceiptDetailPanel({
 
 // ─── Pagination bar ───────────────────────────────────────────────────────────
 
-function PaginationBar({ meta, onPage }: { meta: PaginationMeta; onPage: (p: number) => void }) {
+function PaginationBar({
+  meta,
+  onPage,
+}: {
+  meta: PaginationMeta;
+  onPage: (p: number) => void;
+}) {
   const { page, totalPages, total, limit } = meta;
   const from = (page - 1) * limit + 1;
   const to = Math.min(page * limit, total);
@@ -289,41 +335,47 @@ const YEAR_OPTIONS = Array.from({ length: 5 }, (_, i) => now.getFullYear() - i);
 export function ReceiptsClient() {
   const { toast } = useToast();
 
-  const [receipts,    setReceipts]    = useState<ReceiptType[]>([]);
-  const [pagination,  setPagination]  = useState<PaginationMeta | null>(null);
-  const [loading,     setLoading]     = useState(true);
-  const [error,       setError]       = useState<string | null>(null);
-  const [search,      setSearch]      = useState("");
-  const [debouncedQ,  setDebouncedQ]  = useState("");
-  const [statusFilter, setStatusFilter] = useState<ReceiptStatus | "all">("all");
-  const [month,       setMonth]       = useState<number | "">("");
-  const [year,        setYear]        = useState<number | "">(now.getFullYear());
-  const [page,        setPage]        = useState(1);
-  const [selected,    setSelected]    = useState<ReceiptType | null>(null);
+  const [receipts, setReceipts] = useState<ReceiptType[]>([]);
+  const [pagination, setPagination] = useState<PaginationMeta | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [debouncedQ, setDebouncedQ] = useState("");
+  const [statusFilter, setStatusFilter] = useState<ReceiptStatus | "all">(
+    "all",
+  );
+  const [month, setMonth] = useState<number | "">("");
+  const [year, setYear] = useState<number | "">(now.getFullYear());
+  const [page, setPage] = useState(1);
+  const [selected, setSelected] = useState<ReceiptType | null>(null);
 
   // Modals
   const [notesTarget, setNotesTarget] = useState<ReceiptType | null>(null);
-  const [notesValue,  setNotesValue]  = useState("");
+  const [notesValue, setNotesValue] = useState("");
   const [notesSaving, setNotesSaving] = useState(false);
 
   const [cancelTarget, setCancelTarget] = useState<ReceiptType | null>(null);
-  const [cancelling,   setCancelling]   = useState(false);
+  const [cancelling, setCancelling] = useState(false);
 
   // Stats
   const stats = {
-    total:     pagination?.total ?? receipts.length,
+    total: pagination?.total ?? receipts.length,
     generated: receipts.filter((r) => r.status === "GENERATED").length,
-    pending:   receipts.filter((r) => r.status === "PENDING").length,
     cancelled: receipts.filter((r) => r.status === "CANCELLED").length,
   };
 
   // Debounce search
   useEffect(() => {
-    const t = setTimeout(() => { setDebouncedQ(search); setPage(1); }, 350);
+    const t = setTimeout(() => {
+      setDebouncedQ(search);
+      setPage(1);
+    }, 350);
     return () => clearTimeout(t);
   }, [search]);
 
-  useEffect(() => { setPage(1); }, [statusFilter, month, year]);
+  useEffect(() => {
+    setPage(1);
+  }, [statusFilter, month, year]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -334,8 +386,8 @@ export function ReceiptsClient() {
         limit: PAGE_LIMIT,
         status: statusFilter !== "all" ? statusFilter : undefined,
         search: debouncedQ || undefined,
-        month:  month  !== "" ? month  : undefined,
-        year:   year   !== "" ? year   : undefined,
+        month: month !== "" ? month : undefined,
+        year: year !== "" ? year : undefined,
       });
       const list: ReceiptType[] = Array.isArray(res.data) ? res.data : [];
       setReceipts(list);
@@ -347,13 +399,21 @@ export function ReceiptsClient() {
     }
   }, [page, statusFilter, debouncedQ, month, year]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   // ── Handlers ──
 
   function handleDownload(r: ReceiptType) {
-    toast({ variant: "warning", title: "Telechargement en cours...", duration: 3000 });
-    receiptService.downloadPdf(r.id)
+    toast({
+      variant: "warning",
+      title: "Telechargement en cours...",
+      duration: 3000,
+    });
+    // Utilise la route paiement /api/v1/payments/:paymentId/receipt/pdf
+    paymentService
+      .downloadReceiptPdf(r.paymentId)
       .then((blob) => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
@@ -362,21 +422,39 @@ export function ReceiptsClient() {
         a.click();
         URL.revokeObjectURL(url);
       })
-      .catch(() => toast({ variant: "danger", title: "Echec du telechargement", duration: 4000 }));
+      .catch(() =>
+        toast({
+          variant: "danger",
+          title: "Echec du telechargement",
+          duration: 4000,
+        }),
+      );
   }
 
   async function handleSaveNotes() {
     if (!notesTarget) return;
     setNotesSaving(true);
     try {
-      const res = await receiptService.update(notesTarget.id, { notes: notesValue });
+      const res = await receiptService.update(notesTarget.id, {
+        notes: notesValue,
+      });
       const updated = res.data;
-      setReceipts((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+      setReceipts((prev) =>
+        prev.map((r) => (r.id === updated.id ? updated : r)),
+      );
       if (selected?.id === updated.id) setSelected(updated);
       setNotesTarget(null);
-      toast({ variant: "success", title: "Notes mises a jour", duration: 3000 });
+      toast({
+        variant: "success",
+        title: "Notes mises a jour",
+        duration: 3000,
+      });
     } catch {
-      toast({ variant: "danger", title: "Impossible de sauvegarder", duration: 4000 });
+      toast({
+        variant: "danger",
+        title: "Impossible de sauvegarder",
+        duration: 4000,
+      });
     } finally {
       setNotesSaving(false);
     }
@@ -388,12 +466,18 @@ export function ReceiptsClient() {
     try {
       const res = await receiptService.cancel(cancelTarget.id);
       const updated = res.data;
-      setReceipts((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+      setReceipts((prev) =>
+        prev.map((r) => (r.id === updated.id ? updated : r)),
+      );
       if (selected?.id === updated.id) setSelected(updated);
       setCancelTarget(null);
       toast({ variant: "success", title: "Recu annule", duration: 3000 });
     } catch {
-      toast({ variant: "danger", title: "Impossible d annuler ce recu", duration: 4000 });
+      toast({
+        variant: "danger",
+        title: "Impossible d annuler ce recu",
+        duration: 4000,
+      });
     } finally {
       setCancelling(false);
     }
@@ -417,7 +501,6 @@ export function ReceiptsClient() {
       <div className="flex h-screen overflow-hidden">
         {/* List column */}
         <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
-
           {/* Toolbar */}
           <div className="flex items-center justify-between px-6 py-4 bg-surface border-b border-border-custom shrink-0">
             <div>
@@ -425,16 +508,20 @@ export function ReceiptsClient() {
               {!loading && (
                 <p className="text-[12px] text-primary/40 mt-0.5">
                   {stats.total} recu{stats.total > 1 ? "s" : ""}
-                  {stats.generated > 0 && ` · ${stats.generated} genere${stats.generated > 1 ? "s" : ""}`}
-                  {stats.pending   > 0 && ` · ${stats.pending} en cours`}
-                  {stats.cancelled > 0 && ` · ${stats.cancelled} annule${stats.cancelled > 1 ? "s" : ""}`}
+                  {stats.generated > 0 &&
+                    ` · ${stats.generated} genere${stats.generated > 1 ? "s" : ""}`}
+                  {stats.cancelled > 0 &&
+                    ` · ${stats.cancelled} annule${stats.cancelled > 1 ? "s" : ""}`}
                 </p>
               )}
             </div>
             <div className="flex items-center gap-3">
               {/* Search */}
               <div className="relative">
-                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-primary/35 pointer-events-none" />
+                <Search
+                  size={14}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-primary/35 pointer-events-none"
+                />
                 <input
                   type="search"
                   value={search}
@@ -450,15 +537,18 @@ export function ReceiptsClient() {
           <div className="px-6 py-2.5 border-b border-border-custom bg-surface shrink-0 flex flex-wrap items-center gap-3">
             {/* Status pills */}
             <div className="flex items-center gap-1.5">
-              <span className="text-[11px] font-medium uppercase tracking-wider text-primary/40 mr-1">Statut :</span>
+              <span className="text-[11px] font-medium uppercase tracking-wider text-primary/40 mr-1">
+                Statut :
+              </span>
               {STATUS_FILTERS.map((f) => (
                 <button
                   key={f.value}
                   onClick={() => setStatusFilter(f.value)}
                   className={`px-3 py-1 rounded-full text-[12px] font-medium transition-colors whitespace-nowrap
-                    ${statusFilter === f.value
-                      ? "bg-primary text-white"
-                      : "bg-primary/6 text-primary/60 hover:bg-primary/10 hover:text-primary"
+                    ${
+                      statusFilter === f.value
+                        ? "bg-primary text-white"
+                        : "bg-primary/6 text-primary/60 hover:bg-primary/10 hover:text-primary"
                     }`}
                 >
                   {f.label}
@@ -470,37 +560,52 @@ export function ReceiptsClient() {
 
             {/* Mois */}
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-medium uppercase tracking-wider text-primary/40">Mois/Annee :</span>
+              <span className="text-[11px] font-medium uppercase tracking-wider text-primary/40">
+                Mois/Annee :
+              </span>
               <select
                 value={month}
-                onChange={(e) => setMonth(e.target.value === "" ? "" : Number(e.target.value))}
+                onChange={(e) =>
+                  setMonth(e.target.value === "" ? "" : Number(e.target.value))
+                }
                 className="h-8 px-2 rounded-lg border border-border-custom text-[13px] text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-colors"
               >
                 <option value="">Tous</option>
                 {MONTHS_FR.map((m, i) => (
-                  <option key={i} value={i + 1}>{m}</option>
+                  <option key={i} value={i + 1}>
+                    {m}
+                  </option>
                 ))}
               </select>
               <select
                 value={year}
-                onChange={(e) => setYear(e.target.value === "" ? "" : Number(e.target.value))}
+                onChange={(e) =>
+                  setYear(e.target.value === "" ? "" : Number(e.target.value))
+                }
                 className="h-8 px-2 rounded-lg border border-border-custom text-[13px] text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-colors"
               >
                 <option value="">Toutes</option>
                 {YEAR_OPTIONS.map((y) => (
-                  <option key={y} value={y}>{y}</option>
+                  <option key={y} value={y}>
+                    {y}
+                  </option>
                 ))}
               </select>
               {(month !== "" || year !== now.getFullYear()) && (
                 <button
-                  onClick={() => { setMonth(""); setYear(now.getFullYear()); }}
+                  onClick={() => {
+                    setMonth("");
+                    setYear(now.getFullYear());
+                  }}
                   className="text-[12px] text-primary/40 hover:text-primary transition-colors"
                 >
                   Effacer
                 </button>
               )}
               {(month !== "" || year !== "") && (
-                <span className="text-[12px] text-primary/50 font-medium">{monthYearLabel}</span>
+                <span className="text-[12px] text-primary/50 font-medium">
+                  {monthYearLabel}
+                </span>
               )}
             </div>
           </div>
@@ -533,16 +638,22 @@ export function ReceiptsClient() {
               <table className="w-full border-collapse">
                 <thead className="sticky top-0 z-10 bg-neutral">
                   <tr className="border-b border-border-custom">
-                    {["N° RECU", "LOCATAIRE", "BAIL", "MONTANT", "DATE EMISSION", "STATUT", ""].map(
-                      (h, i) => (
-                        <th
-                          key={i}
-                          className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-primary/40"
-                        >
-                          {h}
-                        </th>
-                      )
-                    )}
+                    {[
+                      "N° RECU",
+                      "LOCATAIRE",
+                      "BAIL",
+                      "MONTANT",
+                      "DATE EMISSION",
+                      "STATUT",
+                      "",
+                    ].map((h, i) => (
+                      <th
+                        key={i}
+                        className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-primary/40"
+                      >
+                        {h}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border-custom">
@@ -550,16 +661,20 @@ export function ReceiptsClient() {
                     const cfg = STATUS_CONFIG[r.status];
                     const tenantName =
                       (r.tenant?.fullName ??
-                      `${r.tenant?.firstName ?? ""} ${r.tenant?.lastName ?? ""}`.trim()) || "—";
+                        `${r.tenant?.firstName ?? ""} ${r.tenant?.lastName ?? ""}`.trim()) ||
+                      "—";
                     const contractRef =
-                      r.lease?.contractNumber ?? (r.leaseId ? r.leaseId.slice(-8) : "—");
+                      r.lease?.contractNumber ??
+                      (r.leaseId ? r.leaseId.slice(-8) : "—");
                     const date = r.receiptDate ?? r.issuedAt ?? "";
                     const isSelected = selected?.id === r.id;
 
                     return (
                       <tr
                         key={r.id}
-                        onClick={() => setSelected((p) => (p?.id === r.id ? null : r))}
+                        onClick={() =>
+                          setSelected((p) => (p?.id === r.id ? null : r))
+                        }
                         className={`cursor-pointer transition-colors duration-100 ${
                           isSelected
                             ? "bg-secondary/8 border-l-2 border-l-secondary"
@@ -571,7 +686,7 @@ export function ReceiptsClient() {
                         <td className="px-5 py-3.5 text-[13px] font-mono font-medium text-primary/80 whitespace-nowrap">
                           {r.receiptNumber ?? "—"}
                         </td>
-                        <td className="px-4 py-3.5 text-[13px] font-medium text-primary max-w-[160px] truncate">
+                        <td className="px-4 py-3.5 text-[13px] font-medium text-primary max-w-40 truncate">
                           {tenantName}
                         </td>
                         <td className="px-4 py-3.5 text-[13px] font-mono text-primary/60">
@@ -648,7 +763,10 @@ export function ReceiptsClient() {
       >
         <div className="space-y-3">
           <p className="text-[13px] text-primary/60">
-            Recu <span className="font-mono font-semibold text-primary">{notesTarget?.receiptNumber ?? "—"}</span>
+            Recu{" "}
+            <span className="font-mono font-semibold text-primary">
+              {notesTarget?.receiptNumber ?? "—"}
+            </span>
           </p>
           <textarea
             value={notesValue}

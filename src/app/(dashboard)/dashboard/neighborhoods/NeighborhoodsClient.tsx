@@ -253,9 +253,9 @@ function DetailPanel({
             </p>
           ) : (
             <div className="space-y-2">
-              {properties.map((p) => (
+              {properties.map((p, i) => (
                 <div
-                  key={p.id}
+                  key={p.id + i}
                   className="flex items-center justify-between p-3 rounded-lg border border-border-custom hover:border-primary/20 hover:bg-primary/3 transition-colors"
                 >
                   <div className="min-w-0">
@@ -394,6 +394,8 @@ export function NeighborhoodsClient() {
   useEffect(() => {
     load();
   }, [load]);
+
+  console.log({ filtered });
 
   useEffect(() => {
     const q = search.trim().toLowerCase();

@@ -1,9 +1,9 @@
-import type { Tenant } from './tenant';
-import type { Lease } from './lease';
+import type { Tenant } from "./tenant";
+import type { Lease } from "./lease";
 
 // ─── Énumérations ─────────────────────────────────────────────────────────────
 
-export type ReceiptStatus = 'GENERATED' | 'PENDING' | 'CANCELLED';
+export type ReceiptStatus = "GENERATED" | "CANCELLED";
 
 // ─── Entité principale ────────────────────────────────────────────────────────
 
@@ -14,9 +14,9 @@ export type Receipt = {
   lease?: Lease;
   tenantId: string;
   tenant?: Tenant;
-  amount: string;            // string comme les autres montants
+  amount: string; // string comme les autres montants
   receiptDate?: string;
-  issuedAt?: string;         // alias possible côté API
+  issuedAt?: string; // alias possible côté API
   receiptNumber?: string;
   status: ReceiptStatus;
   notes?: string;
@@ -42,6 +42,6 @@ export type ReceiptFilterParams = {
   status?: ReceiptStatus;
   tenant?: string;
   search?: string;
-  month?: number;    // 1-12
+  month?: number; // 1-12
   year?: number;
 };

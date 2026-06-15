@@ -48,36 +48,45 @@ export async function refreshAccessToken(): Promise<string | null> {
   if (!refreshToken) return null;
 
   try {
+    // D'après la doc API : POST /api/v1/auth/refresh
+    // Mode hybride : cookie httpOnly OU body { refreshToken }.
+    // Pas d'Authorization header sur cet endpoint (pas d'auth requise).
     const res = await fetch(`${BASE_URL}/api/v1/auth/refresh`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${refreshToken}`,
-      },
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refreshToken }),
+      credentials: "include", // envoie aussi le cookie httpOnly si présent
     });
 
     if (!res.ok) {
-      tokenManager.clear();
+      // 401 = aucun refresh token fourni, 403 = expiré/révoqué
       return null;
     }
 
     const body = await res.json();
-    // L'API peut retourner le token dans différentes clés
-    const newToken: string | null =
-      body?.data?.accessToken ?? body?.data?.token ?? body?.accessToken ?? null;
 
-    if (newToken) {
-      tokenManager.setAccess(newToken);
-      if (body?.data?.refreshToken) {
-        tokenManager.setRefresh(body.data.refreshToken);
+    // L'API renvoie le même format que le login : accessToken à la racine.
+    const newAccessToken: string | null =
+      body?.accessToken ??
+      body?.data?.accessToken ??
+      null;
+
+    // Rotation côté serveur : l'API renvoie aussi un nouveau refreshToken.
+    const newRefreshToken: string | null =
+      body?.refreshToken ??
+      body?.data?.refreshToken ??
+      null;
+
+    if (newAccessToken) {
+      tokenManager.setAccess(newAccessToken);
+      if (newRefreshToken) {
+        tokenManager.setRefresh(newRefreshToken);
       }
-      return newToken;
+      return newAccessToken;
     }
 
-    tokenManager.clear();
     return null;
   } catch {
-    tokenManager.clear();
     return null;
   }
 }
@@ -165,8 +174,9 @@ export async function apiRequest<T>(
     queue.forEach((cb) => cb(newToken));
 
     if (!newToken) {
+      // Refresh échoué → tokens invalides, on nettoie et on redirige
       tokenManager.clear();
-      if (typeof window !== "undefined") {
+      if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
         window.location.href = "/login";
       }
       throw new ApiError(401, "Session expirée. Veuillez vous reconnecter.");
@@ -326,7 +336,7 @@ export const api = {
 
       if (!newToken) {
         tokenManager.clear();
-        if (typeof window !== "undefined") {
+        if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
           window.location.href = "/login";
         }
         throw new ApiError(401, "Session expirée. Veuillez vous reconnecter.");

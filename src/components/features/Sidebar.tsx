@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, Building2, DoorOpen, FileText, Users, CreditCard,
   BarChart3, Settings, LogOut, ChevronRight, MapPin,
-  CalendarClock, Receipt, SlidersHorizontal,
+  CalendarClock, Receipt, SlidersHorizontal, UserCog,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/stores/auth.store";
 import { authService } from "@/lib/services/auth.service";
@@ -22,6 +22,7 @@ const NAV_ITEMS = [
   { label: "Reçus",            href: "/dashboard/receipts",      icon: Receipt },
   { label: "Ajustements",      href: "/dashboard/adjustments",   icon: SlidersHorizontal },
   { label: "Rapports",         href: "/dashboard/reports",       icon: BarChart3 },
+  { label: "Utilisateurs",     href: "/dashboard/users",         icon: UserCog },
   { label: "Paramètres",       href: "/dashboard/settings",      icon: Settings },
 ] as const;
 
@@ -32,8 +33,15 @@ export function Sidebar() {
   const logoutStore = useAuthStore((s) => s.logout);
 
   async function handleLogout() {
-    try { await authService.logout(); } catch { /* ignore */ }
-    finally { logoutStore(); router.push("/login"); }
+    // ORDRE IMPORTANT :
+    // 1. authService.logout() démarre en premier : apiRequest() lit
+    //    tokenManager.getAccess() de manière synchrone avant son premier await.
+    //    Le Bearer token est donc capturé AVANT que logoutStore() ne le supprime.
+    // 2. logoutStore() efface le store + tokenManager côté client (immédiat).
+    // 3. router.push() redirige sans attendre la réponse réseau.
+    authService.logout();      // démarre l'appel API — capture le token sync
+    logoutStore();             // nettoie le store + tokenManager
+    router.push("/login");     // redirige immédiatement
   }
 
   function isActive(href: string) {

@@ -8,8 +8,8 @@ import { tokenManager, refreshAccessToken } from '@/lib/api/client';
 // ─── Helpers JWT ──────────────────────────────────────────────────────────────
 
 /**
- * Décode l'expiration d'un JWT (sans vérifier la signature).
- * Retourne le timestamp Unix (en secondes) ou null si le token est invalide.
+ * Décode le champ `exp` d'un JWT sans vérifier la signature.
+ * Retourne le timestamp Unix (secondes) ou null si impossible.
  */
 function getTokenExp(token: string): number | null {
   try {
@@ -21,68 +21,78 @@ function getTokenExp(token: string): number | null {
 }
 
 /**
- * Retourne true si le token est expiré (ou expirera dans les 60 prochaines secondes).
+ * Retourne true si le token JWT est déjà expiré ou expire dans moins de 30 s.
+ * Un buffer de 30 s (et non 60 s) évite de rater la fenêtre de validité sur
+ * des sessions courtes, tout en laissant le temps de faire le refresh.
  */
-function isTokenExpiredOrExpiring(token: string): boolean {
+function isExpiredOrExpiring(token: string): boolean {
   const exp = getTokenExp(token);
-  if (exp === null) return false; // impossible à déterminer → on laisse passer
-  return Date.now() / 1000 >= exp - 60;
+  if (exp === null) return false; // Impossible à déterminer → on laisse passer
+  return Date.now() / 1000 >= exp - 30;
 }
 
 // ─── AuthGuard ────────────────────────────────────────────────────────────────
 
-export function AuthGuard({ children }: { children: React.ReactNode }) {
-  const router   = useRouter();
-  const logout   = useAuthStore((s) => s.logout);
-  const [checked, setChecked] = useState(false);
+type CheckState = 'pending' | 'ok' | 'redirecting';
 
-  // Évite une double exécution en mode React StrictMode
+export function AuthGuard({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const logout = useAuthStore((s) => s.logout);
+  const [checkState, setCheckState] = useState<CheckState>('pending');
+
+  // Empêche le double-effet en React StrictMode (dev uniquement)
   const ran = useRef(false);
 
   useEffect(() => {
     if (ran.current) return;
     ran.current = true;
 
-    // 1. Réhydrater le store Zustand (skipHydration: true empêche le mismatch SSR)
+    // 1. Synchroniser le store Zustand avec localStorage (skipHydration: true)
     useAuthStore.persist.rehydrate();
 
     async function checkSession() {
       const accessToken  = tokenManager.getAccess();
       const refreshToken = tokenManager.getRefresh();
 
-      // Aucun token → déconnecté
+      // Cas 1 : aucun token → déconnecté
       if (!accessToken && !refreshToken) {
+        setCheckState('redirecting');
         router.replace('/login');
         return;
       }
 
-      // Access token valide (non expiré) → on laisse passer directement
-      if (accessToken && !isTokenExpiredOrExpiring(accessToken)) {
-        setChecked(true);
+      // Cas 2 : access token présent et valide → on ouvre l'app
+      if (accessToken && !isExpiredOrExpiring(accessToken)) {
+        setCheckState('ok');
         return;
       }
 
-      // Access token expiré (ou absent) mais refresh token disponible
-      // → tentative de refresh silencieux avant le premier rendu
+      // Cas 3 : access token absent ou expiré, mais refresh token disponible
+      // → tentative de refresh silencieux AVANT d'afficher l'app
       if (refreshToken) {
-        const newAccessToken = await refreshAccessToken();
-        if (newAccessToken) {
-          // Refresh OK — tokenManager a déjà persisté le nouveau token.
-          setChecked(true);
-          return;
+        try {
+          const newToken = await refreshAccessToken();
+          if (newToken) {
+            setCheckState('ok');
+            return;
+          }
+        } catch {
+          // Ignore : on tombe dans le cas 4
         }
       }
 
-      // Refresh échoué ou pas de refresh token → déconnexion propre
-      logout();
+      // Cas 4 : refresh échoué ou impossible → déconnexion propre
+      logout(); // nettoie le store ET tokenManager
+      setCheckState('redirecting');
       router.replace('/login');
     }
 
     checkSession();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  if (!checked) {
+  // Spinner pendant le check initial
+  if (checkState === 'pending' || checkState === 'redirecting') {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-neutral z-50">
         <div className="flex flex-col items-center gap-4">
