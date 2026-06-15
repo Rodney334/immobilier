@@ -117,6 +117,62 @@ function RowActions({
   );
 }
 
+// ─── Mobile card ─────────────────────────────────────────────────────────────
+
+function ScheduleCard({
+  schedule,
+  onRefresh,
+}: {
+  schedule: RentSchedule;
+  onRefresh: () => void;
+}) {
+  const cfg = STATUS_CFG[schedule.status] ?? STATUS_CFG["PENDING"];
+  const tenant = schedule.lease?.tenant;
+  const tenantName = tenant
+    ? (tenant.fullName ?? `${tenant.firstName} ${tenant.lastName}`)
+    : null;
+  const due = schedule.amountDue ?? schedule.amount;
+  const paid = schedule.amountPaid ?? schedule.paidAmount ?? 0;
+  const remain = schedule.balance ?? schedule.remainingAmount ?? due - paid;
+
+  return (
+    <div className={`bg-surface p-4 transition-colors ${cfg.rowCls}`}>
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <div className="min-w-0">
+          <p className="text-[13px] font-semibold text-primary truncate">
+            {tenantName ?? formatDueDate(schedule.dueDate)}
+          </p>
+          <p className="text-[12px] text-primary/50">{formatDueDate(schedule.dueDate)}</p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <Badge variant={cfg.variant}>{cfg.label}</Badge>
+          <RowActions schedule={schedule} onRefresh={onRefresh} />
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+        <div>
+          <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">Montant dû</p>
+          <p className="text-[12px] font-semibold text-primary tabular-nums">{formatXOF(due)} FCFA</p>
+        </div>
+        <div>
+          <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">Payé</p>
+          <p className="text-[12px] text-primary/70 tabular-nums">{paid > 0 ? `${formatXOF(paid)} FCFA` : "—"}</p>
+        </div>
+        <div>
+          <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">Solde</p>
+          <p className={`text-[12px] font-medium tabular-nums ${remain > 0 ? "text-danger" : "text-primary/70"}`}>
+            {remain > 0 ? `${formatXOF(remain)} FCFA` : "—"}
+          </p>
+        </div>
+        <div>
+          <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">Échéance</p>
+          <p className="text-[12px] text-primary/70 tabular-nums">{formatDueDate(schedule.dueDate)}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SummaryFooter({ schedules }: { schedules: RentSchedule[] }) {
   const totalDue = schedules.reduce((s, r) => s + (r.amountDue ?? r.amount), 0);
   const totalPaid = schedules.reduce(
@@ -261,9 +317,9 @@ export function SchedulesClient() {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
-      <div className="flex items-start justify-between px-6 py-4 bg-surface border-b border-border-custom shrink-0">
+      <div className="flex flex-col gap-3 px-4 py-3 lg:flex-row lg:items-start lg:justify-between lg:px-6 lg:py-4 bg-surface border-b border-border-custom shrink-0">
         <div>
-          <h1 className="font-semibold text-[20px] text-primary">
+          <h1 className="font-semibold text-[18px] lg:text-[20px] text-primary">
             Echeances de loyer
           </h1>
           {!loading && (
@@ -280,7 +336,7 @@ export function SchedulesClient() {
           <button
             onClick={handleMarkOverdue}
             disabled={marking}
-            className="flex items-center gap-2 h-9 px-4 rounded-lg border border-secondary text-secondary text-[13px] font-medium hover:bg-secondary/6 disabled:opacity-50 transition-colors"
+            className="flex items-center gap-2 h-9 px-4 rounded-lg border border-secondary text-secondary text-[13px] font-medium hover:bg-secondary/6 disabled:opacity-50 transition-colors shrink-0"
           >
             {marking ? (
               <Loader2 size={14} className="animate-spin" />
@@ -345,85 +401,96 @@ export function SchedulesClient() {
             </p>
           </div>
         ) : (
-          <table className="w-full border-collapse">
-            <thead className="sticky top-0 z-10 bg-neutral">
-              <tr className="border-b border-border-custom">
-                {[
-                  "Echeance",
-                  "Locataire",
-                  "Local",
-                  "Montant du",
-                  "Paye",
-                  "Solde",
-                  "Statut",
-                  "",
-                ].map((h) => (
-                  <th
-                    key={h}
-                    className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-primary/40"
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border-custom">
-              {schedules.map((s) => {
-                const cfg = STATUS_CFG[s.status] ?? STATUS_CFG["PENDING"];
-                const tenant = s.lease?.tenant;
-                const unit = s.lease?.unit;
-                const due = s.amountDue ?? s.amount;
-                const paid = s.amountPaid ?? s.paidAmount ?? 0;
-                const remain = s.balance ?? s.remainingAmount ?? due - paid;
-                return (
-                  <tr
-                    key={s.id}
-                    className={`transition-colors duration-100 hover:bg-primary/3 ${cfg.rowCls}`}
-                  >
-                    <td className="px-4 py-3 text-[13px] tabular-nums text-primary/80 whitespace-nowrap font-medium">
-                      {formatDueDate(s.dueDate)}
-                    </td>
-                    <td className="px-4 py-3 text-[13px] text-primary">
-                      {tenant ? (
-                        (tenant.fullName ??
-                        `${tenant.firstName} ${tenant.lastName}`)
-                      ) : (
-                        <span className="text-primary/30">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-[13px] text-primary/70">
-                      {unit ? (
-                        unit.unitNumber
-                      ) : (
-                        <span className="text-primary/30">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-[13px] tabular-nums text-primary font-medium">
-                      {formatXOF(due)}
-                    </td>
-                    <td className="px-4 py-3 text-[13px] tabular-nums text-primary/70">
-                      {paid > 0 ? formatXOF(paid) : "—"}
-                    </td>
-                    <td className="px-4 py-3 text-[13px] tabular-nums">
-                      {remain > 0 ? (
-                        <span className="text-danger font-medium">
-                          {formatXOF(remain)}
-                        </span>
-                      ) : (
-                        "—"
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <Badge variant={cfg.variant}>{cfg.label}</Badge>
-                    </td>
-                    <td className="px-3 py-3">
-                      <RowActions schedule={s} onRefresh={load} />
-                    </td>
+          <>
+            {/* Table desktop */}
+            <div className="hidden lg:block overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead className="sticky top-0 z-10 bg-neutral">
+                  <tr className="border-b border-border-custom">
+                    {[
+                      "Echeance",
+                      "Locataire",
+                      "Local",
+                      "Montant du",
+                      "Paye",
+                      "Solde",
+                      "Statut",
+                      "",
+                    ].map((h) => (
+                      <th
+                        key={h}
+                        className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-primary/40"
+                      >
+                        {h}
+                      </th>
+                    ))}
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                </thead>
+                <tbody className="divide-y divide-border-custom">
+                  {schedules.map((s) => {
+                    const cfg = STATUS_CFG[s.status] ?? STATUS_CFG["PENDING"];
+                    const tenant = s.lease?.tenant;
+                    const unit = s.lease?.unit;
+                    const due = s.amountDue ?? s.amount;
+                    const paid = s.amountPaid ?? s.paidAmount ?? 0;
+                    const remain = s.balance ?? s.remainingAmount ?? due - paid;
+                    return (
+                      <tr
+                        key={s.id}
+                        className={`transition-colors duration-100 hover:bg-primary/3 ${cfg.rowCls}`}
+                      >
+                        <td className="px-4 py-3 text-[13px] tabular-nums text-primary/80 whitespace-nowrap font-medium">
+                          {formatDueDate(s.dueDate)}
+                        </td>
+                        <td className="px-4 py-3 text-[13px] text-primary">
+                          {tenant ? (
+                            (tenant.fullName ??
+                            `${tenant.firstName} ${tenant.lastName}`)
+                          ) : (
+                            <span className="text-primary/30">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-[13px] text-primary/70">
+                          {unit ? (
+                            unit.unitNumber
+                          ) : (
+                            <span className="text-primary/30">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-[13px] tabular-nums text-primary font-medium">
+                          {formatXOF(due)}
+                        </td>
+                        <td className="px-4 py-3 text-[13px] tabular-nums text-primary/70">
+                          {paid > 0 ? formatXOF(paid) : "—"}
+                        </td>
+                        <td className="px-4 py-3 text-[13px] tabular-nums">
+                          {remain > 0 ? (
+                            <span className="text-danger font-medium">
+                              {formatXOF(remain)}
+                            </span>
+                          ) : (
+                            "—"
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <Badge variant={cfg.variant}>{cfg.label}</Badge>
+                        </td>
+                        <td className="px-3 py-3">
+                          <RowActions schedule={s} onRefresh={load} />
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            {/* Cards mobiles */}
+            <div className="lg:hidden divide-y divide-border-custom">
+              {schedules.map((s) => (
+                <ScheduleCard key={s.id} schedule={s} onRefresh={load} />
+              ))}
+            </div>
+          </>
         )}
       </div>
 

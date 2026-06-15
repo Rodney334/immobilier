@@ -177,6 +177,64 @@ function ReceiptRowActions({
   );
 }
 
+// ─── Mobile card ─────────────────────────────────────────────────────────────
+
+function ReceiptCard({
+  receipt,
+  onClick,
+  onViewDetails,
+  onEditNotes,
+  onDownload,
+  onCancel,
+}: {
+  receipt: ReceiptType;
+  onClick: () => void;
+  onViewDetails: () => void;
+  onEditNotes: () => void;
+  onDownload: () => void;
+  onCancel: () => void;
+}) {
+  const tenantName =
+    (receipt.tenant?.fullName ??
+      `${receipt.tenant?.firstName ?? ""} ${receipt.tenant?.lastName ?? ""}`.trim()) ||
+    "—";
+  const date = receipt.receiptDate ?? receipt.issuedAt ?? "";
+
+  return (
+    <div
+      onClick={onClick}
+      className="bg-surface p-4 cursor-pointer active:bg-primary/3 transition-colors"
+    >
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <div className="min-w-0">
+          <p className="text-[13px] font-semibold text-primary font-mono truncate">{receipt.receiptNumber ?? "—"}</p>
+          <p className="text-[12px] text-primary/50 truncate">{tenantName}</p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <StatusDot status={receipt.status} />
+          <ReceiptRowActions
+            receipt={receipt}
+            onViewDetails={onViewDetails}
+            onEditNotes={onEditNotes}
+            onDownload={onDownload}
+            onCancel={onCancel}
+          />
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+        <div>
+          <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">Montant</p>
+          <p className="text-[12px] font-semibold text-primary tabular-nums">{receipt.amount ? formatAmount(receipt.amount) : "—"}</p>
+        </div>
+        <div>
+          <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">Date</p>
+          <p className="text-[12px] text-primary/70 tabular-nums">{date ? formatDate(date) : "—"}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Detail panel (slide-in) ──────────────────────────────────────────────────
 
 function ReceiptDetailPanel({
@@ -502,9 +560,9 @@ export function ReceiptsClient() {
         {/* List column */}
         <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
           {/* Toolbar */}
-          <div className="flex items-center justify-between px-6 py-4 bg-surface border-b border-border-custom shrink-0">
+          <div className="flex flex-col gap-3 px-4 py-3 lg:flex-row lg:items-center lg:justify-between lg:px-6 lg:py-4 bg-surface border-b border-border-custom shrink-0">
             <div>
-              <h1 className="font-semibold text-[20px] text-primary">Recus</h1>
+              <h1 className="font-semibold text-[18px] lg:text-[20px] text-primary">Recus</h1>
               {!loading && (
                 <p className="text-[12px] text-primary/40 mt-0.5">
                   {stats.total} recu{stats.total > 1 ? "s" : ""}
@@ -515,9 +573,9 @@ export function ReceiptsClient() {
                 </p>
               )}
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               {/* Search */}
-              <div className="relative">
+              <div className="relative flex-1 lg:flex-none">
                 <Search
                   size={14}
                   className="absolute left-3 top-1/2 -translate-y-1/2 text-primary/35 pointer-events-none"
@@ -527,7 +585,7 @@ export function ReceiptsClient() {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Chercher un recu..."
-                  className="pl-9 pr-4 h-9 w-52 rounded-lg border border-border-custom bg-white text-[13px] text-primary placeholder:text-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors"
+                  className="pl-9 pr-4 h-9 w-full lg:w-52 rounded-lg border border-border-custom bg-white text-[13px] text-primary placeholder:text-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors"
                 />
               </div>
             </div>
@@ -635,86 +693,107 @@ export function ReceiptsClient() {
                 />
               </div>
             ) : (
-              <table className="w-full border-collapse">
-                <thead className="sticky top-0 z-10 bg-neutral">
-                  <tr className="border-b border-border-custom">
-                    {[
-                      "N° RECU",
-                      "LOCATAIRE",
-                      "BAIL",
-                      "MONTANT",
-                      "DATE EMISSION",
-                      "STATUT",
-                      "",
-                    ].map((h, i) => (
-                      <th
-                        key={i}
-                        className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-primary/40"
-                      >
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border-custom">
-                  {receipts.map((r) => {
-                    const cfg = STATUS_CONFIG[r.status];
-                    const tenantName =
-                      (r.tenant?.fullName ??
-                        `${r.tenant?.firstName ?? ""} ${r.tenant?.lastName ?? ""}`.trim()) ||
-                      "—";
-                    const contractRef =
-                      r.lease?.contractNumber ??
-                      (r.leaseId ? r.leaseId.slice(-8) : "—");
-                    const date = r.receiptDate ?? r.issuedAt ?? "";
-                    const isSelected = selected?.id === r.id;
-
-                    return (
-                      <tr
-                        key={r.id}
-                        onClick={() =>
-                          setSelected((p) => (p?.id === r.id ? null : r))
-                        }
-                        className={`cursor-pointer transition-colors duration-100 ${
-                          isSelected
-                            ? "bg-secondary/8 border-l-2 border-l-secondary"
-                            : cfg.row
-                              ? `${cfg.row} border-l-2 border-l-transparent hover:brightness-95`
-                              : "hover:bg-primary/3 border-l-2 border-l-transparent bg-surface"
-                        }`}
-                      >
-                        <td className="px-5 py-3.5 text-[13px] font-mono font-medium text-primary/80 whitespace-nowrap">
-                          {r.receiptNumber ?? "—"}
-                        </td>
-                        <td className="px-4 py-3.5 text-[13px] font-medium text-primary max-w-40 truncate">
-                          {tenantName}
-                        </td>
-                        <td className="px-4 py-3.5 text-[13px] font-mono text-primary/60">
-                          {contractRef}
-                        </td>
-                        <td className="px-4 py-3.5 text-[13px] font-semibold text-primary tabular-nums whitespace-nowrap">
-                          {r.amount ? formatAmount(r.amount) : "—"}
-                        </td>
-                        <td className="px-4 py-3.5 text-[12px] text-primary/50 tabular-nums whitespace-nowrap">
-                          {date ? formatDate(date) : "—"}
-                        </td>
-                        <td className="px-4 py-3.5">
-                          <StatusDot status={r.status} />
-                        </td>
-                        <td className="px-3 py-3.5">
-                          <ReceiptRowActions
-                            receipt={r}
-                            onViewDetails={() => setSelected(r)}
-                            onEditNotes={() => openEditNotes(r)}
-                            onDownload={() => handleDownload(r)}
-                            onCancel={() => setCancelTarget(r)}
-                          />
-                        </td>
+              <>
+                {/* Table desktop */}
+                <div className="hidden lg:block overflow-x-auto">
+                  <table className="w-full border-collapse">
+                    <thead className="sticky top-0 z-10 bg-neutral">
+                      <tr className="border-b border-border-custom">
+                        {[
+                          "N° RECU",
+                          "LOCATAIRE",
+                          "BAIL",
+                          "MONTANT",
+                          "DATE EMISSION",
+                          "STATUT",
+                          "",
+                        ].map((h, i) => (
+                          <th
+                            key={i}
+                            className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-primary/40"
+                          >
+                            {h}
+                          </th>
+                        ))}
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                    </thead>
+                    <tbody className="divide-y divide-border-custom">
+                      {receipts.map((r) => {
+                        const cfg = STATUS_CONFIG[r.status];
+                        const tenantName =
+                          (r.tenant?.fullName ??
+                            `${r.tenant?.firstName ?? ""} ${r.tenant?.lastName ?? ""}`.trim()) ||
+                          "—";
+                        const contractRef =
+                          r.lease?.contractNumber ??
+                          (r.leaseId ? r.leaseId.slice(-8) : "—");
+                        const date = r.receiptDate ?? r.issuedAt ?? "";
+                        const isSelected = selected?.id === r.id;
+
+                        return (
+                          <tr
+                            key={r.id}
+                            onClick={() =>
+                              setSelected((p) => (p?.id === r.id ? null : r))
+                            }
+                            className={`cursor-pointer transition-colors duration-100 ${
+                              isSelected
+                                ? "bg-secondary/8 border-l-2 border-l-secondary"
+                                : cfg.row
+                                  ? `${cfg.row} border-l-2 border-l-transparent hover:brightness-95`
+                                  : "hover:bg-primary/3 border-l-2 border-l-transparent bg-surface"
+                            }`}
+                          >
+                            <td className="px-5 py-3.5 text-[13px] font-mono font-medium text-primary/80 whitespace-nowrap">
+                              {r.receiptNumber ?? "—"}
+                            </td>
+                            <td className="px-4 py-3.5 text-[13px] font-medium text-primary max-w-40 truncate">
+                              {tenantName}
+                            </td>
+                            <td className="px-4 py-3.5 text-[13px] font-mono text-primary/60">
+                              {contractRef}
+                            </td>
+                            <td className="px-4 py-3.5 text-[13px] font-semibold text-primary tabular-nums whitespace-nowrap">
+                              {r.amount ? formatAmount(r.amount) : "—"}
+                            </td>
+                            <td className="px-4 py-3.5 text-[12px] text-primary/50 tabular-nums whitespace-nowrap">
+                              {date ? formatDate(date) : "—"}
+                            </td>
+                            <td className="px-4 py-3.5">
+                              <StatusDot status={r.status} />
+                            </td>
+                            <td className="px-3 py-3.5">
+                              <ReceiptRowActions
+                                receipt={r}
+                                onViewDetails={() => setSelected(r)}
+                                onEditNotes={() => openEditNotes(r)}
+                                onDownload={() => handleDownload(r)}
+                                onCancel={() => setCancelTarget(r)}
+                              />
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                {/* Cards mobiles */}
+                <div className="lg:hidden divide-y divide-border-custom">
+                  {receipts.map((r) => (
+                    <ReceiptCard
+                      key={r.id}
+                      receipt={r}
+                      onClick={() =>
+                        setSelected((p) => (p?.id === r.id ? null : r))
+                      }
+                      onViewDetails={() => setSelected(r)}
+                      onEditNotes={() => openEditNotes(r)}
+                      onDownload={() => handleDownload(r)}
+                      onCancel={() => setCancelTarget(r)}
+                    />
+                  ))}
+                </div>
+              </>
             )}
           </div>
 

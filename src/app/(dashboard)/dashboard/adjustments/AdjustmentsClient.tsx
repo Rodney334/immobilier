@@ -131,6 +131,47 @@ function RowActions({
   );
 }
 
+// ─── Mobile card ─────────────────────────────────────────────────────────────
+
+function AdjustmentCard({
+  adj,
+  onDeleted,
+}: {
+  adj: Adjustment;
+  onDeleted: () => void;
+}) {
+  return (
+    <div className="bg-surface p-4 transition-colors">
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <div className="min-w-0">
+          <p className="text-[13px] font-semibold text-primary truncate">{adj.label || adj.reason || "—"}</p>
+          <p className="text-[12px] text-primary/50 truncate">{adj.scheduleId ? `#${adj.scheduleId.slice(-6)}` : "—"}</p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <TypeBadge type={adj.type} />
+          <RowActions adj={adj} onDeleted={onDeleted} />
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+        <div>
+          <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">Montant</p>
+          <AmountCell type={adj.type} amount={adj.amount} />
+        </div>
+        <div>
+          <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">Date</p>
+          <p className="text-[12px] text-primary/70 tabular-nums">{formatDate(adj.appliedDate)}</p>
+        </div>
+        {adj.reason && (
+          <div className="col-span-2">
+            <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">Raison</p>
+            <p className="text-[12px] text-primary/70 truncate">{adj.reason}</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function AdjustmentsClient() {
   const [adjustments, setAdjustments] = useState<Adjustment[]>([]);
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
@@ -176,9 +217,9 @@ export function AdjustmentsClient() {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
-      <div className="flex items-start justify-between px-6 py-4 bg-surface border-b border-border-custom shrink-0">
+      <div className="flex flex-col gap-3 px-4 py-3 lg:flex-row lg:items-start lg:justify-between lg:px-6 lg:py-4 bg-surface border-b border-border-custom shrink-0">
         <div>
-          <h1 className="font-semibold text-[20px] text-primary">
+          <h1 className="font-semibold text-[18px] lg:text-[20px] text-primary">
             Ajustements
           </h1>
           {!loading && (
@@ -187,7 +228,7 @@ export function AdjustmentsClient() {
             </p>
           )}
         </div>
-        <button className="flex items-center gap-2 h-9 px-4 bg-primary text-white rounded-lg text-[13px] font-medium hover:bg-[#263447] transition-colors">
+        <button className="flex items-center gap-2 h-9 px-4 bg-primary text-white rounded-lg text-[13px] font-medium hover:bg-[#263447] transition-colors shrink-0">
           <Plus size={15} /> Nouvel ajustement
         </button>
       </div>
@@ -262,58 +303,69 @@ export function AdjustmentsClient() {
             />
           </div>
         ) : (
-          <table className="w-full border-collapse">
-            <thead className="sticky top-0 z-10 bg-neutral">
-              <tr className="border-b border-border-custom">
-                {[
-                  "Date",
-                  "Type",
-                  "Libelle",
-                  "Echeance liee",
-                  "Montant",
-                  "Raison",
-                  "",
-                ].map((h) => (
-                  <th
-                    key={h}
-                    className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-primary/40"
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border-custom bg-surface">
+          <>
+            {/* Table desktop */}
+            <div className="hidden lg:block overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead className="sticky top-0 z-10 bg-neutral">
+                  <tr className="border-b border-border-custom">
+                    {[
+                      "Date",
+                      "Type",
+                      "Libelle",
+                      "Echeance liee",
+                      "Montant",
+                      "Raison",
+                      "",
+                    ].map((h) => (
+                      <th
+                        key={h}
+                        className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-primary/40"
+                      >
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border-custom bg-surface">
+                  {adjustments.map((a) => (
+                    <tr
+                      key={a.id}
+                      className="hover:bg-primary/3 transition-colors duration-100"
+                    >
+                      <td className="px-4 py-3 text-[13px] tabular-nums text-primary/60 whitespace-nowrap">
+                        {formatDate(a.appliedDate)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <TypeBadge type={a.type} />
+                      </td>
+                      <td className="px-4 py-3 text-[13px] font-medium text-primary max-w-45 truncate">
+                        {a.label || a.reason}
+                      </td>
+                      <td className="px-4 py-3 text-[13px] text-primary/50">
+                        {a.scheduleId ? `#${a.scheduleId.slice(-6)}` : "—"}
+                      </td>
+                      <td className="px-4 py-3">
+                        <AmountCell type={a.type} amount={a.amount} />
+                      </td>
+                      <td className="px-4 py-3 text-[12px] text-primary/50 max-w-40 truncate">
+                        {a.reason}
+                      </td>
+                      <td className="px-3 py-3">
+                        <RowActions adj={a} onDeleted={load} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {/* Cards mobiles */}
+            <div className="lg:hidden divide-y divide-border-custom">
               {adjustments.map((a) => (
-                <tr
-                  key={a.id}
-                  className="hover:bg-primary/3 transition-colors duration-100"
-                >
-                  <td className="px-4 py-3 text-[13px] tabular-nums text-primary/60 whitespace-nowrap">
-                    {formatDate(a.appliedDate)}
-                  </td>
-                  <td className="px-4 py-3">
-                    <TypeBadge type={a.type} />
-                  </td>
-                  <td className="px-4 py-3 text-[13px] font-medium text-primary max-w-45 truncate">
-                    {a.label || a.reason}
-                  </td>
-                  <td className="px-4 py-3 text-[13px] text-primary/50">
-                    {a.scheduleId ? `#${a.scheduleId.slice(-6)}` : "—"}
-                  </td>
-                  <td className="px-4 py-3">
-                    <AmountCell type={a.type} amount={a.amount} />
-                  </td>
-                  <td className="px-4 py-3 text-[12px] text-primary/50 max-w-40 truncate">
-                    {a.reason}
-                  </td>
-                  <td className="px-3 py-3">
-                    <RowActions adj={a} onDeleted={load} />
-                  </td>
-                </tr>
+                <AdjustmentCard key={a.id} adj={a} onDeleted={load} />
               ))}
-            </tbody>
-          </table>
+            </div>
+          </>
         )}
       </div>
 

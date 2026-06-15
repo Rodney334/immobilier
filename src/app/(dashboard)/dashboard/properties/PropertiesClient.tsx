@@ -37,6 +37,52 @@ function formatDate(iso: string) {
   });
 }
 
+// ─── Mobile card ─────────────────────────────────────────────────────────────
+
+function PropertyCard({
+  property,
+  onClick,
+}: {
+  property: Property;
+  onClick: () => void;
+}) {
+  return (
+    <div
+      onClick={onClick}
+      className="bg-surface p-4 cursor-pointer active:bg-primary/3 transition-colors"
+    >
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-9 h-9 rounded-full bg-primary/8 flex items-center justify-center shrink-0">
+            <Building2 size={16} className="text-primary/50" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[13px] font-semibold text-primary truncate">{property.name}</p>
+            <p className="text-[12px] text-primary/50 truncate">{property.neighborhood?.name ?? "—"}</p>
+          </div>
+        </div>
+        <div className="shrink-0">
+          <Badge variant="neutral">{TYPE_LABELS[property.type] ?? property.type}</Badge>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+        <div>
+          <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">Type</p>
+          <p className="text-[12px] text-primary/70">{TYPE_LABELS[property.type] ?? property.type}</p>
+        </div>
+        <div>
+          <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">Locaux</p>
+          <p className="text-[12px] text-primary/70 tabular-nums">{property.totalUnits ?? "—"}</p>
+        </div>
+        <div className="col-span-2">
+          <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">Créé le</p>
+          <p className="text-[12px] text-primary/70 tabular-nums">{formatDate(property.createdAt)}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Table row ────────────────────────────────────────────────────────────────
 
 function PropertyRow({
@@ -233,9 +279,9 @@ export function PropertiesClient() {
         {/* List column */}
         <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
           {/* Toolbar */}
-          <div className="flex items-center justify-between px-6 py-4 bg-surface border-b border-border-custom shrink-0">
+          <div className="flex flex-col gap-3 px-4 py-3 lg:flex-row lg:items-center lg:justify-between lg:px-6 lg:py-4 bg-surface border-b border-border-custom shrink-0">
             <div>
-              <h1 className="font-semibold text-[20px] text-primary">
+              <h1 className="font-semibold text-[18px] lg:text-[20px] text-primary">
                 Biens immobiliers
               </h1>
               {pagination && !loading && (
@@ -245,8 +291,8 @@ export function PropertiesClient() {
                 </p>
               )}
             </div>
-            <div className="flex items-center gap-3">
-              <div className="relative">
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1 lg:flex-none">
                 <Search
                   size={14}
                   className="absolute left-3 top-1/2 -translate-y-1/2 text-primary/35 pointer-events-none"
@@ -257,7 +303,7 @@ export function PropertiesClient() {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Rechercher…"
-                  className="pl-9 pr-4 h-9 w-56 rounded-lg border border-border-custom bg-white text-[13px] text-primary placeholder:text-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors duration-150"
+                  className="pl-9 pr-4 h-9 w-full lg:w-56 rounded-lg border border-border-custom bg-white text-[13px] text-primary placeholder:text-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors duration-150"
                 />
               </div>
               <button
@@ -265,7 +311,7 @@ export function PropertiesClient() {
                   setEditTarget(null);
                   setFormOpen(true);
                 }}
-                className="flex items-center gap-2 h-9 px-4 bg-primary text-white rounded-lg text-[13px] font-medium hover:bg-[#263447] transition-colors duration-150"
+                className="flex items-center gap-2 h-9 px-4 bg-primary text-white rounded-lg text-[13px] font-medium hover:bg-[#263447] transition-colors duration-150 shrink-0"
               >
                 <Plus size={15} aria-hidden="true" />
                 Ajouter une propriété
@@ -311,34 +357,51 @@ export function PropertiesClient() {
                 />
               </div>
             ) : (
-              <table className="w-full border-collapse">
-                <thead className="sticky top-0 z-10 bg-neutral">
-                  <tr className="border-b border-border-custom">
-                    {["Bien", "Type", "Locaux", "Adresse", "Créé le"].map(
-                      (h) => (
-                        <th
-                          key={h}
-                          className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-primary/40"
-                        >
-                          {h}
-                        </th>
-                      ),
-                    )}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border-custom bg-surface">
+              <>
+                {/* Table desktop */}
+                <div className="hidden lg:block overflow-x-auto">
+                  <table className="w-full border-collapse">
+                    <thead className="sticky top-0 z-10 bg-neutral">
+                      <tr className="border-b border-border-custom">
+                        {["Bien", "Type", "Locaux", "Adresse", "Créé le"].map(
+                          (h) => (
+                            <th
+                              key={h}
+                              className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-primary/40"
+                            >
+                              {h}
+                            </th>
+                          ),
+                        )}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border-custom bg-surface">
+                      {properties.map((p) => (
+                        <PropertyRow
+                          key={p.id}
+                          property={p}
+                          selected={selected?.id === p.id}
+                          onClick={() =>
+                            setSelected((prev) => (prev?.id === p.id ? null : p))
+                          }
+                        />
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {/* Cards mobiles */}
+                <div className="lg:hidden divide-y divide-border-custom">
                   {properties.map((p) => (
-                    <PropertyRow
+                    <PropertyCard
                       key={p.id}
                       property={p}
-                      selected={selected?.id === p.id}
                       onClick={() =>
                         setSelected((prev) => (prev?.id === p.id ? null : p))
                       }
                     />
                   ))}
-                </tbody>
-              </table>
+                </div>
+              </>
             )}
           </div>
 

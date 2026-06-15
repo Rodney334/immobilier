@@ -122,6 +122,66 @@ function UnitRowActions({
   );
 }
 
+// ─── Mobile card ─────────────────────────────────────────────────────────────
+
+function UnitCard({
+  unit,
+  onClick,
+  onEdit,
+  onMarkVacant,
+  onDelete,
+}: {
+  unit: Unit;
+  onClick: () => void;
+  onEdit: () => void;
+  onMarkVacant: () => void;
+  onDelete: () => void;
+}) {
+  const cfg = STATUS_CONFIG[unit.status];
+
+  return (
+    <div
+      onClick={onClick}
+      className="bg-surface p-4 cursor-pointer active:bg-primary/3 transition-colors"
+    >
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-9 h-9 rounded-full bg-primary/8 flex items-center justify-center shrink-0">
+            <DoorOpen size={16} className="text-primary/50" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[13px] font-semibold text-primary truncate">Local {unit.unitNumber}</p>
+            <p className="text-[12px] text-primary/50 truncate">{unit.property?.name ?? "—"}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <Badge variant={cfg.variant}>{cfg.label}</Badge>
+          <UnitRowActions
+            unit={unit}
+            onEdit={onEdit}
+            onMarkVacant={onMarkVacant}
+            onDelete={onDelete}
+          />
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+        <div>
+          <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">Type</p>
+          <p className="text-[12px] text-primary/70">{TYPE_LABELS[unit.type!] ?? unit.type ?? "—"}</p>
+        </div>
+        <div>
+          <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">Loyer</p>
+          <p className="text-[12px] font-semibold text-primary tabular-nums">{fmt.format(Number(unit.baseRent))} XOF</p>
+        </div>
+        <div>
+          <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">Créé le</p>
+          <p className="text-[12px] text-primary/70 tabular-nums">{formatDate(unit.createdAt)}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Table row ────────────────────────────────────────────────────────────────
 
 function UnitRow({
@@ -337,22 +397,22 @@ export function UnitsClient() {
       <div className="flex h-screen overflow-hidden">
         <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
           {/* Toolbar */}
-          <div className="flex items-center justify-between px-6 py-4 bg-surface border-b border-border-custom shrink-0">
+          <div className="flex flex-col gap-3 px-4 py-3 lg:flex-row lg:items-center lg:justify-between lg:px-6 lg:py-4 bg-surface border-b border-border-custom shrink-0">
             <div>
-              <h1 className="font-semibold text-[20px] text-primary">Locaux</h1>
+              <h1 className="font-semibold text-[18px] lg:text-[20px] text-primary">Locaux</h1>
               {pagination && !loading && (
                 <p className="text-[12px] text-primary/40 mt-0.5">
                   {pagination.total} local{pagination.total > 1 ? "x" : ""}
                 </p>
               )}
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <button
                 onClick={() => {
                   setEditTarget(null);
                   setFormOpen(true);
                 }}
-                className="flex items-center gap-2 h-9 px-4 bg-primary text-white rounded-lg text-[13px] font-medium hover:bg-[#263447] transition-colors"
+                className="flex items-center gap-2 h-9 px-4 bg-primary text-white rounded-lg text-[13px] font-medium hover:bg-[#263447] transition-colors shrink-0"
               >
                 <Plus size={15} /> Nouveau local
               </button>
@@ -413,33 +473,56 @@ export function UnitsClient() {
                 />
               </div>
             ) : (
-              <table className="w-full border-collapse">
-                <thead className="sticky top-0 z-10 bg-neutral">
-                  <tr className="border-b border-border-custom">
-                    {[
-                      "Local",
-                      "Type",
-                      "Surface",
-                      "Loyer",
-                      "Statut",
-                      "Créé le",
-                      "",
-                    ].map((h, i) => (
-                      <th
-                        key={i}
-                        className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-primary/40"
-                      >
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border-custom bg-surface">
+              <>
+                {/* Table desktop */}
+                <div className="hidden lg:block overflow-x-auto">
+                  <table className="w-full border-collapse">
+                    <thead className="sticky top-0 z-10 bg-neutral">
+                      <tr className="border-b border-border-custom">
+                        {[
+                          "Local",
+                          "Type",
+                          "Surface",
+                          "Loyer",
+                          "Statut",
+                          "Créé le",
+                          "",
+                        ].map((h, i) => (
+                          <th
+                            key={i}
+                            className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-primary/40"
+                          >
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border-custom bg-surface">
+                      {units.map((u) => (
+                        <UnitRow
+                          key={u.id}
+                          unit={u}
+                          selected={selected?.id === u.id}
+                          onClick={() =>
+                            setSelected((prev) => (prev?.id === u.id ? null : u))
+                          }
+                          onEdit={() => {
+                            setEditTarget(u);
+                            setFormOpen(true);
+                          }}
+                          onMarkVacant={() => handleMarkVacant(u)}
+                          onDelete={() => setDeleteTarget(u)}
+                        />
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {/* Cards mobiles */}
+                <div className="lg:hidden divide-y divide-border-custom">
                   {units.map((u) => (
-                    <UnitRow
+                    <UnitCard
                       key={u.id}
                       unit={u}
-                      selected={selected?.id === u.id}
                       onClick={() =>
                         setSelected((prev) => (prev?.id === u.id ? null : u))
                       }
@@ -451,8 +534,8 @@ export function UnitsClient() {
                       onDelete={() => setDeleteTarget(u)}
                     />
                   ))}
-                </tbody>
-              </table>
+                </div>
+              </>
             )}
           </div>
 

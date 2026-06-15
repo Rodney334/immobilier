@@ -74,6 +74,49 @@ function getInitials(name: string) {
   );
 }
 
+// ─── Mobile card ─────────────────────────────────────────────────────────────
+
+function UserCard({
+  user,
+  onClick,
+}: {
+  user: User;
+  onClick: () => void;
+}) {
+  const cfg = ROLE_CONFIG[user.role];
+  const initials = getInitials(user.name);
+  const isArchived = user.isArchived ?? false;
+
+  return (
+    <div
+      onClick={onClick}
+      className={`bg-surface p-4 cursor-pointer active:bg-primary/3 transition-colors ${isArchived ? "opacity-50" : ""}`}
+    >
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${isArchived ? "bg-primary/5" : "bg-primary/8"}`}>
+            <span className="text-[13px] font-semibold text-primary/60">{initials}</span>
+          </div>
+          <div className="min-w-0">
+            <p className="text-[13px] font-semibold text-primary truncate">{user.name}</p>
+            <p className="text-[12px] text-primary/50 truncate">{user.email}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+          <Badge variant={cfg.variant}>{cfg.label}</Badge>
+          {isArchived ? (
+            <Badge variant="neutral">Archivé</Badge>
+          ) : user.isEmailVerified ? (
+            <Badge variant="success">Actif</Badge>
+          ) : (
+            <Badge variant="warning">Non vérifié</Badge>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Table row ────────────────────────────────────────────────────────────────
 
 function UserRow({
@@ -627,9 +670,9 @@ export function UsersClient() {
       {/* List */}
       <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
         {/* Toolbar */}
-        <div className="flex items-center justify-between px-6 py-4 bg-surface border-b border-border-custom shrink-0">
+        <div className="flex flex-col gap-3 px-4 py-3 lg:flex-row lg:items-center lg:justify-between lg:px-6 lg:py-4 bg-surface border-b border-border-custom shrink-0">
           <div>
-            <h1 className="font-semibold text-[20px] text-primary">
+            <h1 className="font-semibold text-[18px] lg:text-[20px] text-primary">
               Utilisateurs
             </h1>
             {pagination && !loading && (
@@ -638,7 +681,7 @@ export function UsersClient() {
               </p>
             )}
           </div>
-          <div className="relative">
+          <div className="relative flex-1 lg:flex-none">
             <Search
               size={14}
               className="absolute left-3 top-1/2 -translate-y-1/2 text-primary/35 pointer-events-none"
@@ -648,7 +691,7 @@ export function UsersClient() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Nom, prénom, email…"
-              className="pl-9 pr-4 h-9 w-64 rounded-lg border border-border-custom bg-white text-[13px] text-primary placeholder:text-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors"
+              className="pl-9 pr-4 h-9 w-full lg:w-64 rounded-lg border border-border-custom bg-white text-[13px] text-primary placeholder:text-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors"
             />
           </div>
         </div>
@@ -740,34 +783,56 @@ export function UsersClient() {
               />
             </div>
           ) : (
-            <table className="w-full border-collapse">
-              <thead className="sticky top-0 z-10 bg-neutral">
-                <tr className="border-b border-border-custom">
-                  {[
-                    "Utilisateur",
-                    "Rôle",
-                    "Téléphone",
-                    "Statut",
-                    "Créé le",
-                  ].map((h, i) => (
-                    <th
-                      key={i}
-                      className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-primary/40"
-                    >
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border-custom bg-surface">
+            <>
+              {/* Table desktop */}
+              <div className="hidden lg:block overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead className="sticky top-0 z-10 bg-neutral">
+                    <tr className="border-b border-border-custom">
+                      {[
+                        "Utilisateur",
+                        "Rôle",
+                        "Téléphone",
+                        "Statut",
+                        "Créé le",
+                      ].map((h, i) => (
+                        <th
+                          key={i}
+                          className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-primary/40"
+                        >
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border-custom bg-surface">
+                    {users.map((u) => {
+                      const uid = u.id ?? u._id;
+                      const sid = selected ? (selected.id ?? selected._id) : null;
+                      return (
+                        <UserRow
+                          key={uid}
+                          user={u}
+                          selected={sid === uid}
+                          onClick={() =>
+                            setSelected((prev) =>
+                              (prev?.id ?? prev?._id) === uid ? null : u,
+                            )
+                          }
+                        />
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              {/* Cards mobiles */}
+              <div className="lg:hidden divide-y divide-border-custom">
                 {users.map((u) => {
                   const uid = u.id ?? u._id;
-                  const sid = selected ? (selected.id ?? selected._id) : null;
                   return (
-                    <UserRow
+                    <UserCard
                       key={uid}
                       user={u}
-                      selected={sid === uid}
                       onClick={() =>
                         setSelected((prev) =>
                           (prev?.id ?? prev?._id) === uid ? null : u,
@@ -776,8 +841,8 @@ export function UsersClient() {
                     />
                   );
                 })}
-              </tbody>
-            </table>
+              </div>
+            </>
           )}
         </div>
 

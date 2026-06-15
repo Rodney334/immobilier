@@ -37,6 +37,55 @@ function formatDate(iso: string) {
   });
 }
 
+// ─── Mobile card ─────────────────────────────────────────────────────────────
+
+function TenantCard({
+  tenant,
+  onClick,
+}: {
+  tenant: Tenant;
+  onClick: () => void;
+}) {
+  const cfg = STATUS_CONFIG[tenant.status];
+  const fullName = (tenant.fullName || `${tenant.firstName ?? ""} ${tenant.lastName ?? ""}`.trim()) || "—";
+  const initials =
+    `${tenant.firstName?.[0] ?? ""}${tenant.lastName?.[0] ?? ""}`.toUpperCase() ||
+    fullName[0]?.toUpperCase() ||
+    "?";
+
+  return (
+    <div
+      onClick={onClick}
+      className="bg-surface p-4 cursor-pointer active:bg-primary/3 transition-colors"
+    >
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${tenant.status === "BLACKLISTED" ? "bg-danger/10" : "bg-primary/8"}`}>
+            <span className={`text-[13px] font-semibold ${tenant.status === "BLACKLISTED" ? "text-danger" : "text-primary/60"}`}>{initials}</span>
+          </div>
+          <div className="min-w-0">
+            <p className="text-[13px] font-semibold text-primary truncate">{fullName}</p>
+            <p className="text-[12px] text-primary/50 truncate">{tenant.email ?? "—"}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <Badge variant={cfg.variant}>{cfg.label}</Badge>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+        <div>
+          <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">Téléphone</p>
+          <p className="text-[12px] text-primary/70">{tenant.phone ?? "—"}</p>
+        </div>
+        <div>
+          <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">Inscrit le</p>
+          <p className="text-[12px] text-primary/70 tabular-nums">{formatDate(tenant.createdAt)}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Table row ────────────────────────────────────────────────────────────────
 
 function TenantRow({
@@ -202,9 +251,9 @@ export function TenantsClient() {
       <div className="flex h-screen overflow-hidden">
         <div className="flex-1 min-w-0 flex flex-col overflow-hidden bg-surface">
           {/* Toolbar */}
-          <div className="flex items-center justify-between px-6 py-4 bg-surface border-b border-border-custom shrink-0">
+          <div className="flex flex-col gap-3 px-4 py-3 lg:flex-row lg:items-center lg:justify-between lg:px-6 lg:py-4 bg-surface border-b border-border-custom shrink-0">
             <div>
-              <h1 className="font-semibold text-[20px] text-primary">
+              <h1 className="font-semibold text-[18px] lg:text-[20px] text-primary">
                 Locataires
               </h1>
               {pagination && !loading && (
@@ -213,8 +262,8 @@ export function TenantsClient() {
                 </p>
               )}
             </div>
-            <div className="flex items-center gap-3">
-              <div className="relative">
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1 lg:flex-none">
                 <Search
                   size={14}
                   className="absolute left-3 top-1/2 -translate-y-1/2 text-primary/35 pointer-events-none"
@@ -224,12 +273,12 @@ export function TenantsClient() {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Rechercher…"
-                  className="pl-9 pr-4 h-9 w-56 rounded-lg border border-border-custom bg-white text-[13px] text-primary placeholder:text-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors"
+                  className="pl-9 pr-4 h-9 w-full lg:w-56 rounded-lg border border-border-custom bg-white text-[13px] text-primary placeholder:text-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors"
                 />
               </div>
               <button
                 onClick={() => setFormOpen(true)}
-                className="flex items-center gap-2 h-9 px-4 bg-primary text-white rounded-lg text-[13px] font-medium hover:bg-[#263447] transition-colors"
+                className="flex items-center gap-2 h-9 px-4 bg-primary text-white rounded-lg text-[13px] font-medium hover:bg-[#263447] transition-colors shrink-0"
               >
                 <Plus size={15} /> Nouveau locataire
               </button>
@@ -263,36 +312,51 @@ export function TenantsClient() {
                 />
               </div>
             ) : (
-              <table className="w-full border-collapse">
-                <thead className="sticky top-0 z-10 bg-neutral">
-                  <tr className="border-b border-border-custom">
-                    {[
-                      "Locataire",
-                      "Téléphone",
-                      "Statut",
-                      "Ville",
-                      "Créé le",
-                      "",
-                    ].map((h, index) => (
-                      <th
-                        key={index}
-                        className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-primary/40"
-                      >
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border-custom bg-surface">
+              <>
+                {/* Table desktop */}
+                <div className="hidden lg:block overflow-x-auto">
+                  <table className="w-full border-collapse">
+                    <thead className="sticky top-0 z-10 bg-neutral">
+                      <tr className="border-b border-border-custom">
+                        {[
+                          "Locataire",
+                          "Téléphone",
+                          "Statut",
+                          "Ville",
+                          "Créé le",
+                          "",
+                        ].map((h, index) => (
+                          <th
+                            key={index}
+                            className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-primary/40"
+                          >
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border-custom bg-surface">
+                      {tenants.map((t) => (
+                        <TenantRow
+                          key={t.id}
+                          tenant={t}
+                          onClick={() => router.push(`/dashboard/tenants/${t.id}`)}
+                        />
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {/* Cards mobiles */}
+                <div className="lg:hidden divide-y divide-border-custom">
                   {tenants.map((t) => (
-                    <TenantRow
+                    <TenantCard
                       key={t.id}
                       tenant={t}
                       onClick={() => router.push(`/dashboard/tenants/${t.id}`)}
                     />
                   ))}
-                </tbody>
-              </table>
+                </div>
+              </>
             )}
           </div>
 

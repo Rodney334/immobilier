@@ -126,6 +126,74 @@ function LeaseRowActions({
   );
 }
 
+// ─── Mobile card ─────────────────────────────────────────────────────────────
+
+function LeaseCard({
+  lease,
+  onClick,
+  onTerminate,
+  onDownload,
+}: {
+  lease: Lease;
+  onClick: () => void;
+  onTerminate: () => void;
+  onDownload: () => void;
+}) {
+  const cfg = STATUS_CONFIG[lease.status];
+  const tenantName =
+    lease.tenant?.fullName ??
+    (lease.tenant ? `${lease.tenant.firstName} ${lease.tenant.lastName}` : "—");
+  const unitLabel = lease.unit ? `Local ${lease.unit.unitNumber}` : "—";
+
+  return (
+    <div
+      onClick={onClick}
+      className="bg-surface p-4 cursor-pointer active:bg-primary/3 transition-colors"
+    >
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-9 h-9 rounded-full bg-primary/8 flex items-center justify-center shrink-0">
+            <span className="text-[13px] font-semibold text-primary/60">
+              {tenantName !== "—" ? tenantName.split(" ").map((w: string) => w[0]).slice(0, 2).join("").toUpperCase() : "?"}
+            </span>
+          </div>
+          <div className="min-w-0">
+            <p className="text-[13px] font-semibold text-primary truncate">{tenantName}</p>
+            <p className="text-[12px] text-primary/50 truncate">{unitLabel}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <Badge variant={cfg.variant}>{cfg.label}</Badge>
+          <LeaseRowActions
+            lease={lease}
+            onViewDetails={onClick}
+            onTerminate={onTerminate}
+            onDownload={onDownload}
+          />
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+        <div>
+          <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">Loyer</p>
+          <p className="text-[12px] font-semibold text-primary tabular-nums">{formatXOF(Number(lease.monthlyRent))}</p>
+        </div>
+        <div>
+          <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">Périodicité</p>
+          <p className="text-[12px] text-primary/70">{lease.periodicity ? (FREQ_LABELS[lease.periodicity] ?? lease.periodicity) : "—"}</p>
+        </div>
+        <div>
+          <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">Début</p>
+          <p className="text-[12px] text-primary/70 tabular-nums">{formatDate(lease.startDate)}</p>
+        </div>
+        <div>
+          <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">Fin</p>
+          <p className="text-[12px] text-primary/70 tabular-nums">{lease.endDate ? formatDate(lease.endDate) : "—"}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Table row ────────────────────────────────────────────────────────────────
 
 function LeaseRow({
@@ -367,9 +435,9 @@ export function LeasesClient() {
       <div className="flex h-screen overflow-hidden">
         <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
           {/* Toolbar */}
-          <div className="flex items-center justify-between px-6 py-4 bg-surface border-b border-border-custom shrink-0">
+          <div className="flex flex-col gap-3 px-4 py-3 lg:flex-row lg:items-center lg:justify-between lg:px-6 lg:py-4 bg-surface border-b border-border-custom shrink-0">
             <div>
-              <h1 className="font-semibold text-[20px] text-primary">
+              <h1 className="font-semibold text-[18px] lg:text-[20px] text-primary">
                 Contrats de bail
               </h1>
               {pagination && !loading && (
@@ -378,8 +446,8 @@ export function LeasesClient() {
                 </p>
               )}
             </div>
-            <div className="flex items-center gap-3">
-              <div className="relative">
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1 lg:flex-none">
                 <Search
                   size={14}
                   className="absolute left-3 top-1/2 -translate-y-1/2 text-primary/35 pointer-events-none"
@@ -389,7 +457,7 @@ export function LeasesClient() {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Rechercher…"
-                  className="pl-9 pr-4 h-9 w-48 rounded-lg border border-border-custom bg-white text-[13px] text-primary placeholder:text-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors"
+                  className="pl-9 pr-4 h-9 w-full lg:w-48 rounded-lg border border-border-custom bg-white text-[13px] text-primary placeholder:text-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors"
                 />
               </div>
               <button
@@ -397,7 +465,7 @@ export function LeasesClient() {
                   setEditTarget(null);
                   setFormOpen(true);
                 }}
-                className="flex items-center gap-2 h-9 px-4 bg-primary text-white rounded-lg text-[13px] font-medium hover:bg-[#263447] transition-colors"
+                className="flex items-center gap-2 h-9 px-4 bg-primary text-white rounded-lg text-[13px] font-medium hover:bg-[#263447] transition-colors shrink-0"
               >
                 <Plus size={15} /> Nouveau contrat
               </button>
@@ -458,33 +526,75 @@ export function LeasesClient() {
                 />
               </div>
             ) : (
-              <table className="w-full border-collapse">
-                <thead className="sticky top-0 z-10 bg-neutral">
-                  <tr className="border-b border-border-custom">
-                    {[
-                      "Locataire / Local",
-                      "Loyer",
-                      "Frequence",
-                      "Debut",
-                      "Fin",
-                      "Statut",
-                      "",
-                    ].map((h, i) => (
-                      <th
-                        key={i}
-                        className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-primary/40"
-                      >
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border-custom bg-surface">
+              <>
+                {/* Table desktop */}
+                <div className="hidden lg:block overflow-x-auto">
+                  <table className="w-full border-collapse">
+                    <thead className="sticky top-0 z-10 bg-neutral">
+                      <tr className="border-b border-border-custom">
+                        {[
+                          "Locataire / Local",
+                          "Loyer",
+                          "Frequence",
+                          "Debut",
+                          "Fin",
+                          "Statut",
+                          "",
+                        ].map((h, i) => (
+                          <th
+                            key={i}
+                            className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-primary/40"
+                          >
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border-custom bg-surface">
+                      {leases.map((l) => (
+                        <LeaseRow
+                          key={l.id}
+                          lease={l}
+                          selected={selected?.id === l.id}
+                          onClick={() =>
+                            setSelected((p) => (p?.id === l.id ? null : l))
+                          }
+                          onTerminate={() => setTerminateTarget(l)}
+                          onDownload={() => {
+                            toast({
+                              variant: "warning",
+                              title: "Telechargement en cours...",
+                              duration: 3000,
+                            });
+                            leaseService
+                              .downloadContractPdf(l.id)
+                              .then((blob) => {
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement("a");
+                                a.href = url;
+                                a.download = `contrat-${l.id}.pdf`;
+                                a.click();
+                                URL.revokeObjectURL(url);
+                              })
+                              .catch(() =>
+                                toast({
+                                  variant: "danger",
+                                  title: "Echec du telechargement",
+                                  duration: 4000,
+                                }),
+                              );
+                          }}
+                        />
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {/* Cards mobiles */}
+                <div className="lg:hidden divide-y divide-border-custom">
                   {leases.map((l) => (
-                    <LeaseRow
+                    <LeaseCard
                       key={l.id}
                       lease={l}
-                      selected={selected?.id === l.id}
                       onClick={() =>
                         setSelected((p) => (p?.id === l.id ? null : l))
                       }
@@ -515,8 +625,8 @@ export function LeasesClient() {
                       }}
                     />
                   ))}
-                </tbody>
-              </table>
+                </div>
+              </>
             )}
           </div>
 
