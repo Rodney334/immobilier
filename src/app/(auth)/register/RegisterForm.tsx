@@ -1,15 +1,15 @@
-'use client';
+"use client";
 
-import { useActionState, useEffect } from 'react';
-import { useFormStatus } from 'react-dom';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { Loader2 } from 'lucide-react';
-import { Input } from '@/components/ui/Input';
-import { authService } from '@/lib/services/auth.service';
-import { ApiError } from '@/types';
+import { useActionState, useEffect } from "react";
+import { useFormStatus } from "react-dom";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Loader2 } from "lucide-react";
+import { Input } from "@/components/ui/Input";
+import { authService } from "@/lib/services/auth.service";
+import { ApiError } from "@/types";
 
-type FormState = { error: string | null; success: boolean; email: string };
+type FormState = { error: string | null; success: boolean; email?: string };
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -19,7 +19,9 @@ function SubmitButton() {
       disabled={pending}
       className="w-full h-12 bg-primary text-white rounded-lg text-[15px] font-medium hover:bg-[#263447] active:bg-[#16202C] disabled:opacity-60 disabled:cursor-not-allowed transition-colors duration-150 flex items-center justify-center gap-2"
     >
-      {pending && <Loader2 size={16} className="animate-spin" aria-hidden="true" />}
+      {pending && (
+        <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+      )}
       Créer mon compte
     </button>
   );
@@ -30,20 +32,29 @@ export function RegisterForm() {
 
   const [state, formAction] = useActionState(
     async (_prev: FormState, formData: FormData): Promise<FormState> => {
-      const name       = formData.get('name') as string;
-      const email      = formData.get('email') as string;
-      const phone      = formData.get('phoneNumber') as string;
-      const password   = formData.get('password') as string;
-      const confirm    = formData.get('confirmPassword') as string;
+      const name = formData.get("name") as string;
+      const email = formData.get("email") as string;
+      const phone = formData.get("phoneNumber") as string;
+      const password = formData.get("password") as string;
+      const confirm = formData.get("confirmPassword") as string;
 
       if (!name || !email || !password) {
-        return { error: 'Veuillez remplir tous les champs obligatoires.', success: false };
+        return {
+          error: "Veuillez remplir tous les champs obligatoires.",
+          success: false,
+        };
       }
       if (password !== confirm) {
-        return { error: 'Les mots de passe ne correspondent pas.', success: false };
+        return {
+          error: "Les mots de passe ne correspondent pas.",
+          success: false,
+        };
       }
       if (password.length < 8) {
-        return { error: 'Le mot de passe doit contenir au moins 8 caractères.', success: false };
+        return {
+          error: "Le mot de passe doit contenir au moins 8 caractères.",
+          success: false,
+        };
       }
 
       try {
@@ -58,11 +69,11 @@ export function RegisterForm() {
         const message =
           err instanceof ApiError
             ? err.message
-            : 'Une erreur est survenue. Veuillez réessayer.';
-        return { error: message, success: false, email: '' };
+            : "Une erreur est survenue. Veuillez réessayer.";
+        return { error: message, success: false, email: "" };
       }
     },
-    { error: null, success: false, email: '' },
+    { error: null, success: false, email: "" },
   );
 
   // Après inscription → page "vérifiez votre email" avec l'adresse pour le renvoi
@@ -144,7 +155,7 @@ export function RegisterForm() {
       </form>
 
       <p className="text-center text-[13px] text-primary/45">
-        Déjà un compte&nbsp;?{' '}
+        Déjà un compte&nbsp;?{" "}
         <Link
           href="/login"
           className="font-semibold text-primary hover:underline"
