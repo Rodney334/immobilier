@@ -6,6 +6,7 @@ import {
   LayoutDashboard, Building2, DoorOpen, FileText, Users, CreditCard,
   BarChart3, Settings, LogOut, ChevronRight, ChevronLeft, MapPin,
   CalendarClock, Receipt, SlidersHorizontal, UserCog, X,
+  AlertTriangle, ShieldCheck, TrendingUp, ScrollText,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/stores/auth.store";
 import { useSidebarStore } from "@/lib/stores/sidebar.store";
@@ -22,6 +23,10 @@ const NAV_ITEMS = [
   { label: "Paiements",        href: "/dashboard/payments",      icon: CreditCard },
   { label: "Reçus",            href: "/dashboard/receipts",      icon: Receipt },
   { label: "Ajustements",      href: "/dashboard/adjustments",   icon: SlidersHorizontal },
+  { label: "Incidents",         href: "/dashboard/incidents",     icon: AlertTriangle },
+  { label: "Garanties",        href: "/dashboard/deposits",      icon: ShieldCheck },
+  { label: "Rentabilité",      href: "/dashboard/profitability", icon: TrendingUp },
+  { label: "Logs d'audit",    href: "/dashboard/audit-logs",    icon: ScrollText },
   { label: "Rapports",         href: "/dashboard/reports",       icon: BarChart3 },
   { label: "Utilisateurs",     href: "/dashboard/users",         icon: UserCog },
   { label: "Paramètres",       href: "/dashboard/settings",      icon: Settings },

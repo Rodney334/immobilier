@@ -138,7 +138,7 @@ export function PaymentFormModal({ isOpen, onClose, onSaved }: Props) {
               <option value="">Selectionner un contrat...</option>
               {leases.map((l) => (
                 <option key={l.id} value={l.id}>
-                  {l.contractNumber}
+                  {l.tenant?.fullName} {" - "} {l.contractNumber}
                 </option>
               ))}
             </select>

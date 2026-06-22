@@ -3,7 +3,7 @@
 /**
  * L'API retourne les rôles en minuscules : "admin", "manager", "user".
  */
-export type UserRole = "admin" | "user";
+export type UserRole = "superadmin" | "admin" | "user";
 
 // ─── Entité principale ────────────────────────────────────────────────────────
 

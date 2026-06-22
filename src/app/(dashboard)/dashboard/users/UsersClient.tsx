@@ -31,11 +31,12 @@ const ROLE_CONFIG: Record<
   UserRole,
   { label: string; variant: "success" | "warning" | "danger" | "neutral" }
 > = {
+  superadmin: { label: "Super Administrateur", variant: "success" },
   admin: { label: "Administrateur", variant: "danger" },
   user: { label: "Utilisateur", variant: "neutral" },
 };
 
-const ROLES_ORDERED: UserRole[] = ["admin", "user"];
+const ROLES_ORDERED: UserRole[] = ["superadmin", "admin", "user"];
 
 // ─── Filter types ─────────────────────────────────────────────────────────────
 
@@ -76,13 +77,7 @@ function getInitials(name: string) {
 
 // ─── Mobile card ─────────────────────────────────────────────────────────────
 
-function UserCard({
-  user,
-  onClick,
-}: {
-  user: User;
-  onClick: () => void;
-}) {
+function UserCard({ user, onClick }: { user: User; onClick: () => void }) {
   const cfg = ROLE_CONFIG[user.role];
   const initials = getInitials(user.name);
   const isArchived = user.isArchived ?? false;
@@ -94,11 +89,17 @@ function UserCard({
     >
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex items-center gap-3 min-w-0">
-          <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${isArchived ? "bg-primary/5" : "bg-primary/8"}`}>
-            <span className="text-[13px] font-semibold text-primary/60">{initials}</span>
+          <div
+            className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${isArchived ? "bg-primary/5" : "bg-primary/8"}`}
+          >
+            <span className="text-[13px] font-semibold text-primary/60">
+              {initials}
+            </span>
           </div>
           <div className="min-w-0">
-            <p className="text-[13px] font-semibold text-primary truncate">{user.name}</p>
+            <p className="text-[13px] font-semibold text-primary truncate">
+              {user.name}
+            </p>
             <p className="text-[12px] text-primary/50 truncate">{user.email}</p>
           </div>
         </div>
@@ -507,7 +508,7 @@ function UserDetailPanel({
                       {rc.label}
                     </p>
                     <p className="text-[11px] text-primary/40">
-                      {role === "admin"
+                      {role === "admin" || role === "superadmin"
                         ? "Accès complet à toutes les fonctionnalités"
                         : "Accès en lecture seule"}
                     </p>
@@ -808,7 +809,9 @@ export function UsersClient() {
                   <tbody className="divide-y divide-border-custom bg-surface">
                     {users.map((u) => {
                       const uid = u.id ?? u._id;
-                      const sid = selected ? (selected.id ?? selected._id) : null;
+                      const sid = selected
+                        ? (selected.id ?? selected._id)
+                        : null;
                       return (
                         <UserRow
                           key={uid}

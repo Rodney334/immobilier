@@ -51,6 +51,8 @@ function SelectField({
   required,
   disabled,
   defaultValue,
+  value,
+  onChange,
   children,
 }: {
   name: string;
@@ -58,6 +60,8 @@ function SelectField({
   required?: boolean;
   disabled?: boolean;
   defaultValue?: string;
+  value?: string;
+  onChange?: (v: string) => void;
   children: ReactNode;
 }) {
   return (
@@ -70,8 +74,10 @@ function SelectField({
         name={name}
         required={required}
         disabled={disabled}
-        defaultValue={defaultValue ?? ""}
-        className="w-full h-11 px-3 rounded-lg border border-border-custom bg-white text-[14px] text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 disabled:opacity-50 transition-colors"
+        {...(onChange !== undefined
+          ? { value: value ?? "", onChange: (e) => onChange(e.target.value) }
+          : { defaultValue: defaultValue ?? "" })}
+        className="w-full h-11 px-3 rounded-lg border border-border-custom bg-white text-[14px] text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 disabled:opacity-50 disabled:bg-neutral transition-colors"
       >
         {children}
       </select>
@@ -86,6 +92,31 @@ export function LeaseFormModal({ lease, isOpen, onClose, onSaved }: Props) {
   const [units, setUnits] = useState<Unit[]>([]);
   const [loadingOpts, setLoadingOpts] = useState(false);
 
+  // Controlled unit selection — pour dériver le baseRent automatiquement
+  const [selectedUnitId, setSelectedUnitId] = useState<string>(
+    lease?.unitId ?? "",
+  );
+  const selectedUnit = units.find((u) => u._id === selectedUnitId);
+
+  // Loyer : verrouillé sur baseRent du local en mode création
+  const autoRent = !isEdit && selectedUnit ? (selectedUnit.baseRent ?? "") : "";
+  const [rentValue, setRentValue] = useState<string>(lease?.monthlyRent ?? "");
+
+  // Sync rentValue quand le local change (création) ou quand le modal s'ouvre (édition)
+  useEffect(() => {
+    if (!isEdit && selectedUnit) {
+      setRentValue(selectedUnit.baseRent.toString() ?? "");
+    }
+  }, [selectedUnit, isEdit]);
+
+  // Reset des états locaux à l'ouverture
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedUnitId(lease?.unitId ?? "");
+      setRentValue(lease?.monthlyRent ?? "");
+    }
+  }, [isOpen, lease]);
+
   useEffect(() => {
     if (!isOpen) return;
     setLoadingOpts(true);
@@ -97,10 +128,17 @@ export function LeaseFormModal({ lease, isOpen, onClose, onSaved }: Props) {
     ])
       .then(([tRes, uRes]) => {
         if (tRes.status === "fulfilled") setTenants(tRes.value.data);
-        if (uRes.status === "fulfilled") setUnits(uRes.value.data);
+        if (uRes.status === "fulfilled") {
+          const fetched = uRes.value.data;
+          setUnits(fetched);
+          // Si on édite, pré-sélectionner le local courant même s'il n'est pas AVAILABLE
+          if (isEdit && lease?.unitId) {
+            setSelectedUnitId(lease.unitId);
+          }
+        }
       })
       .finally(() => setLoadingOpts(false));
-  }, [isOpen, isEdit]);
+  }, [isOpen, isEdit, lease?.unitId]);
 
   const [state, formAction] = useActionState(
     async (_prev: FormState, formData: FormData): Promise<FormState> => {
@@ -119,7 +157,11 @@ export function LeaseFormModal({ lease, isOpen, onClose, onSaved }: Props) {
           success: false,
         };
       }
-      if (!monthlyRent || isNaN(Number(monthlyRent)) || Number(monthlyRent) <= 0) {
+      if (
+        !monthlyRent ||
+        isNaN(Number(monthlyRent)) ||
+        Number(monthlyRent) <= 0
+      ) {
         return {
           error: "Le montant du loyer doit etre superieur a 0.",
           success: false,
@@ -138,7 +180,10 @@ export function LeaseFormModal({ lease, isOpen, onClose, onSaved }: Props) {
         startDate: new Date(startDate).toISOString(),
         endDate: endDate ? new Date(endDate).toISOString() : undefined,
         monthlyRent,
-        depositAmount: depositAmount && Number(depositAmount) > 0 ? depositAmount : undefined,
+        depositAmount:
+          depositAmount && Number(depositAmount) > 0
+            ? depositAmount
+            : undefined,
         periodicity: periodicity || undefined,
         billingDay: billingDay ? parseInt(billingDay, 10) : undefined,
         status: "ACTIVE",
@@ -154,6 +199,7 @@ export function LeaseFormModal({ lease, isOpen, onClose, onSaved }: Props) {
             })
           : await leaseService.create(payload);
         onSaved(res.data);
+        onClose();
         return { error: null, success: true };
       } catch (err: unknown) {
         const msg =
@@ -164,9 +210,8 @@ export function LeaseFormModal({ lease, isOpen, onClose, onSaved }: Props) {
     { error: null, success: false },
   );
 
-  useEffect(() => {
-    if (state.success) onClose();
-  }, [state.success, onClose]);
+  // En mode création, le loyer est verrouillé sur le baseRent du local sélectionné
+  const rentLocked = !isEdit && !!selectedUnitId;
 
   return (
     <Modal
@@ -189,24 +234,26 @@ export function LeaseFormModal({ lease, isOpen, onClose, onSaved }: Props) {
           label="Locataire"
           required
           disabled={isEdit || loadingOpts}
-          defaultValue={lease?.tenantId ?? ""}
+          defaultValue={isEdit ? (lease?.tenantId ?? "") : undefined}
         >
           <option value="" disabled>
             {loadingOpts ? "Chargement..." : "Selectionner un locataire"}
           </option>
-          {tenants.map((t) => (
-            <option key={t.id} value={t.id}>
+          {tenants.map((t, i) => (
+            <option key={t._id + i} value={t._id}>
               {t.fullName ?? `${t.firstName} ${t.lastName}`}
             </option>
           ))}
         </SelectField>
 
+        {/* Local — contrôlé pour dériver le baseRent */}
         <SelectField
           name="unitId"
           label="Local"
           required
           disabled={isEdit || loadingOpts}
-          defaultValue={lease?.unitId ?? ""}
+          value={isEdit ? (lease?.unitId ?? "") : selectedUnitId}
+          onChange={isEdit ? undefined : setSelectedUnitId}
         >
           <option value="" disabled>
             {loadingOpts
@@ -215,8 +262,8 @@ export function LeaseFormModal({ lease, isOpen, onClose, onSaved }: Props) {
                 ? "Non modifiable"
                 : "Selectionner un local vacant"}
           </option>
-          {units.map((u) => (
-            <option key={u.id} value={u.id}>
+          {units.map((u, i) => (
+            <option key={u._id + i} value={u._id}>
               {`Local ${u.unitNumber}${u.property ? ` - ${u.property.name}` : ""}`}
             </option>
           ))}
@@ -240,15 +287,38 @@ export function LeaseFormModal({ lease, isOpen, onClose, onSaved }: Props) {
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <Input
-            name="monthlyRent"
-            type="number"
-            label="Loyer mensuel (XOF)"
-            required
-            placeholder="ex : 75000"
-            defaultValue={lease?.monthlyRent}
-            hint="Montant en francs CFA"
-          />
+          {/* Loyer — verrouillé sur baseRent en création, éditable en modification */}
+          <div className="space-y-1.5">
+            <label className="block text-[12px] font-medium uppercase tracking-[0.06em] text-primary/60">
+              Loyer mensuel (XOF) <span className="text-danger">*</span>
+            </label>
+            <input
+              name="monthlyRent"
+              type="number"
+              required
+              value={rentLocked ? autoRent : rentValue}
+              onChange={
+                rentLocked
+                  ? () => {} // readOnly — pas de modification
+                  : (e) => setRentValue(e.target.value)
+              }
+              readOnly={rentLocked}
+              placeholder="ex : 75000"
+              className={[
+                "w-full h-11 px-3 rounded-lg border border-border-custom text-[14px] text-primary",
+                "focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors",
+                rentLocked
+                  ? "bg-neutral cursor-not-allowed text-primary/50"
+                  : "bg-white",
+              ].join(" ")}
+            />
+            {rentLocked && selectedUnit && (
+              <p className="text-[11px] text-primary/40">
+                Défini par le loyer de base du local
+              </p>
+            )}
+          </div>
+
           <Input
             name="depositAmount"
             type="number"

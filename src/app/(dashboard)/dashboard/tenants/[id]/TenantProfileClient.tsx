@@ -48,8 +48,18 @@ type ActiveTab = "overview" | "payments" | "receipts" | "adjustments";
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const MONTHS_FR_SHORT = [
-  "Jan","Fév","Mar","Avr","Mai","Jun",
-  "Jul","Aoû","Sep","Oct","Nov","Déc",
+  "Jan",
+  "Fév",
+  "Mar",
+  "Avr",
+  "Mai",
+  "Jun",
+  "Jul",
+  "Aoû",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Déc",
 ];
 
 const fmt = new Intl.NumberFormat("fr-FR");
@@ -59,14 +69,20 @@ function formatAmount(v: string | number) {
 }
 
 function formatDate(iso: string, opts?: Intl.DateTimeFormatOptions) {
-  return new Date(iso).toLocaleDateString("fr-FR", opts ?? {
-    day: "2-digit", month: "short", year: "numeric",
-  });
+  return new Date(iso).toLocaleDateString(
+    "fr-FR",
+    opts ?? {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    },
+  );
 }
 
 function formatMonthLong(iso: string) {
   return new Date(iso).toLocaleDateString("fr-FR", {
-    month: "long", year: "numeric",
+    month: "long",
+    year: "numeric",
   });
 }
 
@@ -82,7 +98,11 @@ function monthsElapsed(startIso: string): number {
 function buildHistoryGrid(
   schedules: RentSchedule[],
 ): Array<{ year: number; month: number; schedule: RentSchedule | null }> {
-  const grid: Array<{ year: number; month: number; schedule: RentSchedule | null }> = [];
+  const grid: Array<{
+    year: number;
+    month: number;
+    schedule: RentSchedule | null;
+  }> = [];
   const now = new Date();
   for (let i = 13; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
@@ -114,9 +134,13 @@ function StatCard({
   valueColor?: string;
 }) {
   return (
-    <div className="flex-1 min-w-[140px] bg-surface border border-border-custom rounded-xl p-4">
-      <p className="text-[12px] font-medium text-primary/40 mb-1 truncate">{label}</p>
-      <p className={`text-[22px] font-bold tabular-nums leading-tight ${valueColor}`}>
+    <div className="flex-1 min-w-35 bg-surface border border-border-custom rounded-xl p-4">
+      <p className="text-[12px] font-medium text-primary/40 mb-1 truncate">
+        {label}
+      </p>
+      <p
+        className={`text-[22px] font-bold tabular-nums leading-tight ${valueColor}`}
+      >
         {value}
       </p>
       {sub && <p className="text-[11px] text-primary/35 mt-0.5">{sub}</p>}
@@ -148,11 +172,31 @@ const SCHEDULE_CELL: Record<
   RentScheduleStatus,
   { bg: string; iconEl: React.ReactNode; text: string }
 > = {
-  PAID:           { bg: "bg-success",           iconEl: <Check size={11} strokeWidth={3} />, text: "text-white" },
-  PARTIALLY_PAID: { bg: "bg-amber-400",          iconEl: <Clock size={11} strokeWidth={2.5} />, text: "text-white" },
-  OVERDUE:        { bg: "bg-danger",             iconEl: <X size={11} strokeWidth={3} />, text: "text-white" },
-  PENDING:        { bg: "bg-primary/8 border border-border-custom", iconEl: null, text: "text-primary/30" },
-  CANCELLED:      { bg: "bg-primary/10",         iconEl: <Minus size={11} strokeWidth={2} />, text: "text-primary/30" },
+  PAID: {
+    bg: "bg-success",
+    iconEl: <Check size={11} strokeWidth={3} />,
+    text: "text-white",
+  },
+  PARTIALLY_PAID: {
+    bg: "bg-amber-400",
+    iconEl: <Clock size={11} strokeWidth={2.5} />,
+    text: "text-white",
+  },
+  OVERDUE: {
+    bg: "bg-danger",
+    iconEl: <X size={11} strokeWidth={3} />,
+    text: "text-white",
+  },
+  PENDING: {
+    bg: "bg-primary/8 border border-border-custom",
+    iconEl: null,
+    text: "text-primary/30",
+  },
+  CANCELLED: {
+    bg: "bg-primary/10",
+    iconEl: <Minus size={11} strokeWidth={2} />,
+    text: "text-primary/30",
+  },
 };
 
 function HistoryCell({
@@ -172,7 +216,9 @@ function HistoryCell({
         title="Sans contrat"
         className="flex flex-col items-center justify-center w-12 h-12 rounded-lg bg-primary/4 border border-border-custom cursor-default"
       >
-        <span className="text-[9px] font-medium text-primary/25 leading-tight">{label}</span>
+        <span className="text-[9px] font-medium text-primary/25 leading-tight">
+          {label}
+        </span>
         <Minus size={10} className="text-primary/20 mt-0.5" />
       </div>
     );
@@ -184,7 +230,9 @@ function HistoryCell({
       title={`${label} — ${schedule.status}`}
       className={`flex flex-col items-center justify-center w-12 h-12 rounded-lg ${cfg.bg} cursor-default`}
     >
-      <span className={`text-[9px] font-medium leading-tight ${cfg.text}`}>{label}</span>
+      <span className={`text-[9px] font-medium leading-tight ${cfg.text}`}>
+        {label}
+      </span>
       {cfg.iconEl ? (
         <span className={`mt-0.5 ${cfg.text}`}>{cfg.iconEl}</span>
       ) : (
@@ -196,13 +244,7 @@ function HistoryCell({
 
 // --- Carte contrat ---
 
-function LeaseCard({
-  lease,
-  label,
-}: {
-  lease: Lease;
-  label: string;
-}) {
+function LeaseCard({ lease, label }: { lease: Lease; label: string }) {
   const isActive = lease.status === "ACTIVE";
   return (
     <div className="flex-1 border border-border-custom rounded-xl p-4 bg-surface">
@@ -214,15 +256,29 @@ function LeaseCard({
       </div>
       <div className="flex items-center gap-1.5 text-[11px] text-primary/40 mb-1">
         <Calendar size={10} />
-        {lease.startDate ? formatDate(lease.startDate, { day: "2-digit", month: "2-digit", year: "numeric" }) : "—"}
+        {lease.startDate
+          ? formatDate(lease.startDate, {
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric",
+            })
+          : "—"}
         {" → "}
-        {lease.endDate ? formatDate(lease.endDate, { day: "2-digit", month: "2-digit", year: "numeric" }) : "…"}
+        {lease.endDate
+          ? formatDate(lease.endDate, {
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric",
+            })
+          : "…"}
       </div>
       <p className="text-[18px] font-bold text-primary tabular-nums">
         {formatAmount(lease.monthlyRent)}/mois
       </p>
       {lease.contractNumber && (
-        <p className="text-[11px] font-mono text-primary/30 mt-1">{lease.contractNumber}</p>
+        <p className="text-[11px] font-mono text-primary/30 mt-1">
+          {lease.contractNumber}
+        </p>
       )}
     </div>
   );
@@ -235,49 +291,56 @@ export function TenantProfileClient({ tenantId }: { tenantId: string }) {
   const { toast } = useToast();
 
   // Core data
-  const [tenant,    setTenant]    = useState<Tenant | null>(null);
-  const [leases,    setLeases]    = useState<Lease[]>([]);
+  const [tenant, setTenant] = useState<Tenant | null>(null);
+  const [leases, setLeases] = useState<Lease[]>([]);
   const [schedules, setSchedules] = useState<RentSchedule[]>([]);
-  const [loading,   setLoading]   = useState(true);
-  const [error,     setError]     = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Stats (computed from fetched data)
-  const [totalPaid,    setTotalPaid]    = useState(0);
-  const [totalUnpaid,  setTotalUnpaid]  = useState(0);
-  const [adjTotal,     setAdjTotal]     = useState(0);
-  const [adjPos,       setAdjPos]       = useState(0);
-  const [adjNeg,       setAdjNeg]       = useState(0);
+  const [totalPaid, setTotalPaid] = useState(0);
+  const [totalUnpaid, setTotalUnpaid] = useState(0);
+  const [adjTotal, setAdjTotal] = useState(0);
+  const [adjPos, setAdjPos] = useState(0);
+  const [adjNeg, setAdjNeg] = useState(0);
 
   // Tabs
-  const [activeTab,     setActiveTab]     = useState<ActiveTab>("overview");
-  const [tabPayments,   setTabPayments]   = useState<Payment[]>([]);
-  const [tabReceipts,   setTabReceipts]   = useState<Receipt[]>([]);
-  const [tabAdjustments,setTabAdjustments]= useState<Adjustment[]>([]);
-  const [tabLoading,    setTabLoading]    = useState(false);
+  const [activeTab, setActiveTab] = useState<ActiveTab>("overview");
+  const [tabPayments, setTabPayments] = useState<Payment[]>([]);
+  const [tabReceipts, setTabReceipts] = useState<Receipt[]>([]);
+  const [tabAdjustments, setTabAdjustments] = useState<Adjustment[]>([]);
+  const [tabLoading, setTabLoading] = useState(false);
   const loadedTabs = useState(() => new Set<ActiveTab>())[0];
 
   // Actions
-  const [editOpen,      setEditOpen]      = useState(false);
-  const [restoring,     setRestoring]     = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [restoring, setRestoring] = useState(false);
   const [incidentsOpen, setIncidentsOpen] = useState(false);
 
   // Derived
-  const activeLease    = leases.find((l) => l.status === "ACTIVE") ?? null;
-  const previousLeases = leases.filter((l) => l.status !== "ACTIVE" && l.status !== "DRAFT");
-  const lastPrevLease  = previousLeases.sort(
-    (a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime(),
-  )[0] ?? null;
+  const activeLease = leases.find((l) => l.status === "ACTIVE") ?? null;
+  const previousLeases = leases.filter(
+    (l) => l.status !== "ACTIVE" && l.status !== "DRAFT",
+  );
+  const lastPrevLease =
+    previousLeases.sort(
+      (a, b) =>
+        new Date(b.startDate).getTime() - new Date(a.startDate).getTime(),
+    )[0] ?? null;
 
   const historyGrid = buildHistoryGrid(schedules);
   const monthsPresent = activeLease ? monthsElapsed(activeLease.startDate) : 0;
   const isBlacklisted = tenant?.status === "BLACKLISTED";
-  const isInactive    = tenant?.status === "INACTIVE";
+  const isInactive = tenant?.status === "INACTIVE";
 
   const fullName = tenant
-    ? (tenant.fullName || `${tenant.firstName ?? ""} ${tenant.lastName ?? ""}`.trim())
+    ? tenant.fullName ||
+      `${tenant.firstName ?? ""} ${tenant.lastName ?? ""}`.trim()
     : "—";
   const initials = tenant
-    ? `${tenant.firstName?.[0] ?? ""}${tenant.lastName?.[0] ?? ""}`.toUpperCase() || fullName[0]?.toUpperCase() || "?"
+    ? `${tenant.firstName?.[0] ?? ""}${tenant.lastName?.[0] ?? ""}`.toUpperCase() ||
+      fullName[0]?.toUpperCase() ||
+      "?"
     : "?";
 
   // ── Load core data ──
@@ -314,8 +377,13 @@ export function TenantProfileClient({ tenantId }: { tenantId: string }) {
         setSchedules(sched);
 
         const unpaid = sched
-          .filter((s) => s.status === "OVERDUE" || s.status === "PARTIALLY_PAID")
-          .reduce((sum, s) => sum + (s.balance ?? s.remainingAmount ?? s.amount ?? 0), 0);
+          .filter(
+            (s) => s.status === "OVERDUE" || s.status === "PARTIALLY_PAID",
+          )
+          .reduce(
+            (sum, s) => sum + (s.balance ?? s.remainingAmount ?? s.amount ?? 0),
+            0,
+          );
         setTotalUnpaid(unpaid);
 
         const adjs = Array.isArray(adjRes.data) ? adjRes.data : [];
@@ -331,7 +399,9 @@ export function TenantProfileClient({ tenantId }: { tenantId: string }) {
     }
   }, [tenantId]);
 
-  useEffect(() => { loadCore(); }, [loadCore]);
+  useEffect(() => {
+    loadCore();
+  }, [loadCore]);
 
   // ── Lazy-load tab data ──
 
@@ -345,14 +415,22 @@ export function TenantProfileClient({ tenantId }: { tenantId: string }) {
     (async () => {
       try {
         if (activeTab === "payments") {
-          const res = await paymentService.getAll({ tenant: tenantId, limit: 100 });
+          const res = await paymentService.getAll({
+            tenant: tenantId,
+            limit: 100,
+          });
           setTabPayments(Array.isArray(res.data) ? res.data : []);
         } else if (activeTab === "receipts") {
-          const res = await receiptService.getAll({ tenant: tenantId, limit: 100 });
+          const res = await receiptService.getAll({
+            tenant: tenantId,
+            limit: 100,
+          });
           setTabReceipts(Array.isArray(res.data) ? res.data : []);
         } else if (activeTab === "adjustments") {
           if (activeLease) {
-            const res = await adjustmentService.getAll({ lease: activeLease.id });
+            const res = await adjustmentService.getAll({
+              lease: activeLease.id,
+            });
             setTabAdjustments(Array.isArray(res.data) ? res.data : []);
           }
         }
@@ -362,7 +440,7 @@ export function TenantProfileClient({ tenantId }: { tenantId: string }) {
         setTabLoading(false);
       }
     })();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
 
   // ── Unblacklist ──
@@ -371,11 +449,19 @@ export function TenantProfileClient({ tenantId }: { tenantId: string }) {
     if (!tenant) return;
     setRestoring(true);
     try {
-      const res = await tenantService.restore(tenant.id);
+      const res = await tenantService.restore(tenant._id);
       setTenant(res.data);
-      toast({ variant: "success", title: "Locataire réintégré", duration: 3000 });
+      toast({
+        variant: "success",
+        title: "Locataire réintégré",
+        duration: 3000,
+      });
     } catch {
-      toast({ variant: "danger", title: "Impossible de réintégrer", duration: 4000 });
+      toast({
+        variant: "danger",
+        title: "Impossible de réintégrer",
+        duration: 4000,
+      });
     } finally {
       setRestoring(false);
     }
@@ -433,7 +519,6 @@ export function TenantProfileClient({ tenantId }: { tenantId: string }) {
     <>
       {/* ── Page shell ── */}
       <div className="flex flex-col h-screen overflow-hidden bg-neutral">
-
         {/* Back bar */}
         <div className="flex items-center gap-3 px-6 py-3 bg-surface border-b border-border-custom shrink-0">
           <button
@@ -443,18 +528,20 @@ export function TenantProfileClient({ tenantId }: { tenantId: string }) {
             <ArrowLeft size={14} /> Locataires
           </button>
           <span className="text-primary/20">/</span>
-          <span className="text-[13px] font-medium text-primary truncate">{fullName}</span>
+          <span className="text-[13px] font-medium text-primary truncate">
+            {fullName}
+          </span>
         </div>
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto">
           <div className="max-w-6xl mx-auto px-6 py-6 flex gap-6 items-start">
-
             {/* ──────────────────────────────────────────────────────────────
                 LEFT — Profile card
             ────────────────────────────────────────────────────────────── */}
-            <div className={`w-80 shrink-0 bg-surface rounded-xl border border-border-custom overflow-hidden ${cardAccent}`}>
-
+            <div
+              className={`w-80 shrink-0 bg-surface rounded-xl border border-border-custom overflow-hidden ${cardAccent}`}
+            >
               {/* Blacklist banner */}
               {isBlacklisted && (
                 <div className="bg-danger/10 border-b border-danger/20 px-4 py-3">
@@ -472,7 +559,9 @@ export function TenantProfileClient({ tenantId }: { tenantId: string }) {
                     </p>
                   )}
                   {!tenant.blacklistReason && tenant.notes && (
-                    <p className="text-[12px] text-danger/80 line-clamp-2">{tenant.notes}</p>
+                    <p className="text-[12px] text-danger/80 line-clamp-2">
+                      {tenant.notes}
+                    </p>
                   )}
                 </div>
               )}
@@ -522,22 +611,52 @@ export function TenantProfileClient({ tenantId }: { tenantId: string }) {
                 {/* Contact rows */}
                 <div className="space-y-2.5 mb-4">
                   {[
-                    { icon: Phone,     label: "Téléphone", val: tenant.phone,       href: tenant.phone ? `tel:${tenant.phone}` : undefined },
-                    { icon: Mail,      label: "Email",     val: tenant.email,       href: tenant.email ? `mailto:${tenant.email}` : undefined },
-                    { icon: Briefcase, label: "Profession",val: tenant.profession,   href: undefined },
-                    { icon: CreditCard,label: "NPI",       val: tenant.identityNumber, href: undefined },
+                    {
+                      icon: Phone,
+                      label: "Téléphone",
+                      val: tenant.phone,
+                      href: tenant.phone ? `tel:${tenant.phone}` : undefined,
+                    },
+                    {
+                      icon: Mail,
+                      label: "Email",
+                      val: tenant.email,
+                      href: tenant.email ? `mailto:${tenant.email}` : undefined,
+                    },
+                    {
+                      icon: Briefcase,
+                      label: "Profession",
+                      val: tenant.profession,
+                      href: undefined,
+                    },
+                    {
+                      icon: CreditCard,
+                      label: "NPI",
+                      val: tenant.identityNumber,
+                      href: undefined,
+                    },
                   ].map(({ icon: Icon, label, val, href }) =>
                     val ? (
                       <div key={label} className="flex items-start gap-2.5">
-                        <Icon size={13} className="text-primary/30 mt-0.5 shrink-0" />
+                        <Icon
+                          size={13}
+                          className="text-primary/30 mt-0.5 shrink-0"
+                        />
                         <div className="min-w-0 flex-1">
-                          <span className="text-[11px] text-primary/35">{label}</span>
+                          <span className="text-[11px] text-primary/35">
+                            {label}
+                          </span>
                           {href ? (
-                            <a href={href} className="block text-[13px] text-secondary truncate hover:underline">
+                            <a
+                              href={href}
+                              className="block text-[13px] text-secondary truncate hover:underline"
+                            >
                               {val}
                             </a>
                           ) : (
-                            <p className="text-[13px] text-primary truncate">{val}</p>
+                            <p className="text-[13px] text-primary truncate">
+                              {val}
+                            </p>
                           )}
                         </div>
                       </div>
@@ -547,9 +666,14 @@ export function TenantProfileClient({ tenantId }: { tenantId: string }) {
                   {/* Depuis (lease start date) */}
                   {activeLease && (
                     <div className="flex items-start gap-2.5">
-                      <Calendar size={13} className="text-primary/30 mt-0.5 shrink-0" />
+                      <Calendar
+                        size={13}
+                        className="text-primary/30 mt-0.5 shrink-0"
+                      />
                       <div className="min-w-0 flex-1">
-                        <span className="text-[11px] text-primary/35">Depuis</span>
+                        <span className="text-[11px] text-primary/35">
+                          Depuis
+                        </span>
                         <p className="text-[13px] text-primary">
                           {formatMonthLong(activeLease.startDate)}
                         </p>
@@ -617,9 +741,7 @@ export function TenantProfileClient({ tenantId }: { tenantId: string }) {
                       </button>
                       {activeLease && (
                         <button
-                          onClick={() =>
-                            router.push(`/dashboard/leases`)
-                          }
+                          onClick={() => router.push(`/dashboard/leases`)}
                           className="w-full text-[13px] font-medium text-danger hover:underline"
                         >
                           Résilier le contrat
@@ -635,7 +757,6 @@ export function TenantProfileClient({ tenantId }: { tenantId: string }) {
                 RIGHT — Stats + Tabs
             ────────────────────────────────────────────────────────────── */}
             <div className="flex-1 min-w-0 flex flex-col gap-5">
-
               {/* Stat cards */}
               <div className="flex gap-3 flex-wrap">
                 <StatCard
@@ -658,8 +779,18 @@ export function TenantProfileClient({ tenantId }: { tenantId: string }) {
                 <StatCard
                   label="Ajustements"
                   value={(adjTotal >= 0 ? "+" : "") + fmt.format(adjTotal)}
-                  sub={adjPos > 0 || adjNeg > 0 ? `+${adjPos} / -${adjNeg}` : undefined}
-                  valueColor={adjTotal < 0 ? "text-danger" : adjTotal > 0 ? "text-success" : "text-primary"}
+                  sub={
+                    adjPos > 0 || adjNeg > 0
+                      ? `+${adjPos} / -${adjNeg}`
+                      : undefined
+                  }
+                  valueColor={
+                    adjTotal < 0
+                      ? "text-danger"
+                      : adjTotal > 0
+                        ? "text-success"
+                        : "text-primary"
+                  }
                 />
               </div>
 
@@ -668,10 +799,10 @@ export function TenantProfileClient({ tenantId }: { tenantId: string }) {
                 <div className="flex border-b border-border-custom px-1">
                   {(
                     [
-                      { id: "overview",     label: "Vue d'ensemble" },
-                      { id: "payments",     label: "Paiements" },
-                      { id: "receipts",     label: "Reçus" },
-                      { id: "adjustments",  label: "Ajustements" },
+                      { id: "overview", label: "Vue d'ensemble" },
+                      { id: "payments", label: "Paiements" },
+                      { id: "receipts", label: "Reçus" },
+                      { id: "adjustments", label: "Ajustements" },
                     ] as const
                   ).map((t) => (
                     <button
@@ -707,7 +838,10 @@ export function TenantProfileClient({ tenantId }: { tenantId: string }) {
                     <ReceiptsTab rows={tabReceipts} loading={tabLoading} />
                   )}
                   {activeTab === "adjustments" && (
-                    <AdjustmentsTab rows={tabAdjustments} loading={tabLoading} />
+                    <AdjustmentsTab
+                      rows={tabAdjustments}
+                      loading={tabLoading}
+                    />
                   )}
                 </div>
               </div>
@@ -724,7 +858,11 @@ export function TenantProfileClient({ tenantId }: { tenantId: string }) {
         onSaved={(updated) => {
           setTenant(updated);
           setEditOpen(false);
-          toast({ variant: "success", title: "Profil mis à jour", duration: 3000 });
+          toast({
+            variant: "success",
+            title: "Profil mis à jour",
+            duration: 3000,
+          });
         }}
       />
 
@@ -737,23 +875,36 @@ export function TenantProfileClient({ tenantId }: { tenantId: string }) {
         <div className="space-y-3">
           {tenant.blacklistReason && (
             <div className="rounded-lg bg-danger/6 border border-danger/15 px-4 py-3">
-              <p className="text-[12px] font-semibold text-danger uppercase tracking-wide mb-1">Motif principal</p>
-              <p className="text-[14px] text-primary">{tenant.blacklistReason}</p>
+              <p className="text-[12px] font-semibold text-danger uppercase tracking-wide mb-1">
+                Motif principal
+              </p>
+              <p className="text-[14px] text-primary">
+                {tenant.blacklistReason}
+              </p>
             </div>
           )}
           {tenant.blacklistedAt && (
             <p className="text-[13px] text-primary/50">
-              Blacklisté le : <span className="font-medium text-primary">{formatDate(tenant.blacklistedAt)}</span>
+              Blacklisté le :{" "}
+              <span className="font-medium text-primary">
+                {formatDate(tenant.blacklistedAt)}
+              </span>
             </p>
           )}
           {tenant.notes && (
             <div>
-              <p className="text-[12px] font-semibold uppercase tracking-wide text-primary/35 mb-1">Notes</p>
-              <p className="text-[13px] text-primary/70 leading-relaxed">{tenant.notes}</p>
+              <p className="text-[12px] font-semibold uppercase tracking-wide text-primary/35 mb-1">
+                Notes
+              </p>
+              <p className="text-[13px] text-primary/70 leading-relaxed">
+                {tenant.notes}
+              </p>
             </div>
           )}
           {!tenant.blacklistReason && !tenant.notes && (
-            <p className="text-[13px] text-primary/40">Aucun incident enregistré.</p>
+            <p className="text-[13px] text-primary/40">
+              Aucun incident enregistré.
+            </p>
           )}
         </div>
       </Modal>
@@ -793,11 +944,14 @@ function OverviewTab({
           {/* Légende */}
           <div className="flex flex-wrap gap-3 mt-2">
             {[
-              { bg: "bg-success",        label: "Payé à temps" },
-              { bg: "bg-amber-400",      label: "Payé en retard" },
-              { bg: "bg-amber-400",      label: "Partiel", extra: true },
-              { bg: "bg-danger",         label: "Impayé" },
-              { bg: "bg-primary/8 border border-border-custom", label: "Sans contrat" },
+              { bg: "bg-success", label: "Payé à temps" },
+              { bg: "bg-amber-400", label: "Payé en retard" },
+              { bg: "bg-amber-400", label: "Partiel", extra: true },
+              { bg: "bg-danger", label: "Impayé" },
+              {
+                bg: "bg-primary/8 border border-border-custom",
+                label: "Sans contrat",
+              },
             ].map((l, i) => (
               <div key={i} className="flex items-center gap-1.5">
                 <span className={`w-3 h-3 rounded-sm ${l.bg} shrink-0`} />
@@ -811,7 +965,9 @@ function OverviewTab({
       {/* Contrats */}
       {(activeLease || lastPrevLease) && (
         <div>
-          <h3 className="text-[14px] font-semibold text-primary mb-3">Contrats</h3>
+          <h3 className="text-[14px] font-semibold text-primary mb-3">
+            Contrats
+          </h3>
           <div className="flex gap-3 flex-wrap">
             {activeLease && (
               <LeaseCard lease={activeLease} label="Bail en cours" />
@@ -824,7 +980,9 @@ function OverviewTab({
       )}
 
       {!activeLease && !lastPrevLease && (
-        <p className="text-[13px] text-primary/40">Aucun contrat pour ce locataire.</p>
+        <p className="text-[13px] text-primary/40">
+          Aucun contrat pour ce locataire.
+        </p>
       )}
     </div>
   );
@@ -832,12 +990,13 @@ function OverviewTab({
 
 // ─── Tab : Paiements ──────────────────────────────────────────────────────────
 
-const PAYMENT_STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  RECORDED:  { label: "Enregistré", color: "text-success" },
-  CANCELLED: { label: "Annulé",     color: "text-danger" },
-  REVERSED:  { label: "Inversé",    color: "text-primary/40" },
-  failed:    { label: "Échoué",     color: "text-danger" },
-};
+const PAYMENT_STATUS_LABELS: Record<string, { label: string; color: string }> =
+  {
+    RECORDED: { label: "Enregistré", color: "text-success" },
+    CANCELLED: { label: "Annulé", color: "text-danger" },
+    REVERSED: { label: "Inversé", color: "text-primary/40" },
+    failed: { label: "Échoué", color: "text-danger" },
+  };
 
 function PaymentsTab({ rows, loading }: { rows: Payment[]; loading: boolean }) {
   if (loading) return <TabLoader />;
@@ -849,7 +1008,10 @@ function PaymentsTab({ rows, loading }: { rows: Payment[]; loading: boolean }) {
         <thead>
           <tr className="border-b border-border-custom">
             {["Date", "Montant", "Méthode", "Réf.", "Statut"].map((h) => (
-              <th key={h} className="px-5 py-2.5 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-primary/35">
+              <th
+                key={h}
+                className="px-5 py-2.5 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-primary/35"
+              >
                 {h}
               </th>
             ))}
@@ -857,7 +1019,10 @@ function PaymentsTab({ rows, loading }: { rows: Payment[]; loading: boolean }) {
         </thead>
         <tbody className="divide-y divide-border-custom">
           {rows.map((p) => {
-            const sc = PAYMENT_STATUS_LABELS[p.status] ?? { label: p.status, color: "text-primary/50" };
+            const sc = PAYMENT_STATUS_LABELS[p.status] ?? {
+              label: p.status,
+              color: "text-primary/50",
+            };
             return (
               <tr key={p.id} className="hover:bg-primary/2">
                 <td className="px-5 py-3 text-[12px] text-primary/50 tabular-nums whitespace-nowrap">
@@ -866,8 +1031,12 @@ function PaymentsTab({ rows, loading }: { rows: Payment[]; loading: boolean }) {
                 <td className="px-5 py-3 text-[13px] font-semibold text-primary tabular-nums whitespace-nowrap">
                   {formatAmount(p.amount)}
                 </td>
-                <td className="px-5 py-3 text-[12px] text-primary/60">{p.paymentMethod ?? "—"}</td>
-                <td className="px-5 py-3 text-[12px] font-mono text-primary/40">{p.reference ?? "—"}</td>
+                <td className="px-5 py-3 text-[12px] text-primary/60">
+                  {p.paymentMethod ?? "—"}
+                </td>
+                <td className="px-5 py-3 text-[12px] font-mono text-primary/40">
+                  {p.reference ?? "—"}
+                </td>
                 <td className="px-5 py-3 text-[12px] font-medium">
                   <span className={sc.color}>{sc.label}</span>
                 </td>
@@ -882,11 +1051,12 @@ function PaymentsTab({ rows, loading }: { rows: Payment[]; loading: boolean }) {
 
 // ─── Tab : Reçus ──────────────────────────────────────────────────────────────
 
-const RECEIPT_STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  GENERATED: { label: "Généré",   color: "text-success" },
-  PENDING:   { label: "En cours", color: "text-secondary" },
-  CANCELLED: { label: "Annulé",   color: "text-danger" },
-};
+const RECEIPT_STATUS_LABELS: Record<string, { label: string; color: string }> =
+  {
+    GENERATED: { label: "Généré", color: "text-success" },
+    PENDING: { label: "En cours", color: "text-secondary" },
+    CANCELLED: { label: "Annulé", color: "text-danger" },
+  };
 
 function ReceiptsTab({ rows, loading }: { rows: Receipt[]; loading: boolean }) {
   if (loading) return <TabLoader />;
@@ -898,7 +1068,10 @@ function ReceiptsTab({ rows, loading }: { rows: Receipt[]; loading: boolean }) {
         <thead>
           <tr className="border-b border-border-custom">
             {["N° Reçu", "Date", "Montant", "Statut"].map((h) => (
-              <th key={h} className="px-5 py-2.5 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-primary/35">
+              <th
+                key={h}
+                className="px-5 py-2.5 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-primary/35"
+              >
                 {h}
               </th>
             ))}
@@ -906,11 +1079,16 @@ function ReceiptsTab({ rows, loading }: { rows: Receipt[]; loading: boolean }) {
         </thead>
         <tbody className="divide-y divide-border-custom">
           {rows.map((r) => {
-            const sc = RECEIPT_STATUS_LABELS[r.status] ?? { label: r.status, color: "text-primary/50" };
+            const sc = RECEIPT_STATUS_LABELS[r.status] ?? {
+              label: r.status,
+              color: "text-primary/50",
+            };
             const date = r.receiptDate ?? r.issuedAt ?? "";
             return (
               <tr key={r.id} className="hover:bg-primary/2">
-                <td className="px-5 py-3 text-[12px] font-mono text-primary/70">{r.receiptNumber ?? "—"}</td>
+                <td className="px-5 py-3 text-[12px] font-mono text-primary/70">
+                  {r.receiptNumber ?? "—"}
+                </td>
                 <td className="px-5 py-3 text-[12px] text-primary/50 tabular-nums whitespace-nowrap">
                   {date ? formatDate(date) : "—"}
                 </td>
@@ -932,14 +1110,20 @@ function ReceiptsTab({ rows, loading }: { rows: Receipt[]; loading: boolean }) {
 // ─── Tab : Ajustements ────────────────────────────────────────────────────────
 
 const ADJ_TYPE_LABELS: Record<string, string> = {
-  DISCOUNT:      "Remise",
-  PENALTY:       "Pénalité",
-  CORRECTION:    "Correction",
+  DISCOUNT: "Remise",
+  PENALTY: "Pénalité",
+  CORRECTION: "Correction",
   RENT_REVISION: "Révision loyer",
-  WAIVER:        "Dispense",
+  WAIVER: "Dispense",
 };
 
-function AdjustmentsTab({ rows, loading }: { rows: Adjustment[]; loading: boolean }) {
+function AdjustmentsTab({
+  rows,
+  loading,
+}: {
+  rows: Adjustment[];
+  loading: boolean;
+}) {
   if (loading) return <TabLoader />;
   if (!rows.length) return <TabEmpty label="Aucun ajustement pour ce bail" />;
 
@@ -949,7 +1133,10 @@ function AdjustmentsTab({ rows, loading }: { rows: Adjustment[]; loading: boolea
         <thead>
           <tr className="border-b border-border-custom">
             {["Date", "Type", "Montant", "Motif"].map((h) => (
-              <th key={h} className="px-5 py-2.5 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-primary/35">
+              <th
+                key={h}
+                className="px-5 py-2.5 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-primary/35"
+              >
                 {h}
               </th>
             ))}
@@ -966,7 +1153,8 @@ function AdjustmentsTab({ rows, loading }: { rows: Adjustment[]; loading: boolea
               </td>
               <td className="px-5 py-3 text-[13px] font-semibold tabular-nums whitespace-nowrap">
                 <span className={a.amount < 0 ? "text-danger" : "text-success"}>
-                  {a.amount >= 0 ? "+" : ""}{fmt.format(a.amount)} FCFA
+                  {a.amount >= 0 ? "+" : ""}
+                  {fmt.format(a.amount)} FCFA
                 </span>
               </td>
               <td className="px-5 py-3 text-[12px] text-primary/60 max-w-xs truncate">

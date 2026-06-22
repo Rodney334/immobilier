@@ -30,9 +30,17 @@ const MONTHS_FR = [
   "Dec",
 ];
 
-function formatXOF(n?: number) {
-  if (n == null) return "—";
-  return new Intl.NumberFormat("fr-FR").format(n);
+// L'API peut retourner des montants en string ("25000.00") — on force en number
+function toNum(v?: number | string | null): number {
+  if (v == null) return 0;
+  const n = typeof v === "string" ? parseFloat(v) : v;
+  return isNaN(n) ? 0 : n;
+}
+
+function formatXOF(n?: number | string | null) {
+  const num = toNum(n);
+  if (num === 0 && n == null) return "—";
+  return new Intl.NumberFormat("fr-FR").format(num);
 }
 function fmtMonthYear(y: number, m: number) {
   return `${MONTHS_FR[m - 1]} ${y}`;
@@ -131,9 +139,9 @@ function ScheduleCard({
   const tenantName = tenant
     ? (tenant.fullName ?? `${tenant.firstName} ${tenant.lastName}`)
     : null;
-  const due = schedule.amountDue ?? schedule.amount;
-  const paid = schedule.amountPaid ?? schedule.paidAmount ?? 0;
-  const remain = schedule.balance ?? schedule.remainingAmount ?? due - paid;
+  const due = toNum(schedule.amountDue ?? schedule.amount);
+  const paid = toNum(schedule.amountPaid ?? schedule.paidAmount);
+  const remain = toNum(schedule.balance ?? schedule.remainingAmount ?? (due - paid));
 
   return (
     <div className={`bg-surface p-4 transition-colors ${cfg.rowCls}`}>
@@ -174,19 +182,16 @@ function ScheduleCard({
 }
 
 function SummaryFooter({ schedules }: { schedules: RentSchedule[] }) {
-  const totalDue = schedules.reduce((s, r) => s + (r.amountDue ?? r.amount), 0);
+  const totalDue = schedules.reduce((s, r) => s + toNum(r.amountDue ?? r.amount), 0);
   const totalPaid = schedules.reduce(
-    (s, r) => s + (r.amountPaid ?? r.paidAmount ?? 0),
+    (s, r) => s + toNum(r.amountPaid ?? r.paidAmount),
     0,
   );
-  const totalRem = schedules.reduce(
-    (s, r) =>
-      s +
-      (r.balance ??
-        r.remainingAmount ??
-        (r.amountDue ?? r.amount) - (r.amountPaid ?? r.paidAmount ?? 0)),
-    0,
-  );
+  const totalRem = schedules.reduce((s, r) => {
+    const due = toNum(r.amountDue ?? r.amount);
+    const paid = toNum(r.amountPaid ?? r.paidAmount);
+    return s + toNum(r.balance ?? r.remainingAmount ?? (due - paid));
+  }, 0);
   const rate = totalDue > 0 ? Math.round((totalPaid / totalDue) * 100) : 0;
   const items = [
     {
@@ -431,9 +436,9 @@ export function SchedulesClient() {
                     const cfg = STATUS_CFG[s.status] ?? STATUS_CFG["PENDING"];
                     const tenant = s.lease?.tenant;
                     const unit = s.lease?.unit;
-                    const due = s.amountDue ?? s.amount;
-                    const paid = s.amountPaid ?? s.paidAmount ?? 0;
-                    const remain = s.balance ?? s.remainingAmount ?? due - paid;
+                    const due = toNum(s.amountDue ?? s.amount);
+                    const paid = toNum(s.amountPaid ?? s.paidAmount);
+                    const remain = toNum(s.balance ?? s.remainingAmount ?? (due - paid));
                     return (
                       <tr
                         key={s.id}

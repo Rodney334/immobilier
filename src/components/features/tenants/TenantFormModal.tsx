@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useActionState } from "react";
+import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { Loader2 } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
@@ -23,6 +23,15 @@ const ID_TYPES: { value: string; label: string }[] = [
   { value: "DriverLicense", label: "Permis de conduire" },
   { value: "ResidencePermit", label: "Titre de sejour" },
   { value: "Other", label: "Autre" },
+];
+
+const LEASE_PURPOSE: { value: string; label: string }[] = [
+  { value: "SHOP", label: "Boutique" },
+  { value: "OFFICE", label: "Bureau" },
+  { value: "STORAGE", label: "Stockage" },
+  { value: "HABITATION", label: "Habitation" },
+  { value: "COMMERCE", label: "Commerce" },
+  { value: "OTHER", label: "Autre" },
 ];
 
 function SubmitButton({ label }: { label: string }) {
@@ -50,10 +59,17 @@ export function TenantFormModal({ tenant, isOpen, onClose, onSaved }: Props) {
       const lastName = (formData.get("lastName") as string).trim();
       const email = (formData.get("email") as string).trim();
       const phone = (formData.get("phone") as string).trim();
+      const secondaryPhone = (formData.get("secondaryPhone") as string).trim();
       const identityType = (formData.get("identityType") as string).trim();
       const identityNumber = (formData.get("identityNumber") as string).trim();
-      const address = (formData.get("address") as string).trim();
-      const emergencyContact = (formData.get("emergencyContact") as string).trim();
+      const leasePurpose = (formData.get("leasePurpose") as string).trim();
+      const leasePurposeDetails = (
+        formData.get("leasePurposeDetails") as string
+      ).trim();
+      // const address = (formData.get("address") as string).trim();
+      const emergencyContact = (
+        formData.get("emergencyContact") as string
+      ).trim();
       const notes = (formData.get("notes") as string).trim();
 
       if (!firstName || !lastName) {
@@ -71,11 +87,14 @@ export function TenantFormModal({ tenant, isOpen, onClose, onSaved }: Props) {
         lastName,
         email: email || undefined,
         phone: phone || undefined,
+        secondaryPhone: secondaryPhone || undefined,
         identityType: identityType || undefined,
         identityNumber: identityNumber || undefined,
-        address: address || undefined,
+        // address: address || undefined,
         emergencyContact: emergencyContact || undefined,
         notes: notes || undefined,
+        leasePurpose: leasePurpose || undefined,
+        leasePurposeDetails: leasePurposeDetails || undefined,
       };
 
       try {
@@ -83,6 +102,7 @@ export function TenantFormModal({ tenant, isOpen, onClose, onSaved }: Props) {
           ? await tenantService.update(tenant!.id, payload)
           : await tenantService.create(payload);
         onSaved(res.data);
+        onClose();
         return { error: null, success: true };
       } catch (err: unknown) {
         const msg =
@@ -92,10 +112,6 @@ export function TenantFormModal({ tenant, isOpen, onClose, onSaved }: Props) {
     },
     { error: null, success: false },
   );
-
-  useEffect(() => {
-    if (state.success) onClose();
-  }, [state.success, onClose]);
 
   return (
     <Modal
@@ -146,6 +162,13 @@ export function TenantFormModal({ tenant, isOpen, onClose, onSaved }: Props) {
           placeholder="+229 97 00 00 00"
           defaultValue={tenant?.phone}
         />
+        <Input
+          name="secondaryPhone"
+          type="tel"
+          label="Second numéro (optionnel)"
+          placeholder="+229 97 00 00 00"
+          defaultValue={tenant?.secondaryPhone}
+        />
 
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
@@ -173,12 +196,12 @@ export function TenantFormModal({ tenant, isOpen, onClose, onSaved }: Props) {
           />
         </div>
 
-        <Input
+        {/* <Input
           name="address"
           label="Adresse (optionnel)"
           placeholder="ex : Cotonou, Zogbo"
           defaultValue={tenant?.address}
-        />
+        /> */}
 
         <div className="grid grid-cols-2 gap-3">
           <Input
@@ -193,6 +216,41 @@ export function TenantFormModal({ tenant, isOpen, onClose, onSaved }: Props) {
             placeholder="ex : Client fidele"
             defaultValue={tenant?.notes}
           />
+        </div>
+
+        <div className="grid grid-cols-1 gap-3">
+          <div className="space-y-1.5">
+            <label className="block text-[12px] font-medium uppercase tracking-[0.06em] text-primary/60">
+              Motif de la location
+            </label>
+            <select
+              name="leasePurpose"
+              defaultValue={tenant?.leasePurpose ?? ""}
+              className="w-full h-11 px-3 rounded-lg border border-border-custom bg-white text-[14px] text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors"
+            >
+              <option value="">Aucune</option>
+              {LEASE_PURPOSE.map((t) => (
+                <option key={t.value} value={t.value}>
+                  {t.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-3">
+          <div className="space-y-1.5">
+            <label className="block text-[12px] font-medium uppercase tracking-[0.06em] text-primary/60">
+              Description du motif de la location
+            </label>
+            <textarea
+              name="leasePurposeDetails"
+              id="leasePurposeDetails"
+              cols={30}
+              defaultValue={tenant?.leasePurposeDetails ?? ""}
+              className="w-full h-11 px-3 rounded-lg border border-border-custom bg-white text-[14px] text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors"
+            ></textarea>
+          </div>
         </div>
 
         <div className="flex items-center justify-end gap-3 pt-4 mt-2 border-t border-border-custom">

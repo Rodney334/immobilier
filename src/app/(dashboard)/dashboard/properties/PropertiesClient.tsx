@@ -57,26 +57,44 @@ function PropertyCard({
             <Building2 size={16} className="text-primary/50" />
           </div>
           <div className="min-w-0">
-            <p className="text-[13px] font-semibold text-primary truncate">{property.name}</p>
-            <p className="text-[12px] text-primary/50 truncate">{property.neighborhood?.name ?? "—"}</p>
+            <p className="text-[13px] font-semibold text-primary truncate">
+              {property.name}
+            </p>
+            <p className="text-[12px] text-primary/50 truncate">
+              {property.neighborhood?.name ?? "—"}
+            </p>
           </div>
         </div>
         <div className="shrink-0">
-          <Badge variant="neutral">{TYPE_LABELS[property.type] ?? property.type}</Badge>
+          <Badge variant="neutral">
+            {TYPE_LABELS[property.type] ?? property.type}
+          </Badge>
         </div>
       </div>
       <div className="grid grid-cols-2 gap-x-4 gap-y-2">
         <div>
-          <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">Type</p>
-          <p className="text-[12px] text-primary/70">{TYPE_LABELS[property.type] ?? property.type}</p>
+          <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">
+            Type
+          </p>
+          <p className="text-[12px] text-primary/70">
+            {TYPE_LABELS[property.type] ?? property.type}
+          </p>
         </div>
         <div>
-          <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">Locaux</p>
-          <p className="text-[12px] text-primary/70 tabular-nums">{property.totalUnits ?? "—"}</p>
+          <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">
+            Locaux liés
+          </p>
+          <p className="text-[12px] text-primary/70 tabular-nums">
+            {property.units.length ?? "—"}
+          </p>
         </div>
         <div className="col-span-2">
-          <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">Créé le</p>
-          <p className="text-[12px] text-primary/70 tabular-nums">{formatDate(property.createdAt)}</p>
+          <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">
+            Créé le
+          </p>
+          <p className="text-[12px] text-primary/70 tabular-nums">
+            {formatDate(property.createdAt)}
+          </p>
         </div>
       </div>
     </div>
@@ -131,7 +149,7 @@ function PropertyRow({
         </Badge>
       </td>
       <td className="px-4 py-3.5 text-[13px] text-primary/70 tabular-nums">
-        {property.totalUnits}
+        {property.units.length}
       </td>
       <td className="px-4 py-3.5 text-[13px] text-primary/50 max-w-50 truncate">
         {property.address}
@@ -282,11 +300,11 @@ export function PropertiesClient() {
           <div className="flex flex-col gap-3 px-4 py-3 lg:flex-row lg:items-center lg:justify-between lg:px-6 lg:py-4 bg-surface border-b border-border-custom shrink-0">
             <div>
               <h1 className="font-semibold text-[18px] lg:text-[20px] text-primary">
-                Biens immobiliers
+                Propriétés
               </h1>
               {pagination && !loading && (
                 <p className="text-[12px] text-primary/40 mt-0.5">
-                  {pagination.total} bien{pagination.total > 1 ? "s" : ""}{" "}
+                  {pagination.total} propriété{pagination.total > 1 ? "s" : ""}{" "}
                   enregistré{pagination.total > 1 ? "s" : ""}
                 </p>
               )}
@@ -363,16 +381,20 @@ export function PropertiesClient() {
                   <table className="w-full border-collapse">
                     <thead className="sticky top-0 z-10 bg-neutral">
                       <tr className="border-b border-border-custom">
-                        {["Bien", "Type", "Locaux", "Adresse", "Créé le"].map(
-                          (h) => (
-                            <th
-                              key={h}
-                              className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-primary/40"
-                            >
-                              {h}
-                            </th>
-                          ),
-                        )}
+                        {[
+                          "Bien",
+                          "Type",
+                          "Locaux liés",
+                          "Adresse",
+                          "Créé le",
+                        ].map((h) => (
+                          <th
+                            key={h}
+                            className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-primary/40"
+                          >
+                            {h}
+                          </th>
+                        ))}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border-custom bg-surface">
@@ -382,7 +404,9 @@ export function PropertiesClient() {
                           property={p}
                           selected={selected?.id === p.id}
                           onClick={() =>
-                            setSelected((prev) => (prev?.id === p.id ? null : p))
+                            setSelected((prev) =>
+                              prev?.id === p.id ? null : p,
+                            )
                           }
                         />
                       ))}

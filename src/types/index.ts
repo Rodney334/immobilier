@@ -17,3 +17,6 @@ export * from './receipt';
 export * from './audit-log';
 export * from './report';
 export * from './payment-plan';
+export * from './incident';
+export * from './deposit';
+export * from './profitability';

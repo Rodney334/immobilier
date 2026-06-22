@@ -141,7 +141,7 @@ export function SettingsClient() {
         <p className="text-[12px] text-primary/40 mt-0.5">Gérez votre profil et vos préférences</p>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-6 py-6 space-y-5 max-w-2xl">
+      <div className="flex-1 overflow-y-auto px-6 py-6 space-y-5">
 
         {/* ── Avatar ── */}
         <Section title="Photo de profil" description="Votre photo apparaît dans l'interface.">

@@ -164,14 +164,12 @@ function NeighborhoodFormModal({
 
 function DetailPanel({
   neighborhood,
-  properties,
   loadingProps,
   onEdit,
   onDelete,
   onClose,
 }: {
   neighborhood: Neighborhood;
-  properties: Property[];
   loadingProps: boolean;
   onEdit: () => void;
   onDelete: () => void;
@@ -247,13 +245,13 @@ function DetailPanel({
                 />
               ))}
             </div>
-          ) : properties.length === 0 ? (
+          ) : neighborhood.properties.length === 0 ? (
             <p className="text-[12px] text-primary/40 italic">
               Aucune propriete dans ce quartier.
             </p>
           ) : (
             <div className="space-y-2">
-              {properties.map((p, i) => (
+              {neighborhood.properties.map((p, i) => (
                 <div
                   key={p.id + i}
                   className="flex items-center justify-between p-3 rounded-lg border border-border-custom hover:border-primary/20 hover:bg-primary/3 transition-colors"
@@ -384,8 +382,13 @@ function NeighborhoodCard({
             <MapPin size={16} className="text-primary/50" />
           </div>
           <div className="min-w-0">
-            <p className="text-[13px] font-semibold text-primary truncate">{neighborhood.name}</p>
-            <p className="text-[12px] text-primary/50 font-mono truncate">{neighborhood.code}</p>
+            <p className="text-[13px] font-semibold text-primary truncate">
+              {neighborhood.name} - Propriétés liées :{" "}
+              {neighborhood.properties.length}
+            </p>
+            <p className="text-[12px] text-primary/50 font-mono truncate">
+              {neighborhood.code}
+            </p>
           </div>
         </div>
         <div className="shrink-0">
@@ -398,8 +401,12 @@ function NeighborhoodCard({
       </div>
       <div className="grid grid-cols-2 gap-x-4 gap-y-2">
         <div className="col-span-2">
-          <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">Description</p>
-          <p className="text-[12px] text-primary/70 truncate">{neighborhood.description || "—"}</p>
+          <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">
+            Description
+          </p>
+          <p className="text-[12px] text-primary/70 truncate">
+            {neighborhood.description || "—"}
+          </p>
         </div>
       </div>
     </div>
@@ -605,16 +612,20 @@ export function NeighborhoodsClient() {
                   <table className="w-full border-collapse">
                     <thead className="sticky top-0 z-10 bg-neutral">
                       <tr className="border-b border-border-custom">
-                        {["Code", "Nom", "Description", "Proprietes liees", ""].map(
-                          (h) => (
-                            <th
-                              key={h}
-                              className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-primary/40"
-                            >
-                              {h}
-                            </th>
-                          ),
-                        )}
+                        {[
+                          "Code",
+                          "Nom",
+                          "Description",
+                          "Proprietes liees",
+                          "",
+                        ].map((h) => (
+                          <th
+                            key={h}
+                            className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-primary/40"
+                          >
+                            {h}
+                          </th>
+                        ))}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border-custom bg-surface">
@@ -645,7 +656,7 @@ export function NeighborhoodsClient() {
                             {n.description || "—"}
                           </td>
                           <td className="px-4 py-3.5 text-[12px] text-primary/50">
-                            0 proprietes
+                            {n.properties.length}
                           </td>
                           <td className="px-3 py-3.5">
                             <RowMenu
@@ -691,7 +702,6 @@ export function NeighborhoodsClient() {
         {selected && (
           <DetailPanel
             neighborhood={selected}
-            properties={selectedProps}
             loadingProps={loadingProps}
             onEdit={() => {
               setEditTarget(selected);

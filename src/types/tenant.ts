@@ -2,6 +2,14 @@
 
 export type TenantStatus = "ACTIVE" | "INACTIVE" | "BLACKLISTED";
 
+export type LeasePurpose =
+  | "SHOP"
+  | "OFFICE"
+  | "STORAGE"
+  | "HABITATION"
+  | "COMMERCE"
+  | "OTHER";
+
 export type IdentityType = string; // CIP, Passport, DriverLicense, etc.
 
 // kept for backward compat
@@ -11,6 +19,7 @@ export type IdType = IdentityType;
 
 export type Tenant = {
   id: string;
+  _id: string;
   firstName?: string;
   lastName?: string;
   fullName: string;
@@ -18,24 +27,27 @@ export type Tenant = {
   secondaryPhone?: string;
   email?: string;
   address?: string;
-  profession?: string;          // occupation / métier
-  identityNumber?: string;      // NPI ou numéro de pièce d'identité
+  profession?: string; // occupation / métier
+  identityNumber?: string; // NPI ou numéro de pièce d'identité
   identityType?: string;
   emergencyContact?: string;
   notes?: string;
   // Blacklist
-  blacklistReason?: string;     // motif de mise en liste noire
-  blacklistedAt?: string;       // date ISO de mise en liste noire
+  blacklistReason?: string; // motif de mise en liste noire
+  blacklistedAt?: string; // date ISO de mise en liste noire
   status: TenantStatus;
   isArchived?: boolean;
   createdAt: string;
   updatedAt: string;
+
+  leasePurpose?: LeasePurpose;
+  leasePurposeDetails?: string;
 };
 
 // --- Payloads ---
 
 export type CreateTenantPayload = {
-  fullName: string;            // obligatoire
+  fullName: string; // obligatoire
   firstName?: string;
   lastName?: string;
   phone?: string;
@@ -47,6 +59,8 @@ export type CreateTenantPayload = {
   emergencyContact?: string;
   notes?: string;
   status?: TenantStatus;
+  leasePurpose?: string;
+  leasePurposeDetails?: string;
 };
 
 export type UpdateTenantPayload = Partial<CreateTenantPayload>;

@@ -1,12 +1,13 @@
-import type { Neighborhood } from './neighborhood';
+import type { Neighborhood } from "./neighborhood";
+import { Unit } from "./unit";
 
 export type PropertyType =
-  | 'Apartment'
-  | 'House'
-  | 'Commercial'
-  | 'Office'
-  | 'Warehouse'
-  | 'Other';
+  | "Apartment"
+  | "House"
+  | "Commercial"
+  | "Office"
+  | "Warehouse"
+  | "Other";
 
 export type Property = {
   id: string;
@@ -25,6 +26,7 @@ export type Property = {
   landmark?: string;
   description?: string;
   isActive?: boolean;
+  units: Unit[];
   createdAt: string;
   updatedAt: string;
 };

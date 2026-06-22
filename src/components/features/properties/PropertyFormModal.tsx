@@ -98,6 +98,7 @@ export function PropertyFormModal({
           ? await propertyService.update(property!.id, payload)
           : await propertyService.create(payload);
         onSaved(res.data);
+        onClose();
         return { error: null, success: true };
       } catch (err: unknown) {
         const msg =
@@ -107,10 +108,6 @@ export function PropertyFormModal({
     },
     { error: null, success: false },
   );
-
-  useEffect(() => {
-    if (state.success) onClose();
-  }, [state.success, onClose]);
 
   return (
     <Modal

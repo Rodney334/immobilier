@@ -17,6 +17,7 @@ export type UnitType =
 
 export type Unit = {
   id: string;
+  _id: string;
   propertyId: string;
   property?: Property;
   unitNumber: string;

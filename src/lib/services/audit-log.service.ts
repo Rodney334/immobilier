@@ -13,33 +13,22 @@ function buildQS(params?: Record<string, unknown>): string {
   if (!params) return '';
   const qs = new URLSearchParams(
     Object.entries(params)
-      .filter(([, v]) => v !== undefined)
+      .filter(([, v]) => v !== undefined && v !== '')
       .map(([k, v]) => [k, String(v)]),
   ).toString();
   return qs ? `?${qs}` : '';
 }
 
 export const auditLogService = {
-  getAll(
-    params?: AuditLogFilterParams,
-  ): Promise<PaginatedResponse<AuditLog>> {
-    return api.get<PaginatedResponse<AuditLog>>(
-      `${BASE}/${buildQS(params)}`,
-    );
+  getAll(params?: AuditLogFilterParams): Promise<PaginatedResponse<AuditLog>> {
+    return api.get<PaginatedResponse<AuditLog>>(`${BASE}/${buildQS(params)}`);
   },
 
   getById(id: string): Promise<ApiResponse<AuditLog>> {
     return api.get<ApiResponse<AuditLog>>(`${BASE}/${id}`);
   },
 
-  /**
-   * Créer une entrée d'audit manuellement.
-   * En général, l'API génère automatiquement les logs —
-   * cette méthode n'est utile que pour des cas exceptionnels.
-   */
-  create(
-    payload: CreateAuditLogPayload,
-  ): Promise<ApiResponse<AuditLog>> {
+  create(payload: CreateAuditLogPayload): Promise<ApiResponse<AuditLog>> {
     return api.post<ApiResponse<AuditLog>>(`${BASE}/`, payload);
   },
 };

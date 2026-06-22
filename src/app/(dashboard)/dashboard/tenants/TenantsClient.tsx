@@ -47,7 +47,10 @@ function TenantCard({
   onClick: () => void;
 }) {
   const cfg = STATUS_CONFIG[tenant.status];
-  const fullName = (tenant.fullName || `${tenant.firstName ?? ""} ${tenant.lastName ?? ""}`.trim()) || "—";
+  const fullName =
+    tenant.fullName ||
+    `${tenant.firstName ?? ""} ${tenant.lastName ?? ""}`.trim() ||
+    "—";
   const initials =
     `${tenant.firstName?.[0] ?? ""}${tenant.lastName?.[0] ?? ""}`.toUpperCase() ||
     fullName[0]?.toUpperCase() ||
@@ -60,12 +63,22 @@ function TenantCard({
     >
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex items-center gap-3 min-w-0">
-          <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${tenant.status === "BLACKLISTED" ? "bg-danger/10" : "bg-primary/8"}`}>
-            <span className={`text-[13px] font-semibold ${tenant.status === "BLACKLISTED" ? "text-danger" : "text-primary/60"}`}>{initials}</span>
+          <div
+            className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${tenant.status === "BLACKLISTED" ? "bg-danger/10" : "bg-primary/8"}`}
+          >
+            <span
+              className={`text-[13px] font-semibold ${tenant.status === "BLACKLISTED" ? "text-danger" : "text-primary/60"}`}
+            >
+              {initials}
+            </span>
           </div>
           <div className="min-w-0">
-            <p className="text-[13px] font-semibold text-primary truncate">{fullName}</p>
-            <p className="text-[12px] text-primary/50 truncate">{tenant.email ?? "—"}</p>
+            <p className="text-[13px] font-semibold text-primary truncate">
+              {fullName}
+            </p>
+            <p className="text-[12px] text-primary/50 truncate">
+              {tenant.email ?? "—"}
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
@@ -74,12 +87,18 @@ function TenantCard({
       </div>
       <div className="grid grid-cols-2 gap-x-4 gap-y-2">
         <div>
-          <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">Téléphone</p>
+          <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">
+            Téléphone
+          </p>
           <p className="text-[12px] text-primary/70">{tenant.phone ?? "—"}</p>
         </div>
         <div>
-          <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">Inscrit le</p>
-          <p className="text-[12px] text-primary/70 tabular-nums">{formatDate(tenant.createdAt)}</p>
+          <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">
+            Inscrit le
+          </p>
+          <p className="text-[12px] text-primary/70 tabular-nums">
+            {formatDate(tenant.createdAt)}
+          </p>
         </div>
       </div>
     </div>
@@ -96,7 +115,10 @@ function TenantRow({
   onClick: () => void;
 }) {
   const cfg = STATUS_CONFIG[tenant.status];
-  const fullName = (tenant.fullName || `${tenant.firstName ?? ""} ${tenant.lastName ?? ""}`.trim()) || "—";
+  const fullName =
+    tenant.fullName ||
+    `${tenant.firstName ?? ""} ${tenant.lastName ?? ""}`.trim() ||
+    "—";
   const initials =
     `${tenant.firstName?.[0] ?? ""}${tenant.lastName?.[0] ?? ""}`.toUpperCase() ||
     fullName[0]?.toUpperCase() ||
@@ -109,12 +131,18 @@ function TenantRow({
     >
       <td className="px-5 py-3.5">
         <div className="flex items-center gap-3">
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-            tenant.status === "BLACKLISTED" ? "bg-danger/10" : "bg-primary/8"
-          }`}>
-            <span className={`text-[12px] font-semibold ${
-              tenant.status === "BLACKLISTED" ? "text-danger" : "text-primary/60"
-            }`}>
+          <div
+            className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+              tenant.status === "BLACKLISTED" ? "bg-danger/10" : "bg-primary/8"
+            }`}
+          >
+            <span
+              className={`text-[12px] font-semibold ${
+                tenant.status === "BLACKLISTED"
+                  ? "text-danger"
+                  : "text-primary/60"
+              }`}
+            >
               {initials}
             </span>
           </div>
@@ -238,8 +266,12 @@ export function TenantsClient() {
 
   function handleSaved(t: Tenant) {
     setTenants((prev) => {
-      const idx = prev.findIndex((x) => x.id === t.id);
-      if (idx >= 0) { const n = [...prev]; n[idx] = t; return n; }
+      const idx = prev.findIndex((x) => x._id === t._id);
+      if (idx >= 0) {
+        const n = [...prev];
+        n[idx] = t;
+        return n;
+      }
       return [t, ...prev];
     });
     setFormOpen(false);
@@ -338,9 +370,11 @@ export function TenantsClient() {
                     <tbody className="divide-y divide-border-custom bg-surface">
                       {tenants.map((t) => (
                         <TenantRow
-                          key={t.id}
+                          key={t._id}
                           tenant={t}
-                          onClick={() => router.push(`/dashboard/tenants/${t.id}`)}
+                          onClick={() =>
+                            router.push(`/dashboard/tenants/${t._id}`)
+                          }
                         />
                       ))}
                     </tbody>
@@ -350,9 +384,9 @@ export function TenantsClient() {
                 <div className="lg:hidden divide-y divide-border-custom">
                   {tenants.map((t) => (
                     <TenantCard
-                      key={t.id}
+                      key={t._id}
                       tenant={t}
-                      onClick={() => router.push(`/dashboard/tenants/${t.id}`)}
+                      onClick={() => router.push(`/dashboard/tenants/${t._id}`)}
                     />
                   ))}
                 </div>
@@ -364,7 +398,6 @@ export function TenantsClient() {
             <PaginationBar meta={pagination} onPage={setPage} />
           )}
         </div>
-
       </div>
 
       <TenantFormModal

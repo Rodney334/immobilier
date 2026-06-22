@@ -60,7 +60,7 @@ export function UnitFormModal({ unit, isOpen, onClose, onSaved }: Props) {
   const [state, formAction] = useActionState(
     async (_prev: FormState, formData: FormData): Promise<FormState> => {
       const propertyId = formData.get("propertyId") as string;
-      const unitNumber = (formData.get("unitNumber") as string).trim();
+      // const unitNumber = (formData.get("unitNumber") as string).trim();
       const label = (formData.get("label") as string).trim();
       const type = (formData.get("type") as string).trim();
       const floor = (formData.get("floor") as string).trim();
@@ -68,26 +68,32 @@ export function UnitFormModal({ unit, isOpen, onClose, onSaved }: Props) {
       const baseRent = (formData.get("baseRent") as string).trim();
 
       if (!isEdit && !propertyId) {
-        return { error: "Veuillez selectionner une propriete.", success: false };
+        return {
+          error: "Veuillez selectionner une propriete.",
+          success: false,
+        };
       }
       if (!baseRent || isNaN(Number(baseRent)) || Number(baseRent) <= 0) {
-        return { error: "Le loyer de base doit etre superieur a 0.", success: false };
+        return {
+          error: "Le loyer de base doit etre superieur a 0.",
+          success: false,
+        };
       }
 
       const payload: CreateUnitPayload = {
         propertyId: propertyId || unit!.propertyId,
-        unitNumber: unitNumber || undefined,   // omis si vide → auto-généré
+        // unitNumber: unitNumber || undefined,   // omis si vide → auto-généré
         label: label || undefined,
         type: type || undefined,
         floor: floor || undefined,
-        area: area || undefined,               // string ("35.50")
-        baseRent,                              // string ("150000")
+        area: area || undefined, // string ("35.50")
+        baseRent, // string ("150000")
       };
 
       try {
         const res = isEdit
           ? await unitService.update(unit!.id, {
-              unitNumber: payload.unitNumber,
+              // unitNumber: payload.unitNumber,
               label: payload.label,
               type: payload.type,
               floor: payload.floor,
@@ -96,6 +102,7 @@ export function UnitFormModal({ unit, isOpen, onClose, onSaved }: Props) {
             })
           : await unitService.create(payload);
         onSaved(res.data);
+        onClose();
         return { error: null, success: true };
       } catch (err: unknown) {
         const msg =
@@ -105,10 +112,6 @@ export function UnitFormModal({ unit, isOpen, onClose, onSaved }: Props) {
     },
     { error: null, success: false },
   );
-
-  useEffect(() => {
-    if (state.success) onClose();
-  }, [state.success, onClose]);
 
   return (
     <Modal
@@ -154,14 +157,14 @@ export function UnitFormModal({ unit, isOpen, onClose, onSaved }: Props) {
           )}
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <Input
+        <div className="grid grid-cols-1 gap-3">
+          {/* <Input
             name="unitNumber"
             label="Numero de local"
             placeholder="ex : L-001 (optionnel)"
             defaultValue={unit?.unitNumber}
             hint="Laissez vide pour auto-generation"
-          />
+          /> */}
           <div className="space-y-1.5">
             <label className="block text-[12px] font-medium uppercase tracking-[0.06em] text-primary/60">
               Type
@@ -193,7 +196,7 @@ export function UnitFormModal({ unit, isOpen, onClose, onSaved }: Props) {
           <Input
             name="baseRent"
             type="number"
-            label="Loyer de base (XOF) *"
+            label="Loyer (XOF) *"
             placeholder="ex : 75000"
             defaultValue={unit?.baseRent}
             required

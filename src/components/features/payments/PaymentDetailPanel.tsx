@@ -102,8 +102,9 @@ export function PaymentDetailPanel({
   const config = STATUS_CONFIG[payment.status];
   const tenantName = payment.lease?.tenant?.fullName || "Locataire inconnu";
   const initials = payment.lease?.tenant
-    ? `${payment.lease.tenant.firstName?.[0] ?? ''}${payment.lease.tenant.lastName?.[0] ?? ''}`.toUpperCase() || '?'
-    : '?';
+    ? `${payment.lease.tenant.firstName?.[0] ?? ""}${payment.lease.tenant.lastName?.[0] ?? ""}`.toUpperCase() ||
+      "?"
+    : "?";
 
   const canCancel =
     payment.status === "RECORDED" || payment.status === "REVERSED";
@@ -238,7 +239,9 @@ export function PaymentDetailPanel({
           <DetailRow
             icon={Calendar}
             label="Date de paiement"
-            value={payment.paymentDate ? formatDate(payment.paymentDate) : undefined}
+            value={
+              payment.paymentDate ? formatDate(payment.paymentDate) : undefined
+            }
           />
           <DetailRow
             icon={CreditCard}
@@ -268,7 +271,8 @@ export function PaymentDetailPanel({
                     className="flex items-center justify-between px-3 py-2 rounded-lg bg-primary/3 border border-border-custom"
                   >
                     <span className="text-[12px] text-primary/60 font-mono truncate">
-                      {alloc.rentScheduleId.slice(0, 8)}…
+                      {/* {alloc.rentScheduleId.slice(0, 8)}… */}
+                      {new Date(alloc.createdAt).toLocaleDateString()}
                     </span>
                     <span className="text-[13px] font-semibold text-primary tabular-nums">
                       {fmt.format(Number(alloc.allocatedAmount))} XOF
