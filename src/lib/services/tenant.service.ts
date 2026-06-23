@@ -6,7 +6,21 @@ import type {
   TenantFilterParams,
   CreateTenantPayload,
   UpdateTenantPayload,
+  Payment,
+  RentSchedule,
+  Adjustment,
+  Lease,
 } from '@/types';
+
+export type TenantSummaryData = {
+  tenant: { _id: string; fullName: string; status: string };
+  totals: { totalPaid: number; totalUnpaid: number };
+  payments: Payment[];
+  unpaidSchedules: RentSchedule[];
+  adjustments: Adjustment[];
+  schedules: RentSchedule[];
+  activeLeases: Lease[];
+};
 
 const BASE = '/api/v1/tenants';
 
@@ -50,5 +64,9 @@ export const tenantService = {
 
   restore(id: string): Promise<ApiResponse<Tenant>> {
     return api.patch<ApiResponse<Tenant>>(`${BASE}/${id}/restore`);
+  },
+
+  getSummary(id: string): Promise<ApiResponse<TenantSummaryData>> {
+    return api.get<ApiResponse<TenantSummaryData>>(`${BASE}/${id}/summary`);
   },
 };

@@ -23,11 +23,6 @@ import {
   Ban,
 } from "lucide-react";
 import { tenantService } from "@/lib/services/tenant.service";
-import { leaseService } from "@/lib/services/lease.service";
-import { rentScheduleService } from "@/lib/services/rent-schedule.service";
-import { paymentService } from "@/lib/services/payment.service";
-import { receiptService } from "@/lib/services/receipt.service";
-import { adjustmentService } from "@/lib/services/adjustment.service";
 import { TenantFormModal } from "@/components/features/tenants/TenantFormModal";
 import { Modal } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
@@ -37,13 +32,12 @@ import type {
   RentSchedule,
   RentScheduleStatus,
   Payment,
-  Receipt,
   Adjustment,
 } from "@/types";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type ActiveTab = "overview" | "payments" | "receipts" | "adjustments";
+type ActiveTab = "overview" | "payments" | "adjustments";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -307,7 +301,6 @@ export function TenantProfileClient({ tenantId }: { tenantId: string }) {
   // Tabs
   const [activeTab, setActiveTab] = useState<ActiveTab>("overview");
   const [tabPayments, setTabPayments] = useState<Payment[]>([]);
-  const [tabReceipts, setTabReceipts] = useState<Receipt[]>([]);
   const [tabAdjustments, setTabAdjustments] = useState<Adjustment[]>([]);
   const [tabLoading, setTabLoading] = useState(false);
   const loadedTabs = useState(() => new Set<ActiveTab>())[0];
@@ -349,49 +342,40 @@ export function TenantProfileClient({ tenantId }: { tenantId: string }) {
     setLoading(true);
     setError(null);
     try {
-      const [tenantRes, leasesRes, paymentsRes] = await Promise.all([
+      const [tenantRes, summaryRes] = await Promise.all([
         tenantService.getById(tenantId),
-        leaseService.getAll({ tenant: tenantId, limit: 50 }),
-        paymentService.getAll({ tenant: tenantId, limit: 200 }),
+        tenantService.getSummary(tenantId),
       ]);
 
       setTenant(tenantRes.data);
-      const ls = Array.isArray(leasesRes.data) ? leasesRes.data : [];
+
+      const summary = summaryRes.data;
+
+      // Leases (ACTIVE + SUSPENDED from summary)
+      const ls = Array.isArray(summary.activeLeases) ? summary.activeLeases : [];
       setLeases(ls);
 
-      // Compute total paid
-      const pmts = Array.isArray(paymentsRes.data) ? paymentsRes.data : [];
-      const paid = pmts
-        .filter((p) => p.status !== "CANCELLED" && p.status !== "REVERSED")
-        .reduce((s, p) => s + Number(p.amount), 0);
-      setTotalPaid(paid);
+      // Schedules
+      const sched = Array.isArray(summary.schedules) ? summary.schedules : [];
+      setSchedules(sched);
 
-      // Load schedules + adjustments for active lease
-      const active = ls.find((l) => l.status === "ACTIVE") ?? null;
-      if (active) {
-        const [schRes, adjRes] = await Promise.all([
-          rentScheduleService.getAll({ lease: active.id, limit: 50 }),
-          adjustmentService.getAll({ lease: active.id }),
-        ]);
-        const sched = Array.isArray(schRes.data) ? schRes.data : [];
-        setSchedules(sched);
+      // Totals (directly from summary)
+      setTotalPaid(summary.totals?.totalPaid ?? 0);
+      setTotalUnpaid(summary.totals?.totalUnpaid ?? 0);
 
-        const unpaid = sched
-          .filter(
-            (s) => s.status === "OVERDUE" || s.status === "PARTIALLY_PAID",
-          )
-          .reduce(
-            (sum, s) => sum + (s.balance ?? s.remainingAmount ?? s.amount ?? 0),
-            0,
-          );
-        setTotalUnpaid(unpaid);
+      // Adjustments stats
+      const adjs = Array.isArray(summary.adjustments) ? summary.adjustments : [];
+      const adjSum = adjs.reduce((s, a) => s + a.amount, 0);
+      setAdjTotal(adjSum);
+      setAdjPos(adjs.filter((a) => a.amount > 0).length);
+      setAdjNeg(adjs.filter((a) => a.amount < 0).length);
 
-        const adjs = Array.isArray(adjRes.data) ? adjRes.data : [];
-        const total = adjs.reduce((s, a) => s + a.amount, 0);
-        setAdjTotal(total);
-        setAdjPos(adjs.filter((a) => a.amount > 0).length);
-        setAdjNeg(adjs.filter((a) => a.amount < 0).length);
-      }
+      // Pre-populate tab data so no lazy fetch is needed
+      const pmts = Array.isArray(summary.payments) ? summary.payments : [];
+      setTabPayments(pmts);
+      setTabAdjustments(adjs);
+      loadedTabs.add("payments");
+      loadedTabs.add("adjustments");
     } catch {
       setError("Impossible de charger le profil.");
     } finally {
@@ -409,39 +393,7 @@ export function TenantProfileClient({ tenantId }: { tenantId: string }) {
     if (loadedTabs.has(activeTab)) return;
     if (activeTab === "overview") return;
 
-    setTabLoading(true);
-    loadedTabs.add(activeTab);
-
-    (async () => {
-      try {
-        if (activeTab === "payments") {
-          const res = await paymentService.getAll({
-            tenant: tenantId,
-            limit: 100,
-          });
-          setTabPayments(Array.isArray(res.data) ? res.data : []);
-        } else if (activeTab === "receipts") {
-          const res = await receiptService.getAll({
-            tenant: tenantId,
-            limit: 100,
-          });
-          setTabReceipts(Array.isArray(res.data) ? res.data : []);
-        } else if (activeTab === "adjustments") {
-          if (activeLease) {
-            const res = await adjustmentService.getAll({
-              lease: activeLease.id,
-            });
-            setTabAdjustments(Array.isArray(res.data) ? res.data : []);
-          }
-        }
-      } catch {
-        // pas bloquant
-      } finally {
-        setTabLoading(false);
-      }
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab]);
+    }, [activeTab]);
 
   // ── Unblacklist ──
 
@@ -801,7 +753,6 @@ export function TenantProfileClient({ tenantId }: { tenantId: string }) {
                     [
                       { id: "overview", label: "Vue d'ensemble" },
                       { id: "payments", label: "Paiements" },
-                      { id: "receipts", label: "Reçus" },
                       { id: "adjustments", label: "Ajustements" },
                     ] as const
                   ).map((t) => (
@@ -833,9 +784,6 @@ export function TenantProfileClient({ tenantId }: { tenantId: string }) {
                   )}
                   {activeTab === "payments" && (
                     <PaymentsTab rows={tabPayments} loading={tabLoading} />
-                  )}
-                  {activeTab === "receipts" && (
-                    <ReceiptsTab rows={tabReceipts} loading={tabLoading} />
                   )}
                   {activeTab === "adjustments" && (
                     <AdjustmentsTab
@@ -1036,64 +984,6 @@ function PaymentsTab({ rows, loading }: { rows: Payment[]; loading: boolean }) {
                 </td>
                 <td className="px-5 py-3 text-[12px] font-mono text-primary/40">
                   {p.reference ?? "—"}
-                </td>
-                <td className="px-5 py-3 text-[12px] font-medium">
-                  <span className={sc.color}>{sc.label}</span>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-// ─── Tab : Reçus ──────────────────────────────────────────────────────────────
-
-const RECEIPT_STATUS_LABELS: Record<string, { label: string; color: string }> =
-  {
-    GENERATED: { label: "Généré", color: "text-success" },
-    PENDING: { label: "En cours", color: "text-secondary" },
-    CANCELLED: { label: "Annulé", color: "text-danger" },
-  };
-
-function ReceiptsTab({ rows, loading }: { rows: Receipt[]; loading: boolean }) {
-  if (loading) return <TabLoader />;
-  if (!rows.length) return <TabEmpty label="Aucun reçu disponible" />;
-
-  return (
-    <div className="overflow-x-auto -mx-5">
-      <table className="w-full border-collapse">
-        <thead>
-          <tr className="border-b border-border-custom">
-            {["N° Reçu", "Date", "Montant", "Statut"].map((h) => (
-              <th
-                key={h}
-                className="px-5 py-2.5 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-primary/35"
-              >
-                {h}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-border-custom">
-          {rows.map((r) => {
-            const sc = RECEIPT_STATUS_LABELS[r.status] ?? {
-              label: r.status,
-              color: "text-primary/50",
-            };
-            const date = r.receiptDate ?? r.issuedAt ?? "";
-            return (
-              <tr key={r.id} className="hover:bg-primary/2">
-                <td className="px-5 py-3 text-[12px] font-mono text-primary/70">
-                  {r.receiptNumber ?? "—"}
-                </td>
-                <td className="px-5 py-3 text-[12px] text-primary/50 tabular-nums whitespace-nowrap">
-                  {date ? formatDate(date) : "—"}
-                </td>
-                <td className="px-5 py-3 text-[13px] font-semibold text-primary tabular-nums whitespace-nowrap">
-                  {formatAmount(r.amount)}
                 </td>
                 <td className="px-5 py-3 text-[12px] font-medium">
                   <span className={sc.color}>{sc.label}</span>
