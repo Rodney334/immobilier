@@ -1,75 +1,96 @@
-import type { ReactNode } from "react";
+import type { ReactNode, CSSProperties } from "react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type BadgeVariant = "success" | "danger" | "warning" | "neutral" | "info";
+export type BadgeVariant =
+  | "success"   // paid, actif
+  | "danger"    // retard, annulé
+  | "warning"   // en attente, partiel
+  | "neutral"   // brouillon, résilié
+  | "info"
+  // Variants sémantiques de la maquette (stamps)
+  | "paid"
+  | "active"
+  | "pending"
+  | "partial"
+  | "overdue"
+  | "draft"
+  | "terminated"
+  | "cancelled";
 
 export type BadgeProps = {
   variant?: BadgeVariant;
-  /** Petite pastille colorée avant le texte */
+  /** Affiche une pastille colorée avant le texte (style dot) */
   dot?: boolean;
+  /** Applique la rotation -1deg typique des stamps de la maquette */
+  stamp?: boolean;
   children: ReactNode;
   className?: string;
+  style?: CSSProperties;
 };
 
 // ─── Style map ────────────────────────────────────────────────────────────────
 
-const variantClasses: Record<
-  BadgeVariant,
-  { badge: string; dot: string }
-> = {
-  // Vert Émeraude → statuts payés, succès
-  success: {
-    badge: "bg-[#2A9D8F]/10 text-[#2A9D8F] border-[#2A9D8F]/20",
-    dot: "bg-[#2A9D8F]",
-  },
-  // Rouge Corail → impayé, erreur, suppression
-  danger: {
-    badge: "bg-[#E76F51]/10 text-[#E76F51] border-[#E76F51]/20",
-    dot: "bg-[#E76F51]",
-  },
-  // Or chaud (Secondary) → avertissement, baux expirant
-  warning: {
-    badge: "bg-[#D4A373]/10 text-[#D4A373] border-[#D4A373]/20",
-    dot: "bg-[#D4A373]",
-  },
-  // Neutre → états génériques, non définis
-  neutral: {
-    badge: "bg-primary/8 text-primary/65 border-primary/15",
-    dot: "bg-primary/40",
-  },
-  // Info → usage occasionnel
-  info: {
-    badge: "bg-blue-50 text-blue-600 border-blue-200",
-    dot: "bg-blue-500",
-  },
+const VARIANT_STYLES: Record<BadgeVariant, { color: string; bg: string }> = {
+  // Aliases sémantiques → redirigent vers les variantes maquette
+  success:     { color: "#5B7B62", bg: "#E0E8DD" },  // sauge
+  danger:      { color: "#A8432F", bg: "#F0DAD2" },  // rouge
+  warning:     { color: "#C99A3A", bg: "#F3E6C4" },  // ocre
+  neutral:     { color: "#3A4944", bg: "rgba(28,43,39,0.07)" }, // ink-soft
+  info:        { color: "#1C5FA8", bg: "#DBEAFE" },
+
+  // Stamps maquette
+  paid:        { color: "#5B7B62", bg: "#E0E8DD" },  // sauge
+  active:      { color: "#5B7B62", bg: "#E0E8DD" },  // sauge
+  pending:     { color: "#C99A3A", bg: "#F3E6C4" },  // ocre
+  partial:     { color: "#C99A3A", bg: "#F3E6C4" },  // ocre
+  overdue:     { color: "#A8432F", bg: "#F0DAD2" },  // rouge
+  draft:       { color: "#3A4944", bg: "rgba(28,43,39,0.07)" },
+  terminated:  { color: "#3A4944", bg: "rgba(28,43,39,0.07)" },
+  cancelled:   { color: "#A8432F", bg: "#F0DAD2" },  // rouge
 };
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function Badge({
   variant = "neutral",
-  dot = false,
+  dot = true,
+  stamp = false,
   children,
   className = "",
+  style: extraStyle,
 }: BadgeProps) {
-  const { badge, dot: dotColor } = variantClasses[variant];
+  const { color, bg } = VARIANT_STYLES[variant];
+
+  const baseStyle: CSSProperties = {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 5,
+    fontFamily: "var(--font-mono)",
+    fontSize: 10.5,
+    fontWeight: 600,
+    textTransform: "uppercase",
+    letterSpacing: "0.05em",
+    padding: "4px 9px 4px 8px",
+    borderRadius: "var(--r-sm)",
+    border: `1.5px solid ${color}`,
+    color,
+    background: bg,
+    transform: stamp ? "rotate(-1deg)" : undefined,
+    whiteSpace: "nowrap",
+    ...extraStyle,
+  };
 
   return (
-    <span
-      className={[
-        "inline-flex items-center gap-1.5",
-        "px-2.5 py-0.5 rounded-full",
-        "text-[12px] font-medium border",
-        badge,
-        className,
-      ]
-        .filter(Boolean)
-        .join(" ")}
-    >
+    <span className={className} style={baseStyle}>
       {dot && (
         <span
-          className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotColor}`}
+          style={{
+            width: 5, height: 5,
+            borderRadius: "50%",
+            background: color,
+            flexShrink: 0,
+          }}
           aria-hidden="true"
         />
       )}

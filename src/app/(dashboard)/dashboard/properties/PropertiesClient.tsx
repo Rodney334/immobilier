@@ -49,7 +49,7 @@ function PropertyCard({
   return (
     <div
       onClick={onClick}
-      className="bg-surface p-4 cursor-pointer active:bg-primary/3 transition-colors"
+      className="bg-surface border border-border-custom rounded-xl p-4 cursor-pointer hover:shadow-md hover:border-primary/20 active:scale-[0.99] transition-all duration-150"
     >
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex items-center gap-3 min-w-0">
@@ -115,14 +115,10 @@ function PropertyRow({
   return (
     <tr
       onClick={onClick}
-      className={`cursor-pointer transition-colors duration-100
-        ${
-          selected
-            ? "bg-secondary/8 border-l-2 border-l-secondary"
-            : "hover:bg-primary/3 border-l-2 border-l-transparent"
-        }`}
+      className="ep-tr"
+      style={selected ? { background: "var(--secondary-soft)", borderLeft: "2px solid var(--secondary)" } : undefined}
     >
-      <td className="px-5 py-3.5">
+      <td className="ep-td">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-primary/6 flex items-center justify-center shrink-0">
             <Building2
@@ -143,18 +139,18 @@ function PropertyRow({
           </div>
         </div>
       </td>
-      <td className="px-4 py-3.5">
-        <Badge variant="neutral">
+      <td className="ep-td">
+        <Badge variant="neutral" stamp>
           {TYPE_LABELS[property.type] ?? property.type}
         </Badge>
       </td>
-      <td className="px-4 py-3.5 text-[13px] text-primary/70 tabular-nums">
+      <td className="ep-td ep-mono tabular-nums text-primary/70">
         {property.units.length}
       </td>
-      <td className="px-4 py-3.5 text-[13px] text-primary/50 max-w-50 truncate">
+      <td className="ep-td text-primary/50 max-w-50 truncate">
         {property.address}
       </td>
-      <td className="px-4 py-3.5 text-[12px] text-primary/40 tabular-nums whitespace-nowrap">
+      <td className="ep-td ep-mono text-primary/40 tabular-nums whitespace-nowrap">
         {formatDate(property.createdAt)}
       </td>
     </tr>
@@ -175,30 +171,12 @@ function PaginationBar({
   const to = Math.min(page * limit, total);
 
   return (
-    <div className="flex items-center justify-between px-5 py-3 border-t border-border-custom bg-surface shrink-0">
-      <p className="text-[12px] text-primary/40 tabular-nums">
-        {from}–{to} sur {total} bien{total > 1 ? "s" : ""}
-      </p>
-      <div className="flex items-center gap-1">
-        <button
-          onClick={() => onPage(page - 1)}
-          disabled={page <= 1}
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-primary/50 hover:text-primary hover:bg-primary/6 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          aria-label="Page précédente"
-        >
-          <ChevronLeft size={15} aria-hidden="true" />
-        </button>
-        <span className="px-3 text-[13px] font-medium text-primary tabular-nums">
-          {page} / {totalPages}
-        </span>
-        <button
-          onClick={() => onPage(page + 1)}
-          disabled={page >= totalPages}
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-primary/50 hover:text-primary hover:bg-primary/6 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          aria-label="Page suivante"
-        >
-          <ChevronRight size={15} aria-hidden="true" />
-        </button>
+    <div className="ep-pagination">
+      <span>{from}–{to} sur {total} bien{total > 1 ? "s" : ""}</span>
+      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <button className="ep-page-btn" onClick={() => onPage(page - 1)} disabled={page <= 1}><ChevronLeft size={13} /></button>
+        <span style={{ fontSize: 12, fontFamily: "var(--font-mono)", padding: "0 8px" }}>Page {page} / {totalPages}</span>
+        <button className="ep-page-btn" onClick={() => onPage(page + 1)} disabled={page >= totalPages}><ChevronRight size={13} /></button>
       </div>
     </div>
   );
@@ -293,35 +271,23 @@ export function PropertiesClient() {
 
   return (
     <>
-      <div className="flex h-screen overflow-hidden">
+      <div style={{ display: "flex", height: "100vh", overflow: "hidden" }}>
         {/* List column */}
         <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
           {/* Toolbar */}
-          <div className="flex flex-col gap-3 px-4 py-3 lg:flex-row lg:items-center lg:justify-between lg:px-6 lg:py-4 bg-surface border-b border-border-custom shrink-0">
+          <div className="ep-topbar" style={{ paddingBottom: 20 }}>
             <div>
-              <h1 className="font-semibold text-[18px] lg:text-[20px] text-primary">
-                Propriétés
-              </h1>
-              {pagination && !loading && (
-                <p className="text-[12px] text-primary/40 mt-0.5">
-                  {pagination.total} propriété{pagination.total > 1 ? "s" : ""}{" "}
-                  enregistré{pagination.total > 1 ? "s" : ""}
-                </p>
-              )}
+              <p className="ep-eyebrow">Parc immobilier</p>
+              <h1 className="ep-page-title">Propriétés</h1>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="relative flex-1 lg:flex-none">
-                <Search
-                  size={14}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-primary/35 pointer-events-none"
-                  aria-hidden="true"
-                />
+            <div className="ep-topbar-actions">
+              <div className="ep-search">
+                <Search size={13} style={{ flexShrink: 0, opacity: 0.5 }} aria-hidden="true" />
                 <input
                   type="search"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Rechercher…"
-                  className="pl-9 pr-4 h-9 w-full lg:w-56 rounded-lg border border-border-custom bg-white text-[13px] text-primary placeholder:text-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors duration-150"
                 />
               </div>
               <button
@@ -329,7 +295,7 @@ export function PropertiesClient() {
                   setEditTarget(null);
                   setFormOpen(true);
                 }}
-                className="flex items-center gap-2 h-9 px-4 bg-primary text-white rounded-lg text-[13px] font-medium hover:bg-[#263447] transition-colors duration-150 shrink-0"
+                className="ep-btn ep-btn-primary"
               >
                 <Plus size={15} aria-hidden="true" />
                 Ajouter une propriété
@@ -338,7 +304,7 @@ export function PropertiesClient() {
           </div>
 
           {error && (
-            <div className="mx-6 mt-4 flex items-center gap-2 px-4 py-3 rounded-lg bg-danger/8 border border-danger/20 text-[13px] text-danger shrink-0">
+            <div style={{ margin: "0 32px 16px", display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: "var(--r-sm)", background: "var(--rouge-soft)", border: "1px solid var(--rouge)", fontSize: 13, color: "var(--rouge)" }}>
               <AlertTriangle size={14} aria-hidden="true" /> {error}
             </div>
           )}
@@ -377,9 +343,10 @@ export function PropertiesClient() {
             ) : (
               <>
                 {/* Table desktop */}
-                <div className="hidden lg:block overflow-x-auto">
+                <div className="hidden lg:block px-4 lg:px-6 py-3">
+                  <div className="ep-panel">
                   <table className="w-full border-collapse">
-                    <thead className="sticky top-0 z-10 bg-neutral">
+                    <thead>
                       <tr className="border-b border-border-custom">
                         {[
                           "Bien",
@@ -390,7 +357,7 @@ export function PropertiesClient() {
                         ].map((h) => (
                           <th
                             key={h}
-                            className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-primary/40"
+                            className="ep-th"
                           >
                             {h}
                           </th>
@@ -412,9 +379,10 @@ export function PropertiesClient() {
                       ))}
                     </tbody>
                   </table>
+                  </div>
                 </div>
                 {/* Cards mobiles */}
-                <div className="lg:hidden divide-y divide-border-custom">
+                <div className="lg:hidden p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                   {properties.map((p) => (
                     <PropertyCard
                       key={p.id}

@@ -203,7 +203,7 @@ function ReceiptCard({
   return (
     <div
       onClick={onClick}
-      className="bg-surface p-4 cursor-pointer active:bg-primary/3 transition-colors"
+      className="bg-surface border border-border-custom rounded-xl p-4 cursor-pointer hover:shadow-md hover:border-primary/20 active:scale-[0.99] transition-all duration-150"
     >
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="min-w-0">
@@ -354,30 +354,12 @@ function PaginationBar({
   const from = (page - 1) * limit + 1;
   const to = Math.min(page * limit, total);
   return (
-    <div className="flex items-center justify-between px-5 py-3 border-t border-border-custom bg-surface shrink-0">
-      <p className="text-[12px] text-primary/40 tabular-nums">
-        {from}–{to} sur {total} recu{total > 1 ? "s" : ""}
-      </p>
-      <div className="flex items-center gap-1">
-        <button
-          onClick={() => onPage(page - 1)}
-          disabled={page <= 1}
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-primary/50 hover:text-primary hover:bg-primary/6 disabled:opacity-30 transition-colors"
-          aria-label="Page precedente"
-        >
-          <ChevronLeft size={15} />
-        </button>
-        <span className="px-3 text-[13px] font-medium text-primary tabular-nums">
-          {page} / {totalPages}
-        </span>
-        <button
-          onClick={() => onPage(page + 1)}
-          disabled={page >= totalPages}
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-primary/50 hover:text-primary hover:bg-primary/6 disabled:opacity-30 transition-colors"
-          aria-label="Page suivante"
-        >
-          <ChevronRight size={15} />
-        </button>
+    <div className="ep-pagination">
+      <span>{from}–{to} sur {total} recu{total > 1 ? "s" : ""}</span>
+      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <button className="ep-page-btn" onClick={() => onPage(page - 1)} disabled={page <= 1}><ChevronLeft size={13} /></button>
+        <span style={{ fontSize: 12, fontFamily: "var(--font-mono)", padding: "0 8px" }}>Page {page} / {totalPages}</span>
+        <button className="ep-page-btn" onClick={() => onPage(page + 1)} disabled={page >= totalPages}><ChevronRight size={13} /></button>
       </div>
     </div>
   );
@@ -556,36 +538,23 @@ export function ReceiptsClient() {
 
   return (
     <>
-      <div className="flex h-screen overflow-hidden">
+      <div style={{ display: "flex", height: "100vh", overflow: "hidden" }}>
         {/* List column */}
         <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
           {/* Toolbar */}
-          <div className="flex flex-col gap-3 px-4 py-3 lg:flex-row lg:items-center lg:justify-between lg:px-6 lg:py-4 bg-surface border-b border-border-custom shrink-0">
+          <div className="ep-topbar" style={{ paddingBottom: 20 }}>
             <div>
-              <h1 className="font-semibold text-[18px] lg:text-[20px] text-primary">Recus</h1>
-              {!loading && (
-                <p className="text-[12px] text-primary/40 mt-0.5">
-                  {stats.total} recu{stats.total > 1 ? "s" : ""}
-                  {stats.generated > 0 &&
-                    ` · ${stats.generated} genere${stats.generated > 1 ? "s" : ""}`}
-                  {stats.cancelled > 0 &&
-                    ` · ${stats.cancelled} annule${stats.cancelled > 1 ? "s" : ""}`}
-                </p>
-              )}
+              <p className="ep-eyebrow">Gestion locative</p>
+              <h1 className="ep-page-title">Recus</h1>
             </div>
-            <div className="flex items-center gap-2">
-              {/* Search */}
-              <div className="relative flex-1 lg:flex-none">
-                <Search
-                  size={14}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-primary/35 pointer-events-none"
-                />
+            <div className="ep-topbar-actions">
+              <div className="ep-search">
+                <Search size={13} style={{ flexShrink: 0, opacity: 0.5 }} />
                 <input
                   type="search"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Chercher un recu..."
-                  className="pl-9 pr-4 h-9 w-full lg:w-52 rounded-lg border border-border-custom bg-white text-[13px] text-primary placeholder:text-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors"
                 />
               </div>
             </div>
@@ -602,12 +571,8 @@ export function ReceiptsClient() {
                 <button
                   key={f.value}
                   onClick={() => setStatusFilter(f.value)}
-                  className={`px-3 py-1 rounded-full text-[12px] font-medium transition-colors whitespace-nowrap
-                    ${
-                      statusFilter === f.value
-                        ? "bg-primary text-white"
-                        : "bg-primary/6 text-primary/60 hover:bg-primary/10 hover:text-primary"
-                    }`}
+                  className="ep-chip"
+                  data-active={statusFilter === f.value ? "true" : "false"}
                 >
                   {f.label}
                 </button>
@@ -669,7 +634,7 @@ export function ReceiptsClient() {
           </div>
 
           {error && (
-            <div className="mx-6 mt-4 flex items-center gap-2 px-4 py-3 rounded-lg bg-danger/8 border border-danger/20 text-[13px] text-danger shrink-0">
+            <div style={{ margin: "0 32px 16px", display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: "var(--r-sm)", background: "var(--rouge-soft)", border: "1px solid var(--rouge)", fontSize: 13, color: "var(--rouge)" }}>
               <AlertTriangle size={14} /> {error}
             </div>
           )}
@@ -695,9 +660,10 @@ export function ReceiptsClient() {
             ) : (
               <>
                 {/* Table desktop */}
-                <div className="hidden lg:block overflow-x-auto">
+                <div className="hidden lg:block px-4 lg:px-6 py-3">
+                  <div className="ep-panel">
                   <table className="w-full border-collapse">
-                    <thead className="sticky top-0 z-10 bg-neutral">
+                    <thead>
                       <tr className="border-b border-border-custom">
                         {[
                           "N° RECU",
@@ -710,7 +676,7 @@ export function ReceiptsClient() {
                         ].map((h, i) => (
                           <th
                             key={i}
-                            className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-primary/40"
+                            className="ep-th"
                           >
                             {h}
                           </th>
@@ -736,33 +702,28 @@ export function ReceiptsClient() {
                             onClick={() =>
                               setSelected((p) => (p?.id === r.id ? null : r))
                             }
-                            className={`cursor-pointer transition-colors duration-100 ${
-                              isSelected
-                                ? "bg-secondary/8 border-l-2 border-l-secondary"
-                                : cfg.row
-                                  ? `${cfg.row} border-l-2 border-l-transparent hover:brightness-95`
-                                  : "hover:bg-primary/3 border-l-2 border-l-transparent bg-surface"
-                            }`}
+                            className={`ep-tr ${cfg.row ?? ""}`}
+                            style={isSelected ? { background: "var(--secondary-soft)", borderLeft: "2px solid var(--secondary)" } : undefined}
                           >
-                            <td className="px-5 py-3.5 text-[13px] font-mono font-medium text-primary/80 whitespace-nowrap">
+                            <td className="ep-td ep-mono font-medium text-primary/80 whitespace-nowrap">
                               {r.receiptNumber ?? "—"}
                             </td>
-                            <td className="px-4 py-3.5 text-[13px] font-medium text-primary max-w-40 truncate">
+                            <td className="ep-td font-medium text-primary max-w-40 truncate">
                               {tenantName}
                             </td>
-                            <td className="px-4 py-3.5 text-[13px] font-mono text-primary/60">
+                            <td className="ep-td ep-mono text-primary/60">
                               {contractRef}
                             </td>
-                            <td className="px-4 py-3.5 text-[13px] font-semibold text-primary tabular-nums whitespace-nowrap">
+                            <td className="ep-td ep-mono ep-amount whitespace-nowrap">
                               {r.amount ? formatAmount(r.amount) : "—"}
                             </td>
-                            <td className="px-4 py-3.5 text-[12px] text-primary/50 tabular-nums whitespace-nowrap">
+                            <td className="ep-td ep-mono text-primary/50 tabular-nums whitespace-nowrap">
                               {date ? formatDate(date) : "—"}
                             </td>
-                            <td className="px-4 py-3.5">
+                            <td className="ep-td">
                               <StatusDot status={r.status} />
                             </td>
-                            <td className="px-3 py-3.5">
+                            <td className="ep-td">
                               <ReceiptRowActions
                                 receipt={r}
                                 onViewDetails={() => setSelected(r)}
@@ -776,9 +737,10 @@ export function ReceiptsClient() {
                       })}
                     </tbody>
                   </table>
+                  </div>
                 </div>
                 {/* Cards mobiles */}
-                <div className="lg:hidden divide-y divide-border-custom">
+                <div className="lg:hidden p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                   {receipts.map((r) => (
                     <ReceiptCard
                       key={r.id}

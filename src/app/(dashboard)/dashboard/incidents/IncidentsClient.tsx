@@ -172,12 +172,8 @@ function Chip({
   return (
     <button
       onClick={onClick}
-      className={[
-        "px-3 py-1 rounded-full text-[12px] border transition-colors duration-150 whitespace-nowrap",
-        active
-          ? "bg-primary text-white border-primary"
-          : "bg-surface text-primary/60 border-border-custom hover:text-primary hover:border-primary/30",
-      ].join(" ")}
+      className="ep-chip"
+      data-active={active ? "true" : "false"}
     >
       {label}
     </button>
@@ -480,22 +476,23 @@ export function IncidentsClient() {
   return (
     <div className="min-h-full bg-bg">
       {/* Topbar */}
-      <div className="bg-surface border-b border-border-custom px-4 py-4 lg:px-6 flex items-center justify-between gap-4">
+      <div className="ep-topbar" style={{ paddingBottom: 20 }}>
         <div>
-          <h1 className="text-[17px] font-medium text-primary">
-            Incidents &amp; Maintenance
-          </h1>
+          <p className="ep-eyebrow">Parc immobilier</p>
+          <h1 className="ep-page-title">Incidents &amp; Maintenance</h1>
         </div>
-        <button
-          onClick={() => {
-            setEditing(null);
-            setModalOpen(true);
-          }}
-          className="flex items-center gap-2 h-9 px-4 bg-primary text-white rounded-lg text-[13px] font-medium hover:bg-[#263447] transition-colors shrink-0"
-        >
-          <Plus size={14} />
-          Signaler un incident
-        </button>
+        <div className="ep-topbar-actions">
+          <button
+            onClick={() => {
+              setEditing(null);
+              setModalOpen(true);
+            }}
+            className="ep-btn ep-btn-primary"
+          >
+            <Plus size={14} />
+            Signaler un incident
+          </button>
+        </div>
       </div>
 
       <div className="px-4 py-5 lg:px-6 space-y-4">

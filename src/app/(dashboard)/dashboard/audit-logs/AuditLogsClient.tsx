@@ -469,46 +469,37 @@ export function AuditLogsClient() {
   ];
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div style={{ display: "flex", height: "100vh", overflow: "hidden" }}>
       {/* ── Main panel ── */}
       <div className="flex flex-col flex-1 overflow-hidden">
         {/* Toolbar */}
-        <div className="px-6 py-4 bg-surface border-b border-border-custom shrink-0 flex items-center justify-between gap-4">
+        <div className="ep-topbar" style={{ paddingBottom: 20 }}>
           <div>
-            <h1 className="font-semibold text-[20px] text-primary">Logs d'audit</h1>
-            <p className="text-[12px] text-primary/40 mt-0.5">
-              {meta.total > 0 ? `${meta.total} entrée${meta.total > 1 ? "s" : ""}` : "Aucune entrée"}
-            </p>
+            <p className="ep-eyebrow">Suivi</p>
+            <h1 className="ep-page-title">Logs d&apos;audit</h1>
           </div>
-          <button
-            onClick={() => setShowCreate(true)}
-            className="flex items-center gap-2 h-9 px-4 bg-primary text-white rounded-lg text-[13px] font-medium hover:bg-[#263447] transition-colors shrink-0"
-          >
-            <Plus size={15} />
-            Créer un log
-          </button>
+          <div className="ep-topbar-actions">
+            <button
+              onClick={() => setShowCreate(true)}
+              className="ep-btn ep-btn-primary"
+            >
+              <Plus size={15} />
+              Créer un log
+            </button>
+          </div>
         </div>
 
         {/* Filters */}
         <div className="px-6 py-3 bg-surface border-b border-border-custom shrink-0 flex flex-wrap items-center gap-3">
           {/* Search */}
-          <div className="relative">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-primary/35 pointer-events-none" />
+          <div className="ep-search">
+            <Search size={13} style={{ flexShrink: 0, opacity: 0.5 }} />
             <input
-              type="text"
+              type="search"
               placeholder="Rechercher par utilisateur…"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="h-9 pl-9 pr-4 w-56 bg-neutral border border-border-custom rounded-lg text-[13px] text-primary placeholder:text-primary/35 outline-none focus:border-primary/30 transition-colors"
             />
-            {search && (
-              <button
-                onClick={() => setSearch("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-primary/30 hover:text-primary/60"
-              >
-                <X size={12} />
-              </button>
-            )}
           </div>
 
           {/* Action filter */}
@@ -566,25 +557,27 @@ export function AuditLogsClient() {
             </div>
           )}
           {!loading && !error && logs.length > 0 && (
+            <div className="px-4 lg:px-6 py-3">
+            <div className="ep-panel">
             <table className="w-full text-[13px]">
               <thead>
-                <tr className="border-b border-border-custom bg-neutral/60">
-                  <th className="text-left px-5 py-3 text-[11px] font-semibold text-primary/40 uppercase tracking-[0.06em] w-40">
+                <tr className="border-b border-border-custom">
+                  <th className="ep-th w-40">
                     Date
                   </th>
-                  <th className="text-left px-4 py-3 text-[11px] font-semibold text-primary/40 uppercase tracking-[0.06em]">
+                  <th className="ep-th">
                     Utilisateur
                   </th>
-                  <th className="text-left px-4 py-3 text-[11px] font-semibold text-primary/40 uppercase tracking-[0.06em] w-36">
+                  <th className="ep-th w-36">
                     Action
                   </th>
-                  <th className="text-left px-4 py-3 text-[11px] font-semibold text-primary/40 uppercase tracking-[0.06em] w-36">
+                  <th className="ep-th w-36">
                     Entité
                   </th>
-                  <th className="text-left px-4 py-3 text-[11px] font-semibold text-primary/40 uppercase tracking-[0.06em] hidden lg:table-cell">
+                  <th className="ep-th hidden lg:table-cell">
                     ID Entité
                   </th>
-                  <th className="text-left px-4 py-3 text-[11px] font-semibold text-primary/40 uppercase tracking-[0.06em] hidden lg:table-cell w-32">
+                  <th className="ep-th hidden lg:table-cell w-32">
                     IP
                   </th>
                 </tr>
@@ -597,17 +590,13 @@ export function AuditLogsClient() {
                     <tr
                       key={log.id || log._id}
                       onClick={() => setSelectedLog(isActive ? null : log)}
-                      className={[
-                        "border-b border-border-custom cursor-pointer transition-colors",
-                        isActive
-                          ? "bg-primary/4"
-                          : "hover:bg-primary/[0.02]",
-                      ].join(" ")}
+                      className="ep-tr"
+                      style={isActive ? { background: "var(--primary-soft)" } : undefined}
                     >
-                      <td className="px-5 py-3 text-primary/50 whitespace-nowrap">
+                      <td className="ep-td ep-mono text-primary/50 whitespace-nowrap">
                         {fmtDate(log.createdAt)}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="ep-td">
                         <p className="font-medium text-primary truncate max-w-[160px]">
                           {log.user?.name ?? log.userId ?? "—"}
                         </p>
@@ -615,22 +604,22 @@ export function AuditLogsClient() {
                           <p className="text-[11px] text-primary/40 truncate max-w-[160px]">{log.user.email}</p>
                         )}
                       </td>
-                      <td className="px-4 py-3">
-                        <Badge variant={cfg.variant}>{cfg.label}</Badge>
+                      <td className="ep-td">
+                        <Badge variant={cfg.variant} stamp>{cfg.label}</Badge>
                       </td>
-                      <td className="px-4 py-3 text-primary/70">
+                      <td className="ep-td text-primary/70">
                         {ENTITY_LABELS[log.entityType] ?? log.entityType}
                       </td>
-                      <td className="px-4 py-3 hidden lg:table-cell">
+                      <td className="ep-td hidden lg:table-cell">
                         {log.entityId ? (
-                          <span className="font-mono text-[12px] text-primary/50 truncate block max-w-[180px]">
+                          <span className="ep-mono text-[12px] text-primary/50 truncate block max-w-[180px]">
                             {log.entityId}
                           </span>
                         ) : (
                           <span className="text-primary/25">—</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 hidden lg:table-cell font-mono text-[12px] text-primary/40">
+                      <td className="ep-td hidden lg:table-cell ep-mono text-[12px] text-primary/40">
                         {log.ipAddress ?? "—"}
                       </td>
                     </tr>
@@ -638,30 +627,19 @@ export function AuditLogsClient() {
                 })}
               </tbody>
             </table>
+            </div>
+            </div>
           )}
         </div>
 
         {/* Pagination */}
         {meta.totalPages > 1 && (
-          <div className="shrink-0 px-6 py-3 border-t border-border-custom bg-surface flex items-center justify-between">
-            <p className="text-[12px] text-primary/40">
-              Page {meta.page} sur {meta.totalPages} · {meta.total} résultat{meta.total > 1 ? "s" : ""}
-            </p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                disabled={meta.page <= 1}
-                className="flex items-center gap-1 h-8 px-3 rounded-lg border border-border-custom text-[12px] text-primary hover:bg-primary/4 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              >
-                <ChevronLeft size={13} /> Préc.
-              </button>
-              <button
-                onClick={() => setPage(p => Math.min(meta.totalPages, p + 1))}
-                disabled={meta.page >= meta.totalPages}
-                className="flex items-center gap-1 h-8 px-3 rounded-lg border border-border-custom text-[12px] text-primary hover:bg-primary/4 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              >
-                Suiv. <ChevronRight size={13} />
-              </button>
+          <div className="ep-pagination">
+            <span>{meta.total} résultat{meta.total > 1 ? "s" : ""}</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <button className="ep-page-btn" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={meta.page <= 1}><ChevronLeft size={13} /></button>
+              <span style={{ fontSize: 12, fontFamily: "var(--font-mono)", padding: "0 8px" }}>Page {meta.page} / {meta.totalPages}</span>
+              <button className="ep-page-btn" onClick={() => setPage(p => Math.min(meta.totalPages, p + 1))} disabled={meta.page >= meta.totalPages}><ChevronRight size={13} /></button>
             </div>
           </div>
         )}

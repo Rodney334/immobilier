@@ -1,62 +1,436 @@
 @import "tailwindcss";
 
+/* ─── Design tokens — maquette Estate Project ────────────────────────────────
+   Palette papier/encre avec accents terracotta, sauge, ocre, rouge.
+   Les variables CSS brutes sont exposées pour les composants qui en ont besoin.
+   Les classes Tailwind (bg-primary, text-secondary…) sont remappées ci-dessous.
+──────────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* — Palette de base — */
+  --ink:            #1C2B27;
+  --ink-soft:       #3A4944;
+  --paper:          #F7F3EC;
+  --paper-raised:   #FFFFFF;
+  --paper-line:     #E4DCC9;
+
+  /* — Accents — */
+  --terracotta:      #C1622D;
+  --terracotta-soft: #F1DDC9;
+  --sauge:           #5B7B62;
+  --sauge-soft:      #E0E8DD;
+  --ocre:            #C99A3A;
+  --ocre-soft:       #F3E6C4;
+  --rouge:           #A8432F;
+  --rouge-soft:      #F0DAD2;
+
+  /* — Polices — */
+  --font-display: var(--font-fraunces, 'Fraunces', serif);
+  --font-serif:   var(--font-source-serif, 'Source Serif 4', serif);
+  --font-sans:    var(--font-inter, 'Inter', sans-serif);
+  --font-mono:    var(--font-ibm-mono, 'IBM Plex Mono', monospace);
+
+  /* — Rayons — */
+  --r-sm: 4px;
+  --r-md: 8px;
+
+  /* — Ombres — */
+  --shadow-card: 0 1px 2px rgba(28,43,39,0.06), 0 1px 0 rgba(28,43,39,0.04);
+}
+
 @theme {
-  /* 1. Couleurs personnalisées */
-  --color-primary: #1E2A38;
-  --color-secondary: #D4A373;
-  --color-success: #2A9D8F;
-  --color-danger: #E76F51;
-  --color-neutral: #F8F9FB;
-  --color-surface: #FFFFFF;
-  --color-border-custom: #E5E7EB;
+  /* Couleurs remappées pour les classes Tailwind existantes */
+  --color-primary:       #1C2B27;   /* ink       → bg-primary / text-primary   */
+  --color-secondary:     #C1622D;   /* terracotta → bg-secondary / text-secondary */
+  --color-success:       #5B7B62;   /* sauge     → bg-success / text-success   */
+  --color-danger:        #A8432F;   /* rouge     → bg-danger / text-danger     */
+  --color-neutral:       #F7F3EC;   /* paper     → bg-neutral                  */
+  --color-surface:       #FFFFFF;   /* paper-raised → bg-surface               */
+  --color-border-custom: #E4DCC9;   /* paper-line → border-border-custom       */
 
-  /* 2. Échelle Typographique (Pratique pour raccourcir vos classes) */
-  --font-size-display: 2rem;       /* 32px */
-  --font-size-h1: 1.5rem;          /* 24px */
-  --font-size-h2: 1.25rem;         /* 20px */
-  --font-size-h3: 1rem;            /* 16px */
-  --font-size-body: 0.875rem;      /* 14px */
-  --font-size-caption: 0.75rem;    /* 12px */
-  --font-size-label: 0.75rem;      /* 12px */
+  /* Couleurs supplémentaires */
+  --color-ink-soft:          #3A4944;
+  --color-terracotta:        #C1622D;
+  --color-terracotta-soft:   #F1DDC9;
+  --color-sauge:             #5B7B62;
+  --color-sauge-soft:        #E0E8DD;
+  --color-ocre:              #C99A3A;
+  --color-ocre-soft:         #F3E6C4;
+  --color-rouge:             #A8432F;
+  --color-rouge-soft:        #F0DAD2;
 
-  /* 3. Radius personnalisé pour la Modal */
+  /* Échelle typographique */
+  --font-size-display: 2rem;
+  --font-size-h1: 1.5rem;
+  --font-size-h2: 1.25rem;
+  --font-size-h3: 1rem;
+  --font-size-body: 0.875rem;
+  --font-size-caption: 0.75rem;
+  --font-size-label: 0.75rem;
+
+  /* Radius */
   --radius-modal: 16px;
 }
 
-/* Styles globaux pour appliquer vos choix par défaut au projet */
+/* Styles globaux */
 @layer base {
   body {
-    background-color: var(--color-neutral);
-    color: var(--color-primary);
+    background-color: var(--paper);
+    background-image:
+      radial-gradient(ellipse at top left, rgba(193,98,45,0.04), transparent 50%),
+      radial-gradient(ellipse at bottom right, rgba(91,123,98,0.04), transparent 50%);
+    color: var(--ink);
+    font-family: var(--font-sans);
     font-size: var(--font-size-body);
     line-height: 1.6;
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    -webkit-font-smoothing: antialiased;
   }
+
+  /* Scrollbar subtile */
+  ::-webkit-scrollbar { width: 9px; height: 9px; }
+  ::-webkit-scrollbar-thumb { background: var(--paper-line); border-radius: 5px; }
 }
 
-/* @import "tailwindcss";
+/* ─── Composants réutilisables — design Estate Project ──────────────────────
+   Classes .ep-* à utiliser directement dans les pages pour assurer
+   la cohérence avec la maquette sans surcharger les props style inline.
+──────────────────────────────────────────────────────────────────────────────── */
+@layer components {
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  /* ── Page header ─────────────────────────────────────────────────────────── */
+  .ep-eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--terracotta);
+    margin-bottom: 6px;
   }
-}
+  .ep-page-title {
+    font-family: var(--font-display);
+    font-size: 30px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    line-height: 1.1;
+  }
+  .ep-page-desc {
+    font-family: var(--font-serif);
+    font-size: 14.5px;
+    color: var(--ink-soft);
+    margin-top: 5px;
+  }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-} */
+  /* ── Panel (carte avec contenu) ──────────────────────────────────────────── */
+  .ep-panel {
+    background: var(--paper-raised);
+    border: 1px solid var(--paper-line);
+    border-radius: var(--r-md);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+  }
+  .ep-panel-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--paper-line);
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .ep-panel-title {
+    font-family: var(--font-display);
+    font-size: 16.5px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .ep-panel-tools {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .ep-panel-foot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 13px 20px;
+    font-size: 12px;
+    color: var(--ink-soft);
+    border-top: 1px solid var(--paper-line);
+  }
+
+  /* ── KPI card ─────────────────────────────────────────────────────────────── */
+  .ep-kpi {
+    background: var(--paper-raised);
+    border: 1px solid var(--paper-line);
+    border-radius: var(--r-md);
+    padding: 18px 20px;
+    box-shadow: var(--shadow-card);
+  }
+  .ep-kpi-label {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--ink-soft);
+  }
+  .ep-kpi-value {
+    font-family: var(--font-display);
+    font-size: 27px;
+    font-weight: 600;
+    margin-top: 8px;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    line-height: 1.1;
+  }
+  .ep-kpi-sub {
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    margin-top: 4px;
+  }
+
+  /* ── Table ────────────────────────────────────────────────────────────────── */
+  .ep-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .ep-th {
+    text-align: left;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-soft);
+    padding: 11px 20px;
+    border-bottom: 1px solid var(--paper-line);
+    background: rgba(228,220,201,0.3);
+    white-space: nowrap;
+  }
+  .ep-td {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--paper-line);
+    font-size: 13.5px;
+    vertical-align: middle;
+    color: var(--ink);
+  }
+  .ep-tr:last-child .ep-td {
+    border-bottom: none;
+  }
+  .ep-tr:hover .ep-td {
+    background: rgba(193,98,45,0.04);
+  }
+  .ep-tr { cursor: pointer; }
+
+  /* ── Cellules spéciales ──────────────────────────────────────────────────── */
+  .ep-mono {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: var(--ink-soft);
+  }
+  .ep-amount {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 13.5px;
+    color: var(--ink);
+  }
+  .ep-cell-strong { font-weight: 600; }
+
+  /* ── Person cell (avatar + nom) ──────────────────────────────────────────── */
+  .ep-person {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+  }
+  .ep-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--terracotta-soft);
+    color: var(--terracotta);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+    text-transform: uppercase;
+  }
+  .ep-person-name { font-weight: 600; font-size: 13px; }
+  .ep-person-sub  { font-size: 11.5px; color: var(--ink-soft); }
+
+  /* ── Boutons ─────────────────────────────────────────────────────────────── */
+  .ep-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 16px;
+    border-radius: var(--r-sm);
+    font-size: 13px;
+    font-weight: 600;
+    border: 1px solid transparent;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    line-height: 1;
+  }
+  .ep-btn-primary  { background: var(--ink);  color: var(--paper); }
+  .ep-btn-primary:hover { background: #0f1a17; }
+  .ep-btn-ghost    { background: transparent; border-color: var(--paper-line); color: var(--ink); }
+  .ep-btn-ghost:hover { background: var(--paper-raised); }
+  .ep-btn-accent   { background: var(--terracotta); color: white; }
+  .ep-btn-accent:hover { background: #a8542a; }
+
+  /* ── Icon button ─────────────────────────────────────────────────────────── */
+  .ep-icon-btn {
+    width: 30px;
+    height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--r-sm);
+    border: 1px solid var(--paper-line);
+    background: var(--paper-raised);
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    flex-shrink: 0;
+  }
+  .ep-icon-btn:hover { background: var(--paper); color: var(--ink); }
+
+  /* ── Filter chip ─────────────────────────────────────────────────────────── */
+  .ep-chip {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    border: 1px solid var(--paper-line);
+    border-radius: 14px;
+    padding: 5px 12px;
+    color: var(--ink-soft);
+    background: var(--paper-raised);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+  }
+  .ep-chip:hover    { border-color: var(--ink-soft); color: var(--ink); }
+  .ep-chip.active,
+  .ep-chip[data-active="true"] {
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--ink);
+  }
+
+  /* ── Search box ──────────────────────────────────────────────────────────── */
+  .ep-search {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--paper);
+    border: 1px solid var(--paper-line);
+    border-radius: var(--r-sm);
+    padding: 6px 10px;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+  }
+  .ep-search input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--ink);
+    font-size: 12.5px;
+    font-family: var(--font-sans);
+    width: 100%;
+  }
+  .ep-search input::placeholder { color: var(--ink-soft); opacity: 0.6; }
+
+  /* ── Section label (séparateur avec texte) ───────────────────────────────── */
+  .ep-section-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--terracotta);
+    margin: 26px 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .ep-section-label::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--paper-line);
+  }
+
+  /* ── Toolbar (zone en-tête de page) ─────────────────────────────────────── */
+  .ep-topbar {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 28px 32px 0;
+    flex-wrap: wrap;
+  }
+  .ep-topbar-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    padding-top: 4px;
+  }
+
+  /* ── Side card ───────────────────────────────────────────────────────────── */
+  .ep-side-card {
+    background: var(--paper-raised);
+    border: 1px solid var(--paper-line);
+    border-radius: var(--r-md);
+    box-shadow: var(--shadow-card);
+    padding: 18px 20px;
+  }
+  .ep-side-card-title {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--ink);
+    margin-bottom: 12px;
+  }
+
+  /* ── Progress bar ────────────────────────────────────────────────────────── */
+  .ep-progress-track {
+    width: 100%;
+    height: 6px;
+    border-radius: 4px;
+    background: var(--paper-line);
+    overflow: hidden;
+  }
+  .ep-progress-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s;
+  }
+
+  /* ── Pagination ──────────────────────────────────────────────────────────── */
+  .ep-pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 13px 20px;
+    font-size: 12px;
+    color: var(--ink-soft);
+    border-top: 1px solid var(--paper-line);
+  }
+  .ep-page-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: var(--r-sm);
+    border: 1px solid var(--paper-line);
+    background: var(--paper-raised);
+    color: var(--ink-soft);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+  .ep-page-btn:hover:not(:disabled) { background: var(--paper); color: var(--ink); }
+  .ep-page-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+}

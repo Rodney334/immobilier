@@ -19,4 +19,6 @@ export * from './report';
 export * from './payment-plan';
 export * from './incident';
 export * from './deposit';
+export * from './guarantor';
 export * from './profitability';
+export * from './contract-template';

@@ -107,18 +107,29 @@ function KpiCard({
     danger: "bg-danger/10 text-danger",
   }[accent];
   return (
-    <div className="bg-surface rounded-xl border border-border-custom p-5 flex flex-col gap-4">
-      <div className="flex items-start justify-between">
-        <div
-          className={`w-10 h-10 rounded-lg flex items-center justify-center ${cls}`}
-        >
+    <div
+      className="flex flex-col gap-3"
+      style={{
+        background: "var(--paper-raised)",
+        border: "1px solid var(--paper-line)",
+        borderRadius: "var(--r-md)",
+        padding: "18px 20px",
+        boxShadow: "var(--shadow-card)",
+      }}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <p style={{
+          fontFamily: "var(--font-mono)",
+          fontSize: 10.5,
+          textTransform: "uppercase",
+          letterSpacing: "0.07em",
+          color: "var(--ink-soft)",
+        }}>
+          {label}
+        </p>
+        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${cls}`}>
           {icon}
         </div>
-        <ArrowUpRight
-          size={14}
-          className="text-primary/25"
-          aria-hidden="true"
-        />
       </div>
       {loading ? (
         <div className="space-y-2">
@@ -127,15 +138,19 @@ function KpiCard({
         </div>
       ) : (
         <div>
-          <p className="font-semibold text-[28px] text-primary tracking-tight tabular-nums leading-none">
+          <p style={{
+            fontFamily: "var(--font-display)",
+            fontSize: 27,
+            fontWeight: 600,
+            letterSpacing: "-0.01em",
+            color: "var(--ink)",
+            lineHeight: 1.1,
+          }}>
             {value}
           </p>
-          {sub && <p className="mt-1 text-[12px] text-primary/45">{sub}</p>}
+          {sub && <p className="mt-1 text-[11.5px]" style={{ color: "var(--ink-soft)" }}>{sub}</p>}
         </div>
       )}
-      <p className="text-[12px] font-medium uppercase tracking-[0.06em] text-primary/40">
-        {label}
-      </p>
     </div>
   );
 }
@@ -161,13 +176,13 @@ function RevenueChart({
   const now = new Date();
   const ticks = [0, 0.25, 0.5, 0.75, 1].map((f) => Math.round(maxVal * f));
   return (
-    <div className="bg-surface rounded-xl border border-border-custom p-5">
+    <div style={{ background: "var(--paper-raised)", border: "1px solid var(--paper-line)", borderRadius: "var(--r-md)", padding: "20px", boxShadow: "var(--shadow-card)" }}>
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h2 className="font-semibold text-[16px] text-primary">
+          <h2 style={{ fontFamily: "var(--font-display)", fontSize: 16.5, fontWeight: 600, color: "var(--ink)" }}>
             Revenus mensuels
           </h2>
-          <p className="text-[12px] text-primary/40" suppressHydrationWarning>
+          <p className="text-[12px]" style={{ color: "var(--ink-soft)" }} suppressHydrationWarning>
             {now.getFullYear()}
           </p>
         </div>
@@ -547,15 +562,18 @@ export function DashboardHomeClient() {
   const now = new Date();
 
   return (
-    <div className="p-8 space-y-8 max-w-300">
+    <div className="p-8 space-y-8 max-w-[1320px]">
       {/* ── Header ── */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="font-semibold text-[24px] text-primary tracking-tight">
+          <p style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--terracotta)", marginBottom: 6 }}>
+            Vue d'ensemble
+          </p>
+          <h1 style={{ fontFamily: "var(--font-display)", fontSize: 30, fontWeight: 600, letterSpacing: "-0.01em", color: "var(--ink)" }}>
             Tableau de bord
           </h1>
           {clientDate && (
-            <p className="text-[13px] text-primary/40 mt-0.5 capitalize">
+            <p className="text-[14.5px] mt-1 capitalize" style={{ fontFamily: "var(--font-serif)", color: "var(--ink-soft)" }}>
               {clientDate}
             </p>
           )}
@@ -564,13 +582,15 @@ export function DashboardHomeClient() {
           {/* Shortcut buttons */}
           <Link
             href="/dashboard/payments"
-            className="flex items-center gap-2 h-9 px-4 bg-primary text-white rounded-lg text-[13px] font-medium hover:bg-[#263447] transition-colors"
+            className="flex items-center gap-2 h-9 px-4 text-white text-[13px] font-semibold transition-colors"
+            style={{ background: "var(--ink)", borderRadius: "var(--r-sm)" }}
           >
             <CreditCard size={14} /> Enregistrer un paiement
           </Link>
           <Link
             href="/dashboard/tenants"
-            className="flex items-center gap-2 h-9 px-4 border border-border-custom rounded-lg text-[13px] font-medium text-primary hover:bg-primary/4 transition-colors"
+            className="flex items-center gap-2 h-9 px-4 text-[13px] font-semibold transition-colors"
+            style={{ border: "1px solid var(--paper-line)", borderRadius: "var(--r-sm)", color: "var(--ink)", background: "var(--paper-raised)" }}
           >
             <UserPlus size={14} /> Nouveau locataire
           </Link>
@@ -578,7 +598,8 @@ export function DashboardHomeClient() {
           <button
             onClick={loadAll}
             disabled={loading}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg border border-border-custom text-[13px] text-primary/60 hover:text-primary hover:border-primary/30 bg-surface transition-colors disabled:opacity-40"
+            className="flex items-center gap-2 px-4 py-2 text-[13px] transition-colors disabled:opacity-40"
+            style={{ border: "1px solid var(--paper-line)", borderRadius: "var(--r-sm)", color: "var(--ink-soft)", background: "var(--paper-raised)" }}
             aria-label="Rafraîchir"
           >
             <RefreshCw
@@ -677,14 +698,14 @@ export function DashboardHomeClient() {
         <RevenueChart annual={data.annual} loading={loading} />
 
         {/* Baux expirant bientôt */}
-        <div className="bg-surface rounded-xl border border-border-custom p-5 flex flex-col">
+        <div className="flex flex-col" style={{ background: "var(--paper-raised)", border: "1px solid var(--paper-line)", borderRadius: "var(--r-md)", padding: "18px 20px", boxShadow: "var(--shadow-card)" }}>
           <div className="flex items-center gap-2 mb-4">
             <AlertTriangle
               size={15}
-              className="text-secondary"
+              style={{ color: "var(--terracotta)" }}
               aria-hidden="true"
             />
-            <h2 className="font-semibold text-[16px] text-primary">
+            <h2 style={{ fontFamily: "var(--font-display)", fontSize: 15, fontWeight: 600, color: "var(--ink)" }}>
               Baux expirant bientôt
             </h2>
             {!loading && data.expiringLeases.length > 0 && (
@@ -742,9 +763,9 @@ export function DashboardHomeClient() {
       {/* ── Bottom row: Paiements récents + Locataires en retard ── */}
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_340px] gap-6">
         {/* Paiements récents */}
-        <div className="bg-surface rounded-xl border border-border-custom overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-border-custom">
-            <h2 className="font-semibold text-[16px] text-primary">
+        <div style={{ background: "var(--paper-raised)", border: "1px solid var(--paper-line)", borderRadius: "var(--r-md)", overflow: "hidden", boxShadow: "var(--shadow-card)" }}>
+          <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: "1px solid var(--paper-line)" }}>
+            <h2 style={{ fontFamily: "var(--font-display)", fontSize: 16.5, fontWeight: 600, color: "var(--ink)" }}>
               Paiements récents
             </h2>
             <Link
@@ -775,8 +796,8 @@ export function DashboardHomeClient() {
             </div>
           ) : (
             <table className="w-full border-collapse">
-              <thead className="bg-neutral">
-                <tr className="border-b border-border-custom">
+              <thead>
+                <tr style={{ borderBottom: "1px solid var(--paper-line)", background: "rgba(228,220,201,0.25)" }}>
                   {[
                     "Date",
                     "Locataire",
@@ -787,14 +808,14 @@ export function DashboardHomeClient() {
                   ].map((h) => (
                     <th
                       key={h}
-                      className="px-5 py-3 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-primary/40 whitespace-nowrap"
+                      style={{ textAlign: "left", fontFamily: "var(--font-mono)", fontSize: 10.5, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--ink-soft)", padding: "11px 20px", whiteSpace: "nowrap" }}
                     >
                       {h}
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border-custom">
+              <tbody style={{ borderTop: "none" }}>
                 {data.recentPayments.map((p) => {
                   const tenantName =
                     p.lease?.tenant?.fullName ||
@@ -841,15 +862,17 @@ export function DashboardHomeClient() {
 
         {/* Locataires en retard */}
         <div
-          className="rounded-xl overflow-hidden"
+          className="overflow-hidden"
           style={{
-            background: "linear-gradient(135deg, #E8735A 0%, #D4604A 100%)",
+            background: "var(--ink)",
+            borderRadius: "var(--r-md)",
+            boxShadow: "var(--shadow-card)",
           }}
         >
           <div className="px-5 pt-5 pb-3">
             <div className="flex items-center gap-2">
-              <Users size={16} className="text-white/80" />
-              <h2 className="font-semibold text-[16px] text-white">
+              <Users size={16} style={{ color: "var(--terracotta)" }} />
+              <h2 style={{ fontFamily: "var(--font-display)", fontSize: 16, fontWeight: 600, color: "var(--paper)" }}>
                 Locataires en retard
               </h2>
               {!loading && data.overdueItems.length > 0 && (

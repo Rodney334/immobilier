@@ -1,17 +1,25 @@
+import { Lease } from "./lease";
+
 // Valeurs exactes de l'API (enum backend)
-export type AdjustmentType = 'DISCOUNT' | 'PENALTY' | 'CORRECTION' | 'RENT_REVISION' | 'WAIVER';
-export type AdjustmentValueMode = 'FIXED' | 'PERCENTAGE';
+export type AdjustmentType =
+  | "DISCOUNT"
+  | "PENALTY"
+  | "CORRECTION"
+  | "RENT_REVISION"
+  | "WAIVER";
+export type AdjustmentValueMode = "FIXED" | "PERCENTAGE";
 
 export type Adjustment = {
   id: string;
   scheduleId?: string;
+  lease?: Lease;
   leaseId?: string;
   type: AdjustmentType;
   amount: number;
   valueMode?: AdjustmentValueMode;
   reason: string;
   label?: string;
-  appliedDate: string;
+  effectiveDate: string;
   createdAt: string;
   updatedAt: string;
 };

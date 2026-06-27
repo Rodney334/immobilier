@@ -374,7 +374,7 @@ function NeighborhoodCard({
   return (
     <div
       onClick={onClick}
-      className="bg-surface p-4 cursor-pointer active:bg-primary/3 transition-colors"
+      className="bg-surface border border-border-custom rounded-xl p-4 cursor-pointer hover:shadow-md hover:border-primary/20 active:scale-[0.99] transition-all duration-150"
     >
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex items-center gap-3 min-w-0">
@@ -522,50 +522,30 @@ export function NeighborhoodsClient() {
 
   return (
     <>
-      <div className="flex h-screen overflow-hidden">
+      <div style={{ display: "flex", height: "100vh", overflow: "hidden" }}>
         <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
           {/* Toolbar */}
-          <div className="flex flex-col gap-3 px-4 py-3 lg:flex-row lg:items-center lg:justify-between lg:px-6 lg:py-4 bg-surface border-b border-border-custom shrink-0">
+          <div className="ep-topbar" style={{ paddingBottom: 20 }}>
             <div>
-              <h1 className="font-semibold text-[18px] lg:text-[20px] text-primary">
-                Quartiers
-              </h1>
-              {!loading && (
-                <p className="text-[12px] text-primary/40 mt-0.5">
-                  Referentiel geographique · {neighborhoods.length} quartier
-                  {neighborhoods.length > 1 ? "s" : ""} enregistre
-                  {neighborhoods.length > 1 ? "s" : ""}
-                </p>
-              )}
+              <p className="ep-eyebrow">Parc immobilier</p>
+              <h1 className="ep-page-title">Quartiers</h1>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="relative flex-1 lg:flex-none">
-                <Search
-                  size={14}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-primary/35 pointer-events-none"
-                />
+            <div className="ep-topbar-actions">
+              <div className="ep-search">
+                <Search size={13} style={{ flexShrink: 0, opacity: 0.5 }} />
                 <input
                   type="search"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Chercher un quartier..."
-                  className="pl-9 pr-4 h-9 w-full lg:w-56 rounded-lg border border-border-custom bg-white text-[13px] text-primary placeholder:text-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors"
                 />
-                {search && (
-                  <button
-                    onClick={() => setSearch("")}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-primary/30 hover:text-primary"
-                  >
-                    <X size={13} />
-                  </button>
-                )}
               </div>
               <button
                 onClick={() => {
                   setEditTarget(null);
                   setFormOpen(true);
                 }}
-                className="flex items-center gap-2 h-9 px-4 bg-primary text-white rounded-lg text-[13px] font-medium hover:bg-[#263447] transition-colors shrink-0"
+                className="ep-btn ep-btn-primary"
               >
                 <Plus size={15} /> Nouveau quartier
               </button>
@@ -573,7 +553,7 @@ export function NeighborhoodsClient() {
           </div>
 
           {error && (
-            <div className="mx-6 mt-4 flex items-center gap-2 px-4 py-3 rounded-lg bg-danger/8 border border-danger/20 text-[13px] text-danger shrink-0">
+            <div style={{ margin: "0 32px 16px", display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: "var(--r-sm)", background: "var(--rouge-soft)", border: "1px solid var(--rouge)", fontSize: 13, color: "var(--rouge)" }}>
               <AlertTriangle size={14} /> {error}
             </div>
           )}
@@ -608,9 +588,10 @@ export function NeighborhoodsClient() {
             ) : (
               <>
                 {/* Table desktop */}
-                <div className="hidden lg:block overflow-x-auto">
+                <div className="hidden lg:block px-4 lg:px-6 py-3">
+                  <div className="ep-panel">
                   <table className="w-full border-collapse">
-                    <thead className="sticky top-0 z-10 bg-neutral">
+                    <thead>
                       <tr className="border-b border-border-custom">
                         {[
                           "Code",
@@ -621,7 +602,7 @@ export function NeighborhoodsClient() {
                         ].map((h) => (
                           <th
                             key={h}
-                            className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-primary/40"
+                            className="ep-th"
                           >
                             {h}
                           </th>
@@ -635,14 +616,15 @@ export function NeighborhoodsClient() {
                           onClick={() =>
                             setSelected((p) => (p?.id === n.id ? null : n))
                           }
-                          className={`cursor-pointer transition-colors duration-100 ${selected?.id === n.id ? "bg-secondary/8 border-l-2 border-l-secondary" : "hover:bg-primary/3 border-l-2 border-l-transparent"}`}
+                          className="ep-tr"
+                          style={selected?.id === n.id ? { background: "var(--secondary-soft)", borderLeft: "2px solid var(--secondary)" } : undefined}
                         >
-                          <td className="px-4 py-3.5">
+                          <td className="ep-td">
                             <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-mono bg-primary/6 text-primary/60 tracking-wider">
                               {n.code}
                             </span>
                           </td>
-                          <td className="px-4 py-3.5">
+                          <td className="ep-td">
                             <div className="flex items-center gap-2.5">
                               <div className="w-8 h-8 rounded-lg bg-primary/6 flex items-center justify-center shrink-0">
                                 <MapPin size={14} className="text-primary/50" />
@@ -652,13 +634,13 @@ export function NeighborhoodsClient() {
                               </p>
                             </div>
                           </td>
-                          <td className="px-4 py-3.5 text-[12px] text-primary/50 max-w-50 truncate">
+                          <td className="ep-td text-primary/50 max-w-50 truncate">
                             {n.description || "—"}
                           </td>
-                          <td className="px-4 py-3.5 text-[12px] text-primary/50">
+                          <td className="ep-td ep-mono text-primary/50">
                             {n.properties.length}
                           </td>
-                          <td className="px-3 py-3.5">
+                          <td className="ep-td">
                             <RowMenu
                               onEdit={() => {
                                 setEditTarget(n);
@@ -674,9 +656,10 @@ export function NeighborhoodsClient() {
                       ))}
                     </tbody>
                   </table>
+                  </div>
                 </div>
                 {/* Cards mobiles */}
-                <div className="lg:hidden divide-y divide-border-custom">
+                <div className="lg:hidden p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                   {filtered.map((n) => (
                     <NeighborhoodCard
                       key={n.id}

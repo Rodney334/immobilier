@@ -9,6 +9,7 @@ export type DepositDeduction = {
   _id: string;
   label: string;
   amount: number;
+  effectiveDate?: string;
   reason?: string;
   createdAt: string;
 };
@@ -19,28 +20,19 @@ export type Deposit = {
   id: string;
   _id: string;
   leaseId: string;
-  lease?: {
-    id: string;
-    contractNumber?: string;
-    tenant?: { id: string; fullName?: string; firstName?: string; lastName?: string };
-    unit?: {
-      id: string;
-      unitNumber: string;
-      label?: string;
-      property?: { id: string; name: string };
-    };
-  };
   depositAmount: number;
-  currency?: string;
+  // currency?: string;
   status: DepositStatus;
   deductions: DepositDeduction[];
+  tenantName: string;
   totalDeductions: number;
-  refundedAmount?: number;
-  refundNotes?: string;
-  refundedAt?: string;
-  netRefundable: number;
+  refundableAmount?: number;
   createdAt: string;
-  updatedAt: string;
+  unitLabel: string;
+  // refundNotes?: string;
+  // refundedAt?: string;
+  // netRefundable: number;
+  // updatedAt: string;
 };
 
 // ─── Payloads ─────────────────────────────────────────────────────────────────

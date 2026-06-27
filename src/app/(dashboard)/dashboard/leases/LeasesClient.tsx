@@ -2,15 +2,8 @@
 
 import { useEffect, useState, useCallback } from "react";
 import {
-  Plus,
-  Search,
-  FileText,
-  Loader2,
-  AlertTriangle,
-  ChevronLeft,
-  ChevronRight,
-  MoreVertical,
-  Download,
+  Plus, Search, FileText, Loader2, AlertTriangle,
+  ChevronLeft, ChevronRight, Download,
 } from "lucide-react";
 import { leaseService } from "@/lib/services/lease.service";
 import { useToast } from "@/components/ui/Toast";
@@ -19,310 +12,66 @@ import { LeaseFormModal } from "@/components/features/leases/LeaseFormModal";
 import { LeaseTerminateModal } from "@/components/features/leases/LeaseTerminateModal";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
-import type {
-  Lease,
-  LeaseStatus,
-  LeasePeriodicity,
-  PaginationMeta,
-} from "@/types";
+import type { Lease, LeaseStatus, LeasePeriodicity, PaginationMeta } from "@/types";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const STATUS_CONFIG: Record<
-  LeaseStatus,
-  {
-    label: string;
-    variant: "success" | "warning" | "danger" | "neutral" | "info";
-  }
-> = {
-  ACTIVE: { label: "Actif", variant: "success" },
-  ARCHIVED: { label: "Archivé", variant: "warning" },
-  DRAFT: { label: "Brouillon", variant: "neutral" },
-  EXPIRED: { label: "Expiré", variant: "neutral" },
-  SUSPENDED: { label: "Suspendu", variant: "warning" },
-  TERMINATED: { label: "Clôturé", variant: "neutral" },
+const STATUS_CONFIG: Record<LeaseStatus, { label: string; variant: "success"|"warning"|"danger"|"neutral"|"active"|"pending"|"draft"|"terminated" }> = {
+  ACTIVE:     { label: "Actif",      variant: "active"     },
+  ARCHIVED:   { label: "Archivé",    variant: "pending"    },
+  DRAFT:      { label: "Brouillon",  variant: "draft"      },
+  EXPIRED:    { label: "Expiré",     variant: "neutral"    },
+  SUSPENDED:  { label: "Suspendu",   variant: "warning"    },
+  TERMINATED: { label: "Clôturé",   variant: "terminated" },
 };
 
 const FREQ_LABELS: Record<LeasePeriodicity, string> = {
-  MONTHLY: "Mensuel",
-  QUARTERLY: "Trimestriel",
-  YEARLY: "Annuel",
+  MONTHLY: "Mensuel", QUARTERLY: "Trimestriel", YEARLY: "Annuel",
 };
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("fr-FR", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
+const FILTER_OPTIONS: { value: LeaseStatus | "all"; label: string }[] = [
+  { value: "all",        label: "Tous"       },
+  { value: "ACTIVE",     label: "Actifs"     },
+  { value: "DRAFT",      label: "Brouillon"  },
+  { value: "EXPIRED",    label: "Expiré"     },
+  { value: "SUSPENDED",  label: "Suspendu"   },
+  { value: "TERMINATED", label: "Clôturé"   },
+];
+
+function fmt(iso: string) {
+  return new Date(iso).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" });
 }
-function formatXOF(n: number) {
-  return new Intl.NumberFormat("fr-FR").format(n) + " XOF";
+function fmtMono(iso: string) {
+  const d = new Date(iso);
+  return `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${String(d.getFullYear()).slice(2)}`;
 }
-function daysUntil(iso: string) {
-  return Math.ceil((new Date(iso).getTime() - Date.now()) / 86_400_000);
-}
-
-// ─── Row actions menu ─────────────────────────────────────────────────────────
-
-function LeaseRowActions({
-  lease,
-  onViewDetails,
-  onTerminate,
-  onDownload,
-}: {
-  lease: Lease;
-  onViewDetails: () => void;
-  onTerminate: () => void;
-  onDownload: () => void;
-}) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="relative" onClick={(e) => e.stopPropagation()}>
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="w-7 h-7 rounded-md flex items-center justify-center text-primary/30 hover:text-primary hover:bg-primary/6 transition-colors"
-      >
-        <MoreVertical size={14} />
-      </button>
-      {open && (
-        <>
-          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-8 z-20 w-48 bg-white rounded-lg shadow-lg border border-border-custom py-1 text-[13px]">
-            <button
-              onClick={() => {
-                setOpen(false);
-                onViewDetails();
-              }}
-              className="w-full text-left px-4 py-2 hover:bg-primary/4 text-primary/70 hover:text-primary transition-colors"
-            >
-              Voir les details
-            </button>
-            {lease.status === "ACTIVE" && (
-              <button
-                onClick={() => {
-                  setOpen(false);
-                  onTerminate();
-                }}
-                className="w-full text-left px-4 py-2 hover:bg-danger/6 text-danger transition-colors"
-              >
-                Resilier
-              </button>
-            )}
-            <div className="my-1 border-t border-border-custom" />
-            <button
-              onClick={() => {
-                setOpen(false);
-                onDownload();
-              }}
-              className="w-full text-left px-4 py-2 hover:bg-primary/4 text-primary/70 hover:text-primary transition-colors flex items-center gap-2"
-            >
-              <Download size={12} /> Telecharger PDF
-            </button>
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
-// ─── Mobile card ─────────────────────────────────────────────────────────────
-
-function LeaseCard({
-  lease,
-  onClick,
-  onTerminate,
-  onDownload,
-}: {
-  lease: Lease;
-  onClick: () => void;
-  onTerminate: () => void;
-  onDownload: () => void;
-}) {
-  const cfg = STATUS_CONFIG[lease.status];
-  const tenantName =
-    lease.tenant?.fullName ??
-    (lease.tenant ? `${lease.tenant.firstName} ${lease.tenant.lastName}` : "—");
-  const unitLabel = lease.unit ? `Local ${lease.unit.unitNumber}` : "—";
-
-  return (
-    <div
-      onClick={onClick}
-      className="bg-surface p-4 cursor-pointer active:bg-primary/3 transition-colors"
-    >
-      <div className="flex items-start justify-between gap-3 mb-3">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="w-9 h-9 rounded-full bg-primary/8 flex items-center justify-center shrink-0">
-            <span className="text-[13px] font-semibold text-primary/60">
-              {tenantName !== "—" ? tenantName.split(" ").map((w: string) => w[0]).slice(0, 2).join("").toUpperCase() : "?"}
-            </span>
-          </div>
-          <div className="min-w-0">
-            <p className="text-[13px] font-semibold text-primary truncate">{tenantName}</p>
-            <p className="text-[12px] text-primary/50 truncate">{unitLabel}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <Badge variant={cfg.variant}>{cfg.label}</Badge>
-          <LeaseRowActions
-            lease={lease}
-            onViewDetails={onClick}
-            onTerminate={onTerminate}
-            onDownload={onDownload}
-          />
-        </div>
-      </div>
-      <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-        <div>
-          <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">Loyer</p>
-          <p className="text-[12px] font-semibold text-primary tabular-nums">{formatXOF(Number(lease.monthlyRent))}</p>
-        </div>
-        <div>
-          <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">Périodicité</p>
-          <p className="text-[12px] text-primary/70">{lease.periodicity ? (FREQ_LABELS[lease.periodicity] ?? lease.periodicity) : "—"}</p>
-        </div>
-        <div>
-          <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">Début</p>
-          <p className="text-[12px] text-primary/70 tabular-nums">{formatDate(lease.startDate)}</p>
-        </div>
-        <div>
-          <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">Fin</p>
-          <p className="text-[12px] text-primary/70 tabular-nums">{lease.endDate ? formatDate(lease.endDate) : "—"}</p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Table row ────────────────────────────────────────────────────────────────
-
-function LeaseRow({
-  lease,
-  selected,
-  onClick,
-  onTerminate,
-  onDownload,
-}: {
-  lease: Lease;
-  selected: boolean;
-  onClick: () => void;
-  onTerminate: () => void;
-  onDownload: () => void;
-}) {
-  const cfg = STATUS_CONFIG[lease.status];
-  const tenantName =
-    lease.tenant?.fullName ??
-    (lease.tenant ? `${lease.tenant.firstName} ${lease.tenant.lastName}` : "—");
-  const unitLabel = lease.unit ? `Local ${lease.unit.unitNumber}` : "—";
-  const daysLeft = lease.endDate ? daysUntil(lease.endDate) : Infinity;
-  const nearExpiry =
-    lease.status === "ACTIVE" && daysLeft <= 30 && daysLeft >= 0;
-
-  return (
-    <tr
-      onClick={onClick}
-      className={`cursor-pointer transition-colors duration-100
-        ${
-          selected
-            ? "bg-secondary/8 border-l-2 border-l-secondary"
-            : nearExpiry
-              ? "bg-secondary/4 border-l-2 border-l-secondary/40 hover:bg-secondary/8"
-              : "hover:bg-primary/3 border-l-2 border-l-transparent"
-        }`}
-    >
-      <td className="px-5 py-3.5">
-        <p className="text-[13px] font-medium text-primary truncate">
-          {tenantName}
-        </p>
-        <p className="text-[11px] text-primary/40">{unitLabel}</p>
-      </td>
-      <td className="px-4 py-3.5 text-[13px] tabular-nums text-primary/80">
-        {formatXOF(Number(lease.monthlyRent))}
-      </td>
-      <td className="px-4 py-3.5 text-[12px] text-primary/50">
-        {lease.periodicity
-          ? (FREQ_LABELS[lease.periodicity] ?? lease.periodicity)
-          : "-"}
-      </td>
-      <td className="px-4 py-3.5 text-[12px] text-primary/50 tabular-nums whitespace-nowrap">
-        {formatDate(lease.startDate)}
-      </td>
-      <td className="px-4 py-3.5 whitespace-nowrap">
-        <p
-          className={`text-[12px] tabular-nums ${nearExpiry ? "text-secondary font-semibold" : "text-primary/50"}`}
-        >
-          {lease.endDate ? formatDate(lease.endDate) : "—"}
-        </p>
-        {nearExpiry && (
-          <p className="text-[11px] text-secondary/80">{daysLeft}j restants</p>
-        )}
-      </td>
-      <td className="px-4 py-3.5">
-        <Badge variant={cfg.variant}>{cfg.label}</Badge>
-      </td>
-      <td className="px-3 py-3.5">
-        <LeaseRowActions
-          lease={lease}
-          onViewDetails={onClick}
-          onTerminate={onTerminate}
-          onDownload={onDownload}
-        />
-      </td>
-    </tr>
-  );
-}
+function fmtXOF(n: number) { return new Intl.NumberFormat("fr-FR").format(n) + " F"; }
+function daysUntil(iso: string) { return Math.ceil((new Date(iso).getTime() - Date.now()) / 86_400_000); }
+function initials(name: string) { return name.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase(); }
 
 // ─── Pagination ───────────────────────────────────────────────────────────────
 
-function PaginationBar({
-  meta,
-  onPage,
-}: {
-  meta: PaginationMeta;
-  onPage: (p: number) => void;
-}) {
+function Pagination({ meta, onPage }: { meta: PaginationMeta; onPage: (p: number) => void }) {
   const { page, totalPages, total, limit } = meta;
   const from = (page - 1) * limit + 1;
   const to = Math.min(page * limit, total);
   return (
-    <div className="flex items-center justify-between px-5 py-3 border-t border-border-custom bg-surface shrink-0">
-      <p className="text-[12px] text-primary/40 tabular-nums">
-        {from}–{to} sur {total} contrat{total > 1 ? "s" : ""}
-      </p>
-      <div className="flex items-center gap-1">
-        <button
-          onClick={() => onPage(page - 1)}
-          disabled={page <= 1}
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-primary/50 hover:text-primary hover:bg-primary/6 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-        >
-          <ChevronLeft size={15} />
+    <div className="ep-pagination">
+      <span>Affichage {from}–{to} sur {total} contrat{total > 1 ? "s" : ""}</span>
+      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <button className="ep-page-btn" onClick={() => onPage(page - 1)} disabled={page <= 1}>
+          <ChevronLeft size={13} />
         </button>
-        <span className="px-3 text-[13px] font-medium text-primary tabular-nums">
-          {page} / {totalPages}
+        <span style={{ fontSize: 12, fontFamily: "var(--font-mono)", padding: "0 8px" }}>
+          Page {page} / {totalPages}
         </span>
-        <button
-          onClick={() => onPage(page + 1)}
-          disabled={page >= totalPages}
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-primary/50 hover:text-primary hover:bg-primary/6 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-        >
-          <ChevronRight size={15} />
+        <button className="ep-page-btn" onClick={() => onPage(page + 1)} disabled={page >= totalPages}>
+          <ChevronRight size={13} />
         </button>
       </div>
     </div>
   );
 }
-
-// ─── Status filter pills ──────────────────────────────────────────────────────
-
-const FILTER_OPTIONS: { value: LeaseStatus | "all"; label: string }[] = [
-  { value: "all", label: "Tous" },
-  { value: "ACTIVE", label: "Actifs" },
-  { value: "ARCHIVED", label: "Archivé" },
-  { value: "DRAFT", label: "Brouillon" },
-  { value: "EXPIRED", label: "Expiré" },
-  { value: "SUSPENDED", label: "Suspendu" },
-  { value: "TERMINATED", label: "Clôturé" },
-];
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
@@ -331,319 +80,220 @@ const PAGE_LIMIT = 15;
 export function LeasesClient() {
   const { toast } = useToast();
 
-  const [leases, setLeases] = useState<Lease[]>([]);
+  const [leases, setLeases]         = useState<Lease[]>([]);
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
+  const [loading, setLoading]       = useState(true);
+  const [error, setError]           = useState<string | null>(null);
+  const [search, setSearch]         = useState("");
   const [debouncedQ, setDebouncedQ] = useState("");
-  const [page, setPage] = useState(1);
+  const [page, setPage]             = useState(1);
   const [statusFilter, setStatusFilter] = useState<LeaseStatus | "all">("all");
-  const [selected, setSelected] = useState<Lease | null>(null);
-  const [formOpen, setFormOpen] = useState(false);
+  const [selected, setSelected]     = useState<Lease | null>(null);
+  const [formOpen, setFormOpen]     = useState(false);
   const [editTarget, setEditTarget] = useState<Lease | null>(null);
   const [terminateTarget, setTerminateTarget] = useState<Lease | null>(null);
   const [toastShown, setToastShown] = useState(false);
 
   useEffect(() => {
-    const t = setTimeout(() => {
-      setDebouncedQ(search);
-      setPage(1);
-    }, 350);
+    const t = setTimeout(() => { setDebouncedQ(search); setPage(1); }, 350);
     return () => clearTimeout(t);
   }, [search]);
 
-  useEffect(() => {
-    setPage(1);
-  }, [statusFilter]);
+  useEffect(() => { setPage(1); }, [statusFilter]);
 
   const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+    setLoading(true); setError(null);
     try {
       const res = await leaseService.getAll({
-        page,
-        limit: PAGE_LIMIT,
+        page, limit: PAGE_LIMIT,
         status: statusFilter === "all" ? undefined : statusFilter,
         search: debouncedQ || undefined,
       });
-      // Normalise la réponse : gère les cas { data: [...] } et { data: { items: [...] } }
-      const list: Lease[] = Array.isArray(res.data)
-        ? res.data
-        : ((res as unknown as { data: { data: Lease[] } }).data?.data ?? []);
-      const meta =
-        res.meta ??
-        (res as unknown as { pagination: typeof res.meta }).pagination ??
-        null;
-      setLeases(list);
-      setPagination(meta);
+      const list: Lease[] = Array.isArray(res.data) ? res.data : ((res as any).data?.data ?? []);
+      const meta = res.meta ?? (res as any).pagination ?? null;
+      setLeases(list); setPagination(meta);
 
-      // Warning toast — affiché une seule fois par session de page
       if (!toastShown) {
-        const expiring = list.filter((l) => {
-          if (l.status !== "ACTIVE") return false;
-          if (!l.endDate) return false;
-          const d = daysUntil(l.endDate);
-          return d >= 0 && d <= 30;
-        });
+        const expiring = list.filter(l => l.status === "ACTIVE" && l.endDate && daysUntil(l.endDate) >= 0 && daysUntil(l.endDate) <= 30);
         if (expiring.length > 0) {
-          toast({
-            variant: "warning",
-            title: `${expiring.length} contrat${expiring.length > 1 ? "s" : ""} expire${expiring.length > 1 ? "nt" : ""} bientôt`,
-            description: `${expiring.length > 1 ? `${expiring.length} baux expirent` : `${expiring[0].tenant?.fullName ?? "Un bail"} expire`} dans moins de 30 jours.`,
-            duration: 8000,
-          });
+          toast({ variant: "warning", title: `${expiring.length} contrat(s) expire(nt) bientôt`, duration: 8000 });
           setToastShown(true);
         }
       }
-    } catch {
-      setError("Impossible de charger les contrats.");
-    } finally {
-      setLoading(false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    } catch { setError("Impossible de charger les contrats."); }
+    finally { setLoading(false); }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, statusFilter, debouncedQ]);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useEffect(() => { load(); }, [load]);
 
   function handleSaved(l: Lease) {
-    setLeases((prev) => {
-      const idx = prev.findIndex((x) => x.id === l.id);
-      if (idx >= 0) {
-        const n = [...prev];
-        n[idx] = l;
-        return n;
-      }
-      return [l, ...prev];
-    });
+    setLeases(prev => { const idx = prev.findIndex(x => x.id === l.id); if (idx >= 0) { const n = [...prev]; n[idx] = l; return n; } return [l, ...prev]; });
     if (selected?.id === l.id) setSelected(l);
-    setFormOpen(false);
-    setEditTarget(null);
-    load();
+    setFormOpen(false); setEditTarget(null); load();
   }
-
   function handleTerminated(l: Lease) {
-    setLeases((prev) => prev.map((x) => (x.id === l.id ? l : x)));
+    setLeases(prev => prev.map(x => x.id === l.id ? l : x));
     if (selected?.id === l.id) setSelected(l);
     setTerminateTarget(null);
   }
 
+  async function handleDownload(l: Lease) {
+    toast({ variant: "warning", title: "Téléchargement en cours…", duration: 3000 });
+    try {
+      const blob = await leaseService.downloadContractPdf(l.id);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a"); a.href = url; a.download = `contrat-${l.id}.pdf`; a.click();
+      URL.revokeObjectURL(url);
+    } catch { toast({ variant: "danger", title: "Échec du téléchargement", duration: 4000 }); }
+  }
+
   return (
     <>
-      <div className="flex h-screen overflow-hidden">
-        <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
-          {/* Toolbar */}
-          <div className="flex flex-col gap-3 px-4 py-3 lg:flex-row lg:items-center lg:justify-between lg:px-6 lg:py-4 bg-surface border-b border-border-custom shrink-0">
+      <div style={{ display: "flex", height: "100vh", overflow: "hidden" }}>
+
+        {/* ── Zone principale ── */}
+        <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+
+          {/* Topbar */}
+          <div className="ep-topbar" style={{ paddingBottom: 20 }}>
             <div>
-              <h1 className="font-semibold text-[18px] lg:text-[20px] text-primary">
-                Contrats de bail
-              </h1>
-              {pagination && !loading && (
-                <p className="text-[12px] text-primary/40 mt-0.5">
-                  {pagination.total} contrat{pagination.total > 1 ? "s" : ""}
-                </p>
-              )}
+              <p className="ep-eyebrow">Gestion locative</p>
+              <h1 className="ep-page-title">Contrats &amp; baux</h1>
+              <p className="ep-page-desc">Tous les baux du parc, leur statut et leurs conditions financières.</p>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="relative flex-1 lg:flex-none">
-                <Search
-                  size={14}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-primary/35 pointer-events-none"
-                />
-                <input
-                  type="search"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Rechercher…"
-                  className="pl-9 pr-4 h-9 w-full lg:w-48 rounded-lg border border-border-custom bg-white text-[13px] text-primary placeholder:text-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors"
-                />
-              </div>
-              <button
-                onClick={() => {
-                  setEditTarget(null);
-                  setFormOpen(true);
-                }}
-                className="flex items-center gap-2 h-9 px-4 bg-primary text-white rounded-lg text-[13px] font-medium hover:bg-[#263447] transition-colors shrink-0"
-              >
-                <Plus size={15} /> Nouveau contrat
+            <div className="ep-topbar-actions">
+              <button className="ep-btn ep-btn-ghost" onClick={() => handleDownload(leases[0] ?? ({} as Lease))}>
+                <Download size={13} /> Exporter
+              </button>
+              <button className="ep-btn ep-btn-primary" onClick={() => { setEditTarget(null); setFormOpen(true); }}>
+                <Plus size={14} /> Nouveau bail
               </button>
             </div>
           </div>
 
-          {/* Status filter pills */}
-          <div className="flex items-center gap-1.5 px-6 py-2.5 border-b border-border-custom bg-surface shrink-0 overflow-x-auto">
-            {FILTER_OPTIONS.map((opt) => (
+          {/* Filtres + recherche */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "0 32px 16px", flexWrap: "wrap" }}>
+            {FILTER_OPTIONS.map(opt => (
               <button
                 key={opt.value}
+                className="ep-chip"
+                data-active={statusFilter === opt.value ? "true" : "false"}
                 onClick={() => setStatusFilter(opt.value)}
-                className={`px-3 py-1 rounded-full text-[12px] font-medium transition-colors whitespace-nowrap
-                  ${
-                    statusFilter === opt.value
-                      ? "bg-primary text-white"
-                      : "bg-primary/6 text-primary/60 hover:bg-primary/10 hover:text-primary"
-                  }`}
               >
                 {opt.label}
               </button>
             ))}
+            <div className="ep-search" style={{ marginLeft: "auto", minWidth: 220 }}>
+              <Search size={13} style={{ flexShrink: 0, opacity: 0.5 }} />
+              <input
+                type="search"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Locataire, n° contrat…"
+              />
+            </div>
           </div>
 
           {error && (
-            <div className="mx-6 mt-4 flex items-center gap-2 px-4 py-3 rounded-lg bg-danger/8 border border-danger/20 text-[13px] text-danger shrink-0">
+            <div style={{ margin: "0 32px 16px", display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: "var(--r-sm)", background: "var(--rouge-soft)", border: "1px solid var(--rouge)", fontSize: 13, color: "var(--rouge)" }}>
               <AlertTriangle size={14} /> {error}
             </div>
           )}
 
-          {/* Table */}
-          <div className="flex-1 overflow-y-auto">
-            {loading ? (
-              <div className="flex items-center justify-center h-48">
-                <Loader2 size={22} className="animate-spin text-primary/30" />
-              </div>
-            ) : leases.length === 0 ? (
-              <div className="p-6">
-                <EmptyState
-                  icon={FileText}
-                  title="Aucun contrat"
-                  description={
-                    statusFilter !== "all"
-                      ? "Aucun contrat pour ce statut."
-                      : "Créez votre premier contrat de bail."
-                  }
-                  actionLabel={
-                    statusFilter === "all" ? "Nouveau contrat" : undefined
-                  }
-                  onAction={
-                    statusFilter === "all"
-                      ? () => {
-                          setEditTarget(null);
-                          setFormOpen(true);
-                        }
-                      : undefined
-                  }
-                />
-              </div>
-            ) : (
-              <>
-                {/* Table desktop */}
-                <div className="hidden lg:block overflow-x-auto">
-                  <table className="w-full border-collapse">
-                    <thead className="sticky top-0 z-10 bg-neutral">
-                      <tr className="border-b border-border-custom">
-                        {[
-                          "Locataire / Local",
-                          "Loyer",
-                          "Frequence",
-                          "Debut",
-                          "Fin",
-                          "Statut",
-                          "",
-                        ].map((h, i) => (
-                          <th
-                            key={i}
-                            className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-primary/40"
-                          >
-                            {h}
-                          </th>
+          {/* Panel */}
+          <div style={{ flex: 1, overflow: "hidden", padding: "0 32px 32px", display: "flex", flexDirection: "column" }}>
+            <div className="ep-panel" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+
+              {loading ? (
+                <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 60 }}>
+                  <Loader2 size={22} className="animate-spin" style={{ color: "var(--ink-soft)" }} />
+                </div>
+              ) : leases.length === 0 ? (
+                <div style={{ padding: 24 }}>
+                  <EmptyState
+                    icon={FileText}
+                    title="Aucun contrat"
+                    description={statusFilter !== "all" ? "Aucun contrat pour ce statut." : "Créez votre premier bail."}
+                    actionLabel={statusFilter === "all" ? "Nouveau contrat" : undefined}
+                    onAction={statusFilter === "all" ? () => { setEditTarget(null); setFormOpen(true); } : undefined}
+                  />
+                </div>
+              ) : (
+                <div style={{ flex: 1, overflowY: "auto" }}>
+                  <table className="ep-table">
+                    <thead>
+                      <tr>
+                        {["Contrat", "Locataire", "Unité", "Loyer mensuel", "Période", "Statut", ""].map((h, i) => (
+                          <th key={i} className="ep-th">{h}</th>
                         ))}
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-border-custom bg-surface">
-                      {leases.map((l) => (
-                        <LeaseRow
-                          key={l.id}
-                          lease={l}
-                          selected={selected?.id === l.id}
-                          onClick={() =>
-                            setSelected((p) => (p?.id === l.id ? null : l))
-                          }
-                          onTerminate={() => setTerminateTarget(l)}
-                          onDownload={() => {
-                            toast({
-                              variant: "warning",
-                              title: "Telechargement en cours...",
-                              duration: 3000,
-                            });
-                            leaseService
-                              .downloadContractPdf(l.id)
-                              .then((blob) => {
-                                const url = URL.createObjectURL(blob);
-                                const a = document.createElement("a");
-                                a.href = url;
-                                a.download = `contrat-${l.id}.pdf`;
-                                a.click();
-                                URL.revokeObjectURL(url);
-                              })
-                              .catch(() =>
-                                toast({
-                                  variant: "danger",
-                                  title: "Echec du telechargement",
-                                  duration: 4000,
-                                }),
-                              );
-                          }}
-                        />
-                      ))}
+                    <tbody>
+                      {leases.map(l => {
+                        const tenantName = l.tenant?.fullName ?? (l.tenant ? `${l.tenant.firstName} ${l.tenant.lastName}` : "—");
+                        const unitLabel  = l.unit ? `${l.unit.property?.name ? l.unit.property.name + " — " : ""}Unité ${l.unit.unitNumber}` : "—";
+                        const daysLeft   = l.endDate ? daysUntil(l.endDate) : Infinity;
+                        const nearExpiry = l.status === "ACTIVE" && daysLeft <= 30 && daysLeft >= 0;
+                        const cfg        = STATUS_CONFIG[l.status];
+                        const isSelected = selected?.id === l.id;
+
+                        return (
+                          <tr
+                            key={l.id}
+                            className="ep-tr"
+                            onClick={() => setSelected(p => p?.id === l.id ? null : l)}
+                            style={{ background: isSelected ? "rgba(193,98,45,0.06)" : undefined }}
+                          >
+                            <td className="ep-td ep-mono">{l.id.slice(-8).toUpperCase()}</td>
+                            <td className="ep-td">
+                              <div className="ep-person">
+                                <div className="ep-avatar">{tenantName !== "—" ? initials(tenantName) : "?"}</div>
+                                <div>
+                                  <div className="ep-person-name">{tenantName}</div>
+                                  <div className="ep-person-sub">Locataire principal</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="ep-td" style={{ fontSize: 13, color: "var(--ink-soft)" }}>{unitLabel}</td>
+                            <td className="ep-td ep-amount">{fmtXOF(Number(l.monthlyRent))}</td>
+                            <td className="ep-td ep-mono">
+                              {fmtMono(l.startDate)} → {l.endDate ? fmtMono(l.endDate) : "en cours"}
+                              {nearExpiry && <div style={{ fontSize: 10.5, color: "var(--ocre)", marginTop: 2 }}>{daysLeft}j restants</div>}
+                            </td>
+                            <td className="ep-td">
+                              <Badge variant={cfg.variant as any} stamp>{cfg.label}</Badge>
+                            </td>
+                            <td className="ep-td" style={{ width: 40 }}>
+                              <button
+                                className="ep-icon-btn"
+                                onClick={e => { e.stopPropagation(); setSelected(p => p?.id === l.id ? null : l); }}
+                              >
+                                →
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
-                {/* Cards mobiles */}
-                <div className="lg:hidden divide-y divide-border-custom">
-                  {leases.map((l) => (
-                    <LeaseCard
-                      key={l.id}
-                      lease={l}
-                      onClick={() =>
-                        setSelected((p) => (p?.id === l.id ? null : l))
-                      }
-                      onTerminate={() => setTerminateTarget(l)}
-                      onDownload={() => {
-                        toast({
-                          variant: "warning",
-                          title: "Telechargement en cours...",
-                          duration: 3000,
-                        });
-                        leaseService
-                          .downloadContractPdf(l.id)
-                          .then((blob) => {
-                            const url = URL.createObjectURL(blob);
-                            const a = document.createElement("a");
-                            a.href = url;
-                            a.download = `contrat-${l.id}.pdf`;
-                            a.click();
-                            URL.revokeObjectURL(url);
-                          })
-                          .catch(() =>
-                            toast({
-                              variant: "danger",
-                              title: "Echec du telechargement",
-                              duration: 4000,
-                            }),
-                          );
-                      }}
-                    />
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
+              )}
 
-          {pagination && pagination.totalPages > 1 && (
-            <PaginationBar meta={pagination} onPage={setPage} />
-          )}
+              {pagination && pagination.totalPages > 1 && (
+                <Pagination meta={pagination} onPage={setPage} />
+              )}
+            </div>
+          </div>
         </div>
 
+        {/* ── Panneau latéral détail ── */}
         {selected && (
           <LeaseDetailPanel
             lease={selected}
             onClose={() => setSelected(null)}
-            onEdit={(l) => {
-              setEditTarget(l);
-              setFormOpen(true);
-            }}
-            onTerminate={(l) => setTerminateTarget(l)}
+            onEdit={l => { setEditTarget(l); setFormOpen(true); }}
+            onTerminate={l => setTerminateTarget(l)}
             onUpdated={handleSaved}
           />
         )}
@@ -652,13 +302,9 @@ export function LeasesClient() {
       <LeaseFormModal
         isOpen={formOpen}
         lease={editTarget}
-        onClose={() => {
-          setFormOpen(false);
-          setEditTarget(null);
-        }}
+        onClose={() => { setFormOpen(false); setEditTarget(null); }}
         onSaved={handleSaved}
       />
-
       {terminateTarget && (
         <LeaseTerminateModal
           isOpen={!!terminateTarget}

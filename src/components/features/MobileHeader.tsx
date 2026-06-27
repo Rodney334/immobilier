@@ -4,23 +4,53 @@ import { Menu } from "lucide-react";
 import { useSidebarStore } from "@/lib/stores/sidebar.store";
 
 /**
- * Barre de navigation supérieure visible uniquement sur mobile/tablette (< lg).
+ * Header fixe visible uniquement sur mobile/tablette (< lg).
  * Contient le bouton hamburger pour ouvrir le drawer sidebar.
  */
 export function MobileHeader() {
   const openMobile = useSidebarStore((s) => s.openMobile);
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-30 h-14 flex items-center gap-3 px-4 bg-primary shadow-sm lg:hidden">
+    <header
+      className="fixed top-0 left-0 right-0 z-30 h-14 flex items-center gap-3 px-4 lg:hidden"
+      style={{ background: "var(--ink)" }}
+    >
       <button
         onClick={openMobile}
-        className="w-9 h-9 flex items-center justify-center rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+        className="w-9 h-9 flex items-center justify-center rounded-lg transition-colors"
+        style={{ color: "rgba(247,243,236,0.6)" }}
+        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--paper)"; (e.currentTarget as HTMLElement).style.background = "rgba(247,243,236,0.07)"; }}
+        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(247,243,236,0.6)"; (e.currentTarget as HTMLElement).style.background = "transparent"; }}
         aria-label="Ouvrir le menu"
       >
-        <Menu size={22} />
+        <Menu size={20} />
       </button>
-      <span className="text-white font-bold text-[18px] tracking-wide">
-        Estate Mgmt
+
+      {/* Brand mark */}
+      <div
+        style={{
+          width: 28, height: 28, flexShrink: 0,
+          borderRadius: "var(--r-sm)",
+          background: "var(--terracotta)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontFamily: "var(--font-display)",
+          fontWeight: 600, fontSize: 15,
+          color: "var(--ink)",
+        }}
+      >
+        E
+      </div>
+
+      <span
+        style={{
+          fontFamily: "var(--font-display)",
+          fontSize: 15,
+          fontWeight: 600,
+          color: "var(--paper)",
+          letterSpacing: "0.01em",
+        }}
+      >
+        Estate Project
       </span>
     </header>
   );

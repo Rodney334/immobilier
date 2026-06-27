@@ -144,7 +144,7 @@ function ScheduleCard({
   const remain = toNum(schedule.balance ?? schedule.remainingAmount ?? (due - paid));
 
   return (
-    <div className={`bg-surface p-4 transition-colors ${cfg.rowCls}`}>
+    <div className={`bg-surface border border-border-custom rounded-xl p-4 transition-all duration-150 ${cfg.rowCls}`}>
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="min-w-0">
           <p className="text-[13px] font-semibold text-primary truncate">
@@ -322,26 +322,16 @@ export function SchedulesClient() {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
-      <div className="flex flex-col gap-3 px-4 py-3 lg:flex-row lg:items-start lg:justify-between lg:px-6 lg:py-4 bg-surface border-b border-border-custom shrink-0">
+      <div className="ep-topbar" style={{ paddingBottom: 20 }}>
         <div>
-          <h1 className="font-semibold text-[18px] lg:text-[20px] text-primary">
-            Echeances de loyer
-          </h1>
-          {!loading && (
-            <p className="text-[12px] text-primary/40 mt-0.5">
-              {fmtMonthYear(year, month)} · {schedules.length} echeances
-              {stats.paid > 0 && ` · ${stats.paid} payees`}
-              {stats.partial > 0 && ` · ${stats.partial} partielles`}
-              {stats.overdue > 0 && ` · ${stats.overdue} en retard`}
-              {stats.cancelled > 0 && ` · ${stats.cancelled} annulees`}
-            </p>
-          )}
+          <p className="ep-eyebrow">Gestion locative</p>
+          <h1 className="ep-page-title">Echeances de loyer</h1>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="ep-topbar-actions">
           <button
             onClick={handleMarkOverdue}
             disabled={marking}
-            className="flex items-center gap-2 h-9 px-4 rounded-lg border border-secondary text-secondary text-[13px] font-medium hover:bg-secondary/6 disabled:opacity-50 transition-colors shrink-0"
+            className="ep-btn ep-btn-ghost"
           >
             {marking ? (
               <Loader2 size={14} className="animate-spin" />
@@ -350,7 +340,7 @@ export function SchedulesClient() {
             )}
             Marquer les retards
           </button>
-          {/* <button className="flex items-center gap-2 h-9 px-4 bg-primary text-white rounded-lg text-[13px] font-medium hover:bg-[#263447] transition-colors">
+          {/* <button className="ep-btn ep-btn-primary">
             <Plus size={15} /> Creer une echeance
           </button> */}
         </div>
@@ -379,7 +369,8 @@ export function SchedulesClient() {
             <button
               key={f.value}
               onClick={() => setStatus(f.value)}
-              className={`px-3 py-1 rounded-full text-[12px] font-medium transition-colors whitespace-nowrap ${status === f.value ? "bg-primary text-white" : "bg-primary/6 text-primary/60 hover:bg-primary/10"}`}
+              className="ep-chip"
+              data-active={status === f.value ? "true" : "false"}
             >
               {f.label}
             </button>
@@ -388,7 +379,7 @@ export function SchedulesClient() {
       </div>
 
       {error && (
-        <div className="mx-6 mt-4 flex items-center gap-2 px-4 py-3 rounded-lg bg-danger/8 border border-danger/20 text-[13px] text-danger shrink-0">
+        <div style={{ margin: "0 32px 16px", display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: "var(--r-sm)", background: "var(--rouge-soft)", border: "1px solid var(--rouge)", fontSize: 13, color: "var(--rouge)" }}>
           <AlertTriangle size={14} /> {error}
         </div>
       )}
@@ -408,9 +399,10 @@ export function SchedulesClient() {
         ) : (
           <>
             {/* Table desktop */}
-            <div className="hidden lg:block overflow-x-auto">
+            <div className="hidden lg:block px-4 lg:px-6 py-3">
+              <div className="ep-panel">
               <table className="w-full border-collapse">
-                <thead className="sticky top-0 z-10 bg-neutral">
+                <thead>
                   <tr className="border-b border-border-custom">
                     {[
                       "Echeance",
@@ -424,7 +416,7 @@ export function SchedulesClient() {
                     ].map((h) => (
                       <th
                         key={h}
-                        className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-primary/40"
+                        className="ep-th"
                       >
                         {h}
                       </th>
@@ -442,12 +434,12 @@ export function SchedulesClient() {
                     return (
                       <tr
                         key={s.id}
-                        className={`transition-colors duration-100 hover:bg-primary/3 ${cfg.rowCls}`}
+                        className={`ep-tr ${cfg.rowCls}`}
                       >
-                        <td className="px-4 py-3 text-[13px] tabular-nums text-primary/80 whitespace-nowrap font-medium">
+                        <td className="ep-td tabular-nums text-primary/80 whitespace-nowrap font-medium">
                           {formatDueDate(s.dueDate)}
                         </td>
-                        <td className="px-4 py-3 text-[13px] text-primary">
+                        <td className="ep-td text-primary">
                           {tenant ? (
                             (tenant.fullName ??
                             `${tenant.firstName} ${tenant.lastName}`)
@@ -455,20 +447,20 @@ export function SchedulesClient() {
                             <span className="text-primary/30">—</span>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-[13px] text-primary/70">
+                        <td className="ep-td text-primary/70">
                           {unit ? (
                             unit.unitNumber
                           ) : (
                             <span className="text-primary/30">—</span>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-[13px] tabular-nums text-primary font-medium">
+                        <td className="ep-td ep-mono ep-amount">
                           {formatXOF(due)}
                         </td>
-                        <td className="px-4 py-3 text-[13px] tabular-nums text-primary/70">
+                        <td className="ep-td ep-mono tabular-nums text-primary/70">
                           {paid > 0 ? formatXOF(paid) : "—"}
                         </td>
-                        <td className="px-4 py-3 text-[13px] tabular-nums">
+                        <td className="ep-td ep-mono tabular-nums">
                           {remain > 0 ? (
                             <span className="text-danger font-medium">
                               {formatXOF(remain)}
@@ -477,10 +469,10 @@ export function SchedulesClient() {
                             "—"
                           )}
                         </td>
-                        <td className="px-4 py-3">
-                          <Badge variant={cfg.variant}>{cfg.label}</Badge>
+                        <td className="ep-td">
+                          <Badge variant={cfg.variant} stamp>{cfg.label}</Badge>
                         </td>
-                        <td className="px-3 py-3">
+                        <td className="ep-td">
                           <RowActions schedule={s} onRefresh={load} />
                         </td>
                       </tr>
@@ -488,9 +480,10 @@ export function SchedulesClient() {
                   })}
                 </tbody>
               </table>
+              </div>
             </div>
             {/* Cards mobiles */}
-            <div className="lg:hidden divide-y divide-border-custom">
+            <div className="lg:hidden p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
               {schedules.map((s) => (
                 <ScheduleCard key={s.id} schedule={s} onRefresh={load} />
               ))}
@@ -500,30 +493,12 @@ export function SchedulesClient() {
       </div>
 
       {pagination && pagination.totalPages > 1 && (
-        <div className="flex items-center justify-between px-5 py-3 border-t border-border-custom bg-surface shrink-0">
-          <p className="text-[12px] text-primary/40 tabular-nums">
-            {(page - 1) * PAGE_LIMIT + 1}–
-            {Math.min(page * PAGE_LIMIT, pagination.total)} sur{" "}
-            {pagination.total}
-          </p>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setPage((p) => p - 1)}
-              disabled={page <= 1}
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-primary/50 hover:text-primary hover:bg-primary/6 disabled:opacity-30 transition-colors"
-            >
-              <ChevronLeft size={15} />
-            </button>
-            <span className="px-3 text-[13px] font-medium text-primary tabular-nums">
-              {page} / {pagination.totalPages}
-            </span>
-            <button
-              onClick={() => setPage((p) => p + 1)}
-              disabled={page >= pagination.totalPages}
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-primary/50 hover:text-primary hover:bg-primary/6 disabled:opacity-30 transition-colors"
-            >
-              <ChevronRight size={15} />
-            </button>
+        <div className="ep-pagination">
+          <span>{(page - 1) * PAGE_LIMIT + 1}–{Math.min(page * PAGE_LIMIT, pagination.total)} sur {pagination.total} écheances</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <button className="ep-page-btn" onClick={() => setPage((p) => p - 1)} disabled={page <= 1}><ChevronLeft size={13} /></button>
+            <span style={{ fontSize: 12, fontFamily: "var(--font-mono)", padding: "0 8px" }}>Page {page} / {pagination.totalPages}</span>
+            <button className="ep-page-btn" onClick={() => setPage((p) => p + 1)} disabled={page >= pagination.totalPages}><ChevronRight size={13} /></button>
           </div>
         </div>
       )}

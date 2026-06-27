@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   X,
   User,
@@ -13,10 +13,13 @@ import {
   FileDown,
   RefreshCw,
   Loader2,
+  FileCode,
+  ChevronDown,
 } from "lucide-react";
 import { leaseService } from "@/lib/services/lease.service";
+import { contractTemplateService } from "@/lib/services/contract-template.service";
 import { Badge } from "@/components/ui/Badge";
-import type { Lease, LeaseStatus, LeasePeriodicity } from "@/types";
+import type { Lease, LeaseStatus, LeasePeriodicity, ContractTemplate } from "@/types";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -115,6 +118,120 @@ function ActionButton({
 }
 
 // ─── Props ────────────────────────────────────────────────────────────────────
+
+// ─── Composant : Générer PDF avec sélecteur de template ──────────────────────
+
+function GeneratePdfAction({ leaseId }: { leaseId: string }) {
+  const [templates, setTemplates] = useState<ContractTemplate[]>([]);
+  const [loaded, setLoaded] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [selectedId, setSelectedId] = useState<string>("");
+  const [generating, setGenerating] = useState(false);
+
+  async function loadTemplates() {
+    if (loaded) { setOpen(o => !o); return; }
+    try {
+      const res = await contractTemplateService.list();
+      const list = Array.isArray(res.data) ? res.data : [];
+      setTemplates(list);
+      const def = list.find(t => t.isDefault);
+      if (def) setSelectedId(def.id);
+    } catch {
+      // silencieux
+    } finally {
+      setLoaded(true);
+      setOpen(true);
+    }
+  }
+
+  async function handleGenerate() {
+    setGenerating(true);
+    try {
+      const blob = await contractTemplateService.downloadPdf(leaseId, selectedId || undefined);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `contrat-${leaseId}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      // silencieux
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  return (
+    <div>
+      <button
+        onClick={loadTemplates}
+        className={`flex items-center gap-2 w-full px-3 py-2.5 rounded-lg text-[13px] font-medium
+                   transition-colors text-primary hover:bg-primary/4 border border-border-custom hover:border-primary/30`}
+      >
+        <FileCode size={14} />
+        <span style={{ flex: 1 }}>Générer PDF avec template</span>
+        <ChevronDown size={13} style={{
+          transition: "transform 0.2s",
+          transform: open ? "rotate(180deg)" : "rotate(0deg)",
+          opacity: 0.5,
+        }} />
+      </button>
+
+      {open && (
+        <div style={{
+          marginTop: 4, padding: "10px 12px",
+          background: "var(--paper-raised, #f8f6f1)",
+          border: "1px solid var(--paper-line, rgba(0,0,0,0.1))",
+          borderRadius: "var(--r-sm, 6px)",
+          display: "flex", flexDirection: "column", gap: 8,
+        }}>
+          <div>
+            <label style={{
+              display: "block", fontSize: 11,
+              textTransform: "uppercase", letterSpacing: "0.06em",
+              color: "var(--ink-soft)", marginBottom: 4, fontWeight: 500,
+            }}>
+              Template
+            </label>
+            <select
+              value={selectedId}
+              onChange={e => setSelectedId(e.target.value)}
+              style={{
+                width: "100%", height: 34, padding: "0 8px",
+                borderRadius: "var(--r-sm, 6px)",
+                border: "1px solid var(--paper-line, rgba(0,0,0,0.12))",
+                background: "var(--paper)", fontSize: 12,
+                outline: "none",
+              }}
+            >
+              <option value="">— Template par défaut —</option>
+              {templates.map(t => (
+                <option key={t.id} value={t.id}>
+                  {t.name}{t.isDefault ? " ★" : ""}
+                </option>
+              ))}
+            </select>
+          </div>
+          <button
+            onClick={handleGenerate}
+            disabled={generating}
+            className="flex items-center justify-center gap-2 w-full px-3 py-2 rounded-lg text-[12px] font-medium transition-colors"
+            style={{
+              background: "var(--terracotta, #c1622d)",
+              color: "white", border: "none", cursor: "pointer",
+              opacity: generating ? 0.7 : 1,
+            }}
+          >
+            {generating ? <Loader2 size={13} className="animate-spin" /> : <FileDown size={13} />}
+            {generating ? "Génération…" : "Télécharger le PDF"}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 type Tab = "details" | "actions";
 
@@ -307,6 +424,7 @@ export function LeaseDetailPanel({
               onClick={handleDownloadPdf}
               loading={downloadingPdf}
             />
+            <GeneratePdfAction leaseId={lease.id} />
             <ActionButton
               icon={RefreshCw}
               label="Générer les échéances"

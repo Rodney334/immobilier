@@ -3,7 +3,7 @@ import { Loader2 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
+export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger" | "accent";
 export type ButtonSize = "sm" | "md" | "lg";
 
 export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -17,20 +17,27 @@ export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 // ─── Style maps ───────────────────────────────────────────────────────────────
 
 const variantClasses: Record<ButtonVariant, string> = {
+  // Fond encre foncée — action principale
   primary:
-    "bg-primary text-white hover:bg-[#263447] active:bg-[#16202C] disabled:bg-primary/50",
+    "bg-primary text-white hover:bg-[#0f1a17] active:bg-[#0a1410] disabled:opacity-50",
+  // Fond terracotta — action secondaire / CTA chaud
   secondary:
-    "bg-secondary text-white hover:bg-[#C8935E] active:bg-[#BC8352] disabled:bg-secondary/50",
+    "bg-secondary text-white hover:bg-[#a8542a] active:bg-[#943f1e] disabled:opacity-50",
+  // Accent alias (identique à secondary dans ce design)
+  accent:
+    "bg-secondary text-white hover:bg-[#a8542a] active:bg-[#943f1e] disabled:opacity-50",
+  // Contour discret — action neutre
   ghost:
-    "bg-transparent text-primary border border-[#E5E7EB] hover:bg-primary/5 active:bg-primary/10 disabled:opacity-50",
+    "bg-transparent text-primary border border-[var(--paper-line)] hover:bg-[var(--paper-raised)] active:bg-[var(--paper-line)] disabled:opacity-50",
+  // Rouge destructif
   danger:
-    "bg-danger text-white hover:bg-[#D9613E] active:bg-[#CC5233] disabled:bg-danger/50",
+    "bg-danger text-white hover:bg-[#8f3924] active:bg-[#7a2e1b] disabled:opacity-50",
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
-  sm: "h-8 px-3 text-[13px] rounded-md gap-1.5",
-  md: "h-10 px-5 text-[14px] rounded-lg gap-2",
-  lg: "h-12 px-6 text-[15px] rounded-lg gap-2",
+  sm: "h-8 px-3 text-[12px] rounded-[var(--r-sm)] gap-1.5",
+  md: "h-9 px-4 text-[13px] rounded-[var(--r-sm)] gap-1.5",
+  lg: "h-10 px-5 text-[14px] rounded-[var(--r-sm)] gap-2",
 };
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -49,8 +56,8 @@ export function Button({
     <button
       disabled={disabled || loading}
       className={[
-        "inline-flex items-center justify-center",
-        "font-medium transition-colors duration-150",
+        "inline-flex items-center justify-center font-semibold",
+        "transition-colors duration-150",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/50 focus-visible:ring-offset-1",
         "disabled:cursor-not-allowed",
         variantClasses[variant],
@@ -63,7 +70,7 @@ export function Button({
       {...props}
     >
       {loading && (
-        <Loader2 size={15} className="animate-spin shrink-0" aria-hidden="true" />
+        <Loader2 size={14} className="animate-spin shrink-0" aria-hidden="true" />
       )}
       {children}
     </button>

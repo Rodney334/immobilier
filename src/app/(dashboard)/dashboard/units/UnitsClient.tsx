@@ -142,7 +142,7 @@ function UnitCard({
   return (
     <div
       onClick={onClick}
-      className="bg-surface p-4 cursor-pointer active:bg-primary/3 transition-colors"
+      className="bg-surface border border-border-custom rounded-xl p-4 cursor-pointer hover:shadow-md hover:border-primary/20 active:scale-[0.99] transition-all duration-150"
     >
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex items-center gap-3 min-w-0">
@@ -204,14 +204,10 @@ function UnitRow({
   return (
     <tr
       onClick={onClick}
-      className={`cursor-pointer transition-colors duration-100
-        ${
-          selected
-            ? "bg-secondary/8 border-l-2 border-l-secondary"
-            : "hover:bg-primary/3 border-l-2 border-l-transparent"
-        }`}
+      className="ep-tr"
+      style={selected ? { background: "var(--secondary-soft)", borderLeft: "2px solid var(--secondary)" } : undefined}
     >
-      <td className="px-5 py-3.5">
+      <td className="ep-td">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-primary/6 flex items-center justify-center shrink-0">
             <DoorOpen
@@ -232,22 +228,22 @@ function UnitRow({
           </div>
         </div>
       </td>
-      <td className="px-4 py-3.5">
-        <Badge variant="neutral">{TYPE_LABELS[unit.type!] ?? unit.type}</Badge>
+      <td className="ep-td">
+        <Badge variant="neutral" stamp>{TYPE_LABELS[unit.type!] ?? unit.type}</Badge>
       </td>
-      <td className="px-4 py-3.5 text-[13px] text-primary/60">
+      <td className="ep-td text-primary/60">
         {unit.area ? `${unit.area} m²` : "—"}
       </td>
-      <td className="px-4 py-3.5 text-[13px] font-medium text-primary tabular-nums whitespace-nowrap">
+      <td className="ep-td ep-mono ep-amount whitespace-nowrap">
         {fmt.format(Number(unit.baseRent))} XOF
       </td>
-      <td className="px-4 py-3.5">
-        <Badge variant={cfg.variant}>{cfg.label}</Badge>
+      <td className="ep-td">
+        <Badge variant={cfg.variant} stamp>{cfg.label}</Badge>
       </td>
-      <td className="px-4 py-3.5 text-[12px] text-primary/40 tabular-nums whitespace-nowrap">
+      <td className="ep-td ep-mono text-primary/40 tabular-nums whitespace-nowrap">
         {formatDate(unit.createdAt)}
       </td>
-      <td className="px-3 py-3.5">
+      <td className="ep-td">
         <UnitRowActions
           unit={unit}
           onEdit={onEdit}
@@ -272,30 +268,12 @@ function PaginationBar({
   const from = (page - 1) * limit + 1;
   const to = Math.min(page * limit, total);
   return (
-    <div className="flex items-center justify-between px-5 py-3 border-t border-border-custom bg-surface shrink-0">
-      <p className="text-[12px] text-primary/40 tabular-nums">
-        {from}–{to} sur {total} local{total > 1 ? "x" : ""}
-      </p>
-      <div className="flex items-center gap-1">
-        <button
-          onClick={() => onPage(page - 1)}
-          disabled={page <= 1}
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-primary/50 hover:text-primary hover:bg-primary/6 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          aria-label="Page précédente"
-        >
-          <ChevronLeft size={15} />
-        </button>
-        <span className="px-3 text-[13px] font-medium text-primary tabular-nums">
-          {page} / {totalPages}
-        </span>
-        <button
-          onClick={() => onPage(page + 1)}
-          disabled={page >= totalPages}
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-primary/50 hover:text-primary hover:bg-primary/6 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          aria-label="Page suivante"
-        >
-          <ChevronRight size={15} />
-        </button>
+    <div className="ep-pagination">
+      <span>{from}–{to} sur {total} local{total > 1 ? "x" : ""}</span>
+      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <button className="ep-page-btn" onClick={() => onPage(page - 1)} disabled={page <= 1}><ChevronLeft size={13} /></button>
+        <span style={{ fontSize: 12, fontFamily: "var(--font-mono)", padding: "0 8px" }}>Page {page} / {totalPages}</span>
+        <button className="ep-page-btn" onClick={() => onPage(page + 1)} disabled={page >= totalPages}><ChevronRight size={13} /></button>
       </div>
     </div>
   );
@@ -394,25 +372,21 @@ export function UnitsClient() {
 
   return (
     <>
-      <div className="flex h-screen overflow-hidden">
+      <div style={{ display: "flex", height: "100vh", overflow: "hidden" }}>
         <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
           {/* Toolbar */}
-          <div className="flex flex-col gap-3 px-4 py-3 lg:flex-row lg:items-center lg:justify-between lg:px-6 lg:py-4 bg-surface border-b border-border-custom shrink-0">
+          <div className="ep-topbar" style={{ paddingBottom: 20 }}>
             <div>
-              <h1 className="font-semibold text-[18px] lg:text-[20px] text-primary">Locaux</h1>
-              {pagination && !loading && (
-                <p className="text-[12px] text-primary/40 mt-0.5">
-                  {pagination.total} local{pagination.total > 1 ? "x" : ""}
-                </p>
-              )}
+              <p className="ep-eyebrow">Parc immobilier</p>
+              <h1 className="ep-page-title">Locaux</h1>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="ep-topbar-actions">
               <button
                 onClick={() => {
                   setEditTarget(null);
                   setFormOpen(true);
                 }}
-                className="flex items-center gap-2 h-9 px-4 bg-primary text-white rounded-lg text-[13px] font-medium hover:bg-[#263447] transition-colors shrink-0"
+                className="ep-btn ep-btn-primary"
               >
                 <Plus size={15} /> Nouveau local
               </button>
@@ -425,12 +399,8 @@ export function UnitsClient() {
               <button
                 key={opt.value}
                 onClick={() => setStatusFilter(opt.value)}
-                className={`px-3 py-1.5 rounded-full text-[12px] font-medium whitespace-nowrap transition-colors
-                  ${
-                    statusFilter === opt.value
-                      ? "bg-primary text-white"
-                      : "bg-primary/6 text-primary/60 hover:bg-primary/10"
-                  }`}
+                className="ep-chip"
+                data-active={statusFilter === opt.value ? "true" : "false"}
               >
                 {opt.label}
               </button>
@@ -438,7 +408,7 @@ export function UnitsClient() {
           </div>
 
           {error && (
-            <div className="mx-6 mt-4 flex items-center gap-2 px-4 py-3 rounded-lg bg-danger/8 border border-danger/20 text-[13px] text-danger shrink-0">
+            <div style={{ margin: "0 32px 16px", display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: "var(--r-sm)", background: "var(--rouge-soft)", border: "1px solid var(--rouge)", fontSize: 13, color: "var(--rouge)" }}>
               <AlertTriangle size={14} /> {error}
             </div>
           )}
@@ -475,9 +445,10 @@ export function UnitsClient() {
             ) : (
               <>
                 {/* Table desktop */}
-                <div className="hidden lg:block overflow-x-auto">
+                <div className="hidden lg:block px-4 lg:px-6 py-3">
+                  <div className="ep-panel">
                   <table className="w-full border-collapse">
-                    <thead className="sticky top-0 z-10 bg-neutral">
+                    <thead>
                       <tr className="border-b border-border-custom">
                         {[
                           "Local",
@@ -490,7 +461,7 @@ export function UnitsClient() {
                         ].map((h, i) => (
                           <th
                             key={i}
-                            className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-primary/40"
+                            className="ep-th"
                           >
                             {h}
                           </th>
@@ -516,9 +487,10 @@ export function UnitsClient() {
                       ))}
                     </tbody>
                   </table>
+                  </div>
                 </div>
                 {/* Cards mobiles */}
-                <div className="lg:hidden divide-y divide-border-custom">
+                <div className="lg:hidden p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                   {units.map((u) => (
                     <UnitCard
                       key={u.id}

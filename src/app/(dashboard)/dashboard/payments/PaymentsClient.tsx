@@ -158,7 +158,7 @@ function PaymentCard({
   return (
     <div
       onClick={onClick}
-      className="bg-surface p-4 cursor-pointer active:bg-primary/3 transition-colors"
+      className="bg-surface border border-border-custom rounded-xl p-4 cursor-pointer hover:shadow-md hover:border-primary/20 active:scale-[0.99] transition-all duration-150"
     >
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex items-center gap-3 min-w-0">
@@ -233,44 +233,24 @@ function PaymentRow({
 
   return (
     <tr
+      className="ep-tr"
       onClick={onClick}
-      className={`cursor-pointer transition-colors duration-100
-        ${
-          selected
-            ? "bg-secondary/8 border-l-2 border-l-secondary"
-            : "hover:bg-primary/3 border-l-2 border-l-transparent"
-        }`}
+      style={{ background: selected ? "rgba(193,98,45,0.06)" : undefined }}
     >
-      <td className="px-5 py-3.5">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-primary/8 flex items-center justify-center shrink-0">
-            <span className="text-[12px] font-semibold text-primary/60">
-              {initials}
-            </span>
-          </div>
-          <p className="text-[13px] font-medium text-primary truncate">
-            {tenantName}
-          </p>
+      <td className="ep-td">
+        <div className="ep-person">
+          <div className="ep-avatar">{initials}</div>
+          <div className="ep-person-name">{tenantName}</div>
         </div>
       </td>
-      <td className="px-4 py-3.5 text-[13px] font-semibold text-primary tabular-nums whitespace-nowrap">
-        {formatAmount(parseFloat(payment.amount))}
+      <td className="ep-td ep-amount">{formatAmount(parseFloat(payment.amount))}</td>
+      <td className="ep-td" style={{ fontSize: 13, color: "var(--ink-soft)" }}>
+        {payment.paymentMethod ? (METHOD_LABELS[payment.paymentMethod] ?? payment.paymentMethod) : "—"}
       </td>
-      <td className="px-4 py-3.5 text-[13px] text-primary/60">
-        {payment.paymentMethod
-          ? (METHOD_LABELS[payment.paymentMethod] ?? payment.paymentMethod)
-          : "—"}
-      </td>
-      <td className="px-4 py-3.5 text-[13px] text-primary/50 font-mono">
-        {payment.reference ?? "—"}
-      </td>
-      <td className="px-4 py-3.5 text-[12px] text-primary/40 tabular-nums whitespace-nowrap">
-        {formatDate(payment.paymentDate!)}
-      </td>
-      <td className="px-4 py-3.5">
-        <Badge variant={cfg.variant}>{cfg.label}</Badge>
-      </td>
-      <td className="px-3 py-3.5">
+      <td className="ep-td ep-mono">{payment.reference ?? "—"}</td>
+      <td className="ep-td ep-mono">{formatDate(payment.paymentDate!)}</td>
+      <td className="ep-td"><Badge variant={cfg.variant} stamp>{cfg.label}</Badge></td>
+      <td className="ep-td" style={{ width: 40 }} onClick={(e) => e.stopPropagation()}>
         <PaymentRowActions
           payment={payment}
           onEdit={onEdit}
@@ -296,30 +276,12 @@ function PaginationBar({
   const from = (page - 1) * limit + 1;
   const to = Math.min(page * limit, total);
   return (
-    <div className="flex items-center justify-between px-5 py-3 border-t border-border-custom bg-surface shrink-0">
-      <p className="text-[12px] text-primary/40 tabular-nums">
-        {from}–{to} sur {total} paiement{total > 1 ? "s" : ""}
-      </p>
-      <div className="flex items-center gap-1">
-        <button
-          onClick={() => onPage(page - 1)}
-          disabled={page <= 1}
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-primary/50 hover:text-primary hover:bg-primary/6 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          aria-label="Page précédente"
-        >
-          <ChevronLeft size={15} />
-        </button>
-        <span className="px-3 text-[13px] font-medium text-primary tabular-nums">
-          {page} / {totalPages}
-        </span>
-        <button
-          onClick={() => onPage(page + 1)}
-          disabled={page >= totalPages}
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-primary/50 hover:text-primary hover:bg-primary/6 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          aria-label="Page suivante"
-        >
-          <ChevronRight size={15} />
-        </button>
+    <div className="ep-pagination">
+      <span>{from}–{to} sur {total} paiement{total > 1 ? "s" : ""}</span>
+      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <button className="ep-page-btn" onClick={() => onPage(page - 1)} disabled={page <= 1}><ChevronLeft size={13} /></button>
+        <span style={{ fontSize: 12, fontFamily: "var(--font-mono)", padding: "0 8px" }}>Page {page} / {totalPages}</span>
+        <button className="ep-page-btn" onClick={() => onPage(page + 1)} disabled={page >= totalPages}><ChevronRight size={13} /></button>
       </div>
     </div>
   );
@@ -457,127 +419,84 @@ export function PaymentsClient() {
 
   return (
     <>
-      <div className="flex h-screen overflow-hidden">
-        <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
-          {/* Toolbar */}
-          <div className="flex flex-col gap-3 px-4 py-3 lg:flex-row lg:items-center lg:justify-between lg:px-6 lg:py-4 bg-surface border-b border-border-custom shrink-0">
+      <div style={{ display: "flex", height: "100vh", overflow: "hidden" }}>
+        <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          {/* Topbar */}
+          <div className="ep-topbar" style={{ paddingBottom: 20 }}>
             <div>
-              <h1 className="font-semibold text-[18px] lg:text-[20px] text-primary">
-                Paiements
-              </h1>
+              <p className="ep-eyebrow">Gestion locative</p>
+              <h1 className="ep-page-title">Paiements</h1>
               {pagination && !loading && (
-                <p className="text-[12px] text-primary/40 mt-0.5">
-                  {pagination.total} paiement{pagination.total > 1 ? "s" : ""}
-                </p>
+                <p className="ep-page-desc">{pagination.total} paiement{pagination.total > 1 ? "s" : ""} enregistré{pagination.total > 1 ? "s" : ""}</p>
               )}
             </div>
-            <div className="flex items-center gap-2">
-              <div className="relative flex-1 lg:flex-none">
-                <Search
-                  size={14}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-primary/35 pointer-events-none"
-                />
-                <input
-                  type="search"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Rechercher un locataire…"
-                  className="pl-9 pr-4 h-9 w-full lg:w-60 rounded-lg border border-border-custom bg-white text-[13px] text-primary placeholder:text-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors"
-                />
-              </div>
-              <button
-                onClick={() => setFormOpen(true)}
-                className="flex items-center gap-2 h-9 px-4 bg-primary text-white rounded-lg text-[13px] font-medium hover:bg-[#263447] transition-colors shrink-0"
-              >
-                <Plus size={15} /> Enregistrer un paiement
+            <div className="ep-topbar-actions">
+              <button className="ep-btn ep-btn-primary" onClick={() => setFormOpen(true)}>
+                <Plus size={14} /> Enregistrer un paiement
               </button>
             </div>
           </div>
 
-          {/* Status filter pills */}
-          <div className="flex items-center gap-2 px-6 py-3 border-b border-border-custom bg-surface shrink-0 overflow-x-auto">
+          {/* Filtres + recherche */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "0 32px 16px", flexWrap: "wrap" }}>
             {FILTER_OPTIONS.map((opt) => (
               <button
                 key={opt.value}
+                className="ep-chip"
+                data-active={statusFilter === opt.value ? "true" : "false"}
                 onClick={() => setStatusFilter(opt.value)}
-                className={`px-3 py-1.5 rounded-full text-[12px] font-medium whitespace-nowrap transition-colors
-                  ${
-                    statusFilter === opt.value
-                      ? "bg-primary text-white"
-                      : "bg-primary/6 text-primary/60 hover:bg-primary/10"
-                  }`}
               >
                 {opt.label}
               </button>
             ))}
+            <div className="ep-search" style={{ marginLeft: "auto", minWidth: 220 }}>
+              <Search size={13} style={{ flexShrink: 0, opacity: 0.5 }} />
+              <input type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Rechercher un locataire…" />
+            </div>
           </div>
 
           {error && (
-            <div className="mx-6 mt-4 flex items-center gap-2 px-4 py-3 rounded-lg bg-danger/8 border border-danger/20 text-[13px] text-danger shrink-0">
+            <div style={{ margin: "0 32px 16px", display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: "var(--r-sm)", background: "var(--rouge-soft)", border: "1px solid var(--rouge)", fontSize: 13, color: "var(--rouge)" }}>
               <AlertTriangle size={14} /> {error}
             </div>
           )}
 
           {/* Table */}
-          <div className="flex-1 overflow-y-auto">
+          <div style={{ flex: 1, overflow: "hidden", padding: "0 32px 32px", display: "flex", flexDirection: "column" }}>
             {loading ? (
-              <div className="flex items-center justify-center h-48">
-                <Loader2 size={22} className="animate-spin text-primary/30" />
+              <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 60 }}>
+                <Loader2 size={22} className="animate-spin" style={{ color: "var(--ink-soft)" }} />
               </div>
             ) : payments.length === 0 ? (
-              <div className="p-6">
+              <div className="ep-panel" style={{ padding: 24 }}>
                 <EmptyState
                   icon={CreditCard}
                   title="Aucun paiement"
-                  description={
-                    statusFilter !== "all"
-                      ? "Aucun paiement avec ce statut."
-                      : "Enregistrez votre premier paiement."
-                  }
-                  actionLabel={
-                    statusFilter === "all"
-                      ? "Enregistrer un paiement"
-                      : undefined
-                  }
-                  onAction={
-                    statusFilter === "all" ? () => setFormOpen(true) : undefined
-                  }
+                  description={statusFilter !== "all" ? "Aucun paiement avec ce statut." : "Enregistrez votre premier paiement."}
+                  actionLabel={statusFilter === "all" ? "Enregistrer un paiement" : undefined}
+                  onAction={statusFilter === "all" ? () => setFormOpen(true) : undefined}
                 />
               </div>
             ) : (
               <>
                 {/* Table desktop */}
-                <div className="hidden lg:block overflow-x-auto">
-                  <table className="w-full border-collapse">
-                    <thead className="sticky top-0 z-10 bg-neutral">
-                      <tr className="border-b border-border-custom">
-                        {[
-                          "Locataire",
-                          "Montant",
-                          "Méthode",
-                          "Référence",
-                          "Date",
-                          "Statut",
-                          "",
-                        ].map((h, i) => (
-                          <th
-                            key={i}
-                            className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-primary/40"
-                          >
-                            {h}
-                          </th>
+                <div className="hidden lg:flex ep-panel" style={{ flex: 1, flexDirection: "column", overflow: "hidden" }}>
+                  <div style={{ flex: 1, overflowY: "auto" }}>
+                  <table className="ep-table">
+                    <thead>
+                      <tr>
+                        {["Locataire","Montant","Méthode","Référence","Date","Statut",""].map((h, i) => (
+                          <th key={i} className="ep-th">{h}</th>
                         ))}
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-border-custom bg-surface">
+                    <tbody>
                       {payments.map((p) => (
                         <PaymentRow
                           key={p.id}
                           payment={p}
                           selected={selected?.id === p.id}
-                          onClick={() =>
-                            setSelected((prev) => (prev?.id === p.id ? null : p))
-                          }
+                          onClick={() => setSelected((prev) => (prev?.id === p.id ? null : p))}
                           onEdit={() => setSelected(p)}
                           onMarkPaid={() => handleMarkPaid(p)}
                           onDelete={() => setDeleteTarget(p)}
@@ -586,9 +505,13 @@ export function PaymentsClient() {
                       ))}
                     </tbody>
                   </table>
+                  </div>
+                  {pagination && pagination.totalPages > 1 && (
+                    <PaginationBar meta={pagination} onPage={setPage} />
+                  )}
                 </div>
                 {/* Cards mobiles */}
-                <div className="lg:hidden divide-y divide-border-custom">
+                <div className="lg:hidden p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                   {payments.map((p) => (
                     <PaymentCard
                       key={p.id}
@@ -606,10 +529,6 @@ export function PaymentsClient() {
               </>
             )}
           </div>
-
-          {pagination && pagination.totalPages > 1 && (
-            <PaginationBar meta={pagination} onPage={setPage} />
-          )}
         </div>
 
         {/* Right panel */}

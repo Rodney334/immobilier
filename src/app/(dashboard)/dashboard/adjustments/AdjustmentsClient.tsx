@@ -141,11 +141,16 @@ function AdjustmentCard({
   onDeleted: () => void;
 }) {
   return (
-    <div className="bg-surface p-4 transition-colors">
+    <div className="bg-surface border border-border-custom rounded-xl p-4 transition-all duration-150">
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="min-w-0">
-          <p className="text-[13px] font-semibold text-primary truncate">{adj.label || adj.reason || "—"}</p>
-          <p className="text-[12px] text-primary/50 truncate">{adj.scheduleId ? `#${adj.scheduleId.slice(-6)}` : "—"}</p>
+          <p className="text-[13px] font-semibold text-primary truncate">
+            {adj.label || adj.reason || "—"}
+          </p>
+          <p className="text-[12px] text-primary/50 truncate">
+            {/* {adj.scheduleId ? `#${adj.scheduleId.slice(-6)}` : "—"} */}
+            {adj.lease ? `#${adj.lease.contractNumber}` : "—"}
+          </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <TypeBadge type={adj.type} />
@@ -154,16 +159,24 @@ function AdjustmentCard({
       </div>
       <div className="grid grid-cols-2 gap-x-4 gap-y-2">
         <div>
-          <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">Montant</p>
+          <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">
+            Montant
+          </p>
           <AmountCell type={adj.type} amount={adj.amount} />
         </div>
         <div>
-          <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">Date</p>
-          <p className="text-[12px] text-primary/70 tabular-nums">{formatDate(adj.appliedDate)}</p>
+          <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">
+            Date
+          </p>
+          <p className="text-[12px] text-primary/70 tabular-nums">
+            {formatDate(adj.createdAt)}
+          </p>
         </div>
         {adj.reason && (
           <div className="col-span-2">
-            <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">Raison</p>
+            <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">
+              Raison
+            </p>
             <p className="text-[12px] text-primary/70 truncate">{adj.reason}</p>
           </div>
         )}
@@ -217,20 +230,16 @@ export function AdjustmentsClient() {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
-      <div className="flex flex-col gap-3 px-4 py-3 lg:flex-row lg:items-start lg:justify-between lg:px-6 lg:py-4 bg-surface border-b border-border-custom shrink-0">
+      <div className="ep-topbar" style={{ paddingBottom: 20 }}>
         <div>
-          <h1 className="font-semibold text-[18px] lg:text-[20px] text-primary">
-            Ajustements
-          </h1>
-          {!loading && (
-            <p className="text-[12px] text-primary/40 mt-0.5">
-              {total} ajustement{total > 1 ? "s" : ""}
-            </p>
-          )}
+          <p className="ep-eyebrow">Gestion locative</p>
+          <h1 className="ep-page-title">Ajustements</h1>
         </div>
-        <button className="flex items-center gap-2 h-9 px-4 bg-primary text-white rounded-lg text-[13px] font-medium hover:bg-[#263447] transition-colors shrink-0">
-          <Plus size={15} /> Nouvel ajustement
-        </button>
+        <div className="ep-topbar-actions">
+          <button className="ep-btn ep-btn-primary">
+            <Plus size={15} /> Nouvel ajustement
+          </button>
+        </div>
       </div>
 
       <div className="px-6 py-3 border-b border-border-custom bg-surface shrink-0 space-y-3">
@@ -242,7 +251,8 @@ export function AdjustmentsClient() {
               <button
                 key={f.value}
                 onClick={() => setTypeFilter(f.value)}
-                className={`px-3 py-1 rounded-full text-[12px] font-medium transition-colors whitespace-nowrap ${typeFilter === f.value ? "bg-primary text-white" : "bg-primary/6 text-primary/60 hover:bg-primary/10"}`}
+                className="ep-chip"
+                data-active={typeFilter === f.value ? "true" : "false"}
               >
                 {f.label}
                 {count != null && count > 0 ? ` (${count})` : ""}
@@ -284,7 +294,7 @@ export function AdjustmentsClient() {
       </div>
 
       {error && (
-        <div className="mx-6 mt-4 flex items-center gap-2 px-4 py-3 rounded-lg bg-danger/8 border border-danger/20 text-[13px] text-danger shrink-0">
+        <div style={{ margin: "0 32px 16px", display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: "var(--r-sm)", background: "var(--rouge-soft)", border: "1px solid var(--rouge)", fontSize: 13, color: "var(--rouge)" }}>
           <AlertTriangle size={14} /> {error}
         </div>
       )}
@@ -305,62 +315,65 @@ export function AdjustmentsClient() {
         ) : (
           <>
             {/* Table desktop */}
-            <div className="hidden lg:block overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead className="sticky top-0 z-10 bg-neutral">
-                  <tr className="border-b border-border-custom">
-                    {[
-                      "Date",
-                      "Type",
-                      "Libelle",
-                      "Echeance liee",
-                      "Montant",
-                      "Raison",
-                      "",
-                    ].map((h) => (
-                      <th
-                        key={h}
-                        className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-primary/40"
-                      >
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border-custom bg-surface">
-                  {adjustments.map((a) => (
-                    <tr
-                      key={a.id}
-                      className="hover:bg-primary/3 transition-colors duration-100"
-                    >
-                      <td className="px-4 py-3 text-[13px] tabular-nums text-primary/60 whitespace-nowrap">
-                        {formatDate(a.appliedDate)}
-                      </td>
-                      <td className="px-4 py-3">
-                        <TypeBadge type={a.type} />
-                      </td>
-                      <td className="px-4 py-3 text-[13px] font-medium text-primary max-w-45 truncate">
-                        {a.label || a.reason}
-                      </td>
-                      <td className="px-4 py-3 text-[13px] text-primary/50">
-                        {a.scheduleId ? `#${a.scheduleId.slice(-6)}` : "—"}
-                      </td>
-                      <td className="px-4 py-3">
-                        <AmountCell type={a.type} amount={a.amount} />
-                      </td>
-                      <td className="px-4 py-3 text-[12px] text-primary/50 max-w-40 truncate">
-                        {a.reason}
-                      </td>
-                      <td className="px-3 py-3">
-                        <RowActions adj={a} onDeleted={load} />
-                      </td>
+            <div className="hidden lg:block px-4 lg:px-6 py-3">
+              <div className="ep-panel">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="border-b border-border-custom">
+                      {[
+                        "Date",
+                        "Type",
+                        "Libelle",
+                        "Contrat lié",
+                        "Montant",
+                        "Raison",
+                        "",
+                      ].map((h) => (
+                        <th
+                          key={h}
+                          className="ep-th"
+                        >
+                          {h}
+                        </th>
+                      ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-border-custom bg-surface">
+                    {adjustments.map((a) => (
+                      <tr
+                        key={a.id}
+                        className="ep-tr"
+                      >
+                        <td className="ep-td ep-mono tabular-nums text-primary/60 whitespace-nowrap">
+                          {formatDate(a.createdAt)}
+                        </td>
+                        <td className="ep-td">
+                          <TypeBadge type={a.type} />
+                        </td>
+                        <td className="ep-td font-medium text-primary max-w-45 truncate">
+                          {a.label || a.reason}
+                        </td>
+                        <td className="ep-td text-primary/50">
+                          {/* {a.scheduleId ? `#${a.scheduleId.slice(-6)}` : "—"} */}
+                          {a.lease ? `#${a.lease.contractNumber}` : "—"}
+                        </td>
+                        <td className="ep-td">
+                          <AmountCell type={a.type} amount={a.amount} />
+                        </td>
+                        <td className="ep-td text-primary/50 max-w-40 truncate">
+                          {a.reason}
+                        </td>
+                        <td className="ep-td">
+                          <RowActions adj={a} onDeleted={load} />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
             {/* Cards mobiles */}
-            <div className="lg:hidden divide-y divide-border-custom">
+            <div className="lg:hidden p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
               {adjustments.map((a) => (
                 <AdjustmentCard key={a.id} adj={a} onDeleted={load} />
               ))}
@@ -370,30 +383,12 @@ export function AdjustmentsClient() {
       </div>
 
       {pagination && pagination.totalPages > 1 && (
-        <div className="flex items-center justify-between px-5 py-3 border-t border-border-custom bg-surface shrink-0">
-          <p className="text-[12px] text-primary/40 tabular-nums">
-            {(page - 1) * PAGE_LIMIT + 1}–
-            {Math.min(page * PAGE_LIMIT, pagination.total)} sur{" "}
-            {pagination.total}
-          </p>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setPage((p) => p - 1)}
-              disabled={page <= 1}
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-primary/50 hover:text-primary hover:bg-primary/6 disabled:opacity-30 transition-colors"
-            >
-              <ChevronLeft size={15} />
-            </button>
-            <span className="px-3 text-[13px] font-medium text-primary tabular-nums">
-              {page} / {pagination.totalPages}
-            </span>
-            <button
-              onClick={() => setPage((p) => p + 1)}
-              disabled={page >= pagination.totalPages}
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-primary/50 hover:text-primary hover:bg-primary/6 disabled:opacity-30 transition-colors"
-            >
-              <ChevronRight size={15} />
-            </button>
+        <div className="ep-pagination">
+          <span>{(page - 1) * PAGE_LIMIT + 1}–{Math.min(page * PAGE_LIMIT, pagination.total)} sur {pagination.total} ajustements</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <button className="ep-page-btn" onClick={() => setPage((p) => p - 1)} disabled={page <= 1}><ChevronLeft size={13} /></button>
+            <span style={{ fontSize: 12, fontFamily: "var(--font-mono)", padding: "0 8px" }}>Page {page} / {pagination.totalPages}</span>
+            <button className="ep-page-btn" onClick={() => setPage((p) => p + 1)} disabled={page >= pagination.totalPages}><ChevronRight size={13} /></button>
           </div>
         </div>
       )}
