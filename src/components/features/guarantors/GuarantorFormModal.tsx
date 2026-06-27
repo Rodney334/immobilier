@@ -11,21 +11,21 @@ import type { Guarantor, GuarantorPayload, Lease } from "@/types";
 
 const RELATION_OPTIONS = [
   { value: "", label: "— Relation —" },
-  { value: "Famille",     label: "Famille"     },
-  { value: "Ami(e)",      label: "Ami(e)"      },
-  { value: "Employeur",   label: "Employeur"   },
-  { value: "Collègue",    label: "Collègue"    },
-  { value: "Propriétaire",label: "Propriétaire"},
-  { value: "Autre",       label: "Autre"       },
+  { value: "Famille", label: "Famille" },
+  { value: "Ami(e)", label: "Ami(e)" },
+  { value: "Employeur", label: "Employeur" },
+  { value: "Collègue", label: "Collègue" },
+  { value: "Propriétaire", label: "Propriétaire" },
+  { value: "Autre", label: "Autre" },
 ];
 
 const IDENTITY_TYPE_OPTIONS = [
-  { value: "",              label: "— Type de pièce —"        },
-  { value: "CNI",           label: "CNI"                      },
-  { value: "Passeport",     label: "Passeport"                },
-  { value: "Permis",        label: "Permis de conduire"       },
-  { value: "Titre séjour",  label: "Titre de séjour"          },
-  { value: "Autre",         label: "Autre"                    },
+  { value: "", label: "— Type de pièce —" },
+  { value: "CNI", label: "CNI" },
+  { value: "Passeport", label: "Passeport" },
+  { value: "Permis", label: "Permis de conduire" },
+  { value: "Titre séjour", label: "Titre de séjour" },
+  { value: "Autre", label: "Autre" },
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -33,9 +33,12 @@ const IDENTITY_TYPE_OPTIONS = [
 function leaseLabel(l: Lease): string {
   const parts: string[] = [];
   if (l.contractNumber) parts.push(l.contractNumber);
-  if (l.unit?.reference) parts.push(l.unit.reference);
-  else if (l.unit?.name) parts.push(l.unit.name);
-  const start = new Date(l.startDate).toLocaleDateString("fr-FR", { month: "short", year: "numeric" });
+  if (l.unit?.unitNumber) parts.push(l.unit?.unitNumber);
+  else if (l.unit?.label) parts.push(l.unit.label);
+  const start = new Date(l.startDate).toLocaleDateString("fr-FR", {
+    month: "short",
+    year: "numeric",
+  });
   parts.push(`depuis ${start}`);
   return parts.join(" · ");
 }
@@ -109,30 +112,45 @@ type FormData = {
 
 const EMPTY: FormData = {
   leaseId: "",
-  fullName: "", relation: "", identityType: "", identityNumber: "",
-  phone: "", secondaryPhone: "", email: "", address: "",
-  employer: "", jobTitle: "", monthlyIncome: "", notes: "",
+  fullName: "",
+  relation: "",
+  identityType: "",
+  identityNumber: "",
+  phone: "",
+  secondaryPhone: "",
+  email: "",
+  address: "",
+  employer: "",
+  jobTitle: "",
+  monthlyIncome: "",
+  notes: "",
 };
 
 function fromGuarantor(g: Guarantor): FormData {
   return {
-    leaseId:       g.leaseId ?? "",
-    fullName:      g.fullName ?? "",
-    relation:      g.relation ?? "",
-    identityType:  g.identityType ?? "",
-    identityNumber:g.identityNumber ?? "",
-    phone:         g.phone ?? "",
-    secondaryPhone:g.secondaryPhone ?? "",
-    email:         g.email ?? "",
-    address:       g.address ?? "",
-    employer:      g.employer ?? "",
-    jobTitle:      g.jobTitle ?? "",
+    leaseId: g.leaseId ?? "",
+    fullName: g.fullName ?? "",
+    relation: g.relation ?? "",
+    identityType: g.identityType ?? "",
+    identityNumber: g.identityNumber ?? "",
+    phone: g.phone ?? "",
+    secondaryPhone: g.secondaryPhone ?? "",
+    email: g.email ?? "",
+    address: g.address ?? "",
+    employer: g.employer ?? "",
+    jobTitle: g.jobTitle ?? "",
     monthlyIncome: g.monthlyIncome != null ? String(g.monthlyIncome) : "",
-    notes:         g.notes ?? "",
+    notes: g.notes ?? "",
   };
 }
 
-export function GuarantorFormModal({ isOpen, onClose, onSaved, leases, guarantor }: Props) {
+export function GuarantorFormModal({
+  isOpen,
+  onClose,
+  onSaved,
+  leases,
+  guarantor,
+}: Props) {
   const isEdit = !!guarantor;
   const [form, setForm] = useState<FormData>(EMPTY);
   const [loading, setLoading] = useState(false);
@@ -152,31 +170,46 @@ export function GuarantorFormModal({ isOpen, onClose, onSaved, leases, guarantor
   }, [isOpen, guarantor, leases]);
 
   function set(field: keyof FormData) {
-    return (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-      setForm(prev => ({ ...prev, [field]: e.target.value }));
+    return (
+      e: React.ChangeEvent<
+        HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+      >,
+    ) => {
+      setForm((prev) => ({ ...prev, [field]: e.target.value }));
     };
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.leaseId)         { setError("Veuillez sélectionner un bail."); return; }
-    if (!form.fullName.trim()) { setError("Le nom complet est obligatoire."); return; }
-    if (!form.phone.trim())    { setError("Le téléphone est obligatoire."); return; }
+    if (!form.leaseId) {
+      setError("Veuillez sélectionner un bail.");
+      return;
+    }
+    if (!form.fullName.trim()) {
+      setError("Le nom complet est obligatoire.");
+      return;
+    }
+    if (!form.phone.trim()) {
+      setError("Le téléphone est obligatoire.");
+      return;
+    }
 
     const payload: GuarantorPayload = {
-      leaseId:        form.leaseId,
-      fullName:       form.fullName.trim(),
-      phone:          form.phone.trim(),
+      leaseId: form.leaseId,
+      fullName: form.fullName.trim(),
+      phone: form.phone.trim(),
       secondaryPhone: form.secondaryPhone.trim() || undefined,
-      email:          form.email.trim() || undefined,
-      address:        form.address.trim() || undefined,
-      employer:       form.employer.trim() || undefined,
-      jobTitle:       form.jobTitle.trim() || undefined,
-      monthlyIncome:  form.monthlyIncome ? Number(form.monthlyIncome) : undefined,
+      email: form.email.trim() || undefined,
+      address: form.address.trim() || undefined,
+      employer: form.employer.trim() || undefined,
+      jobTitle: form.jobTitle.trim() || undefined,
+      monthlyIncome: form.monthlyIncome
+        ? Number(form.monthlyIncome)
+        : undefined,
       identityNumber: form.identityNumber.trim() || undefined,
-      identityType:   form.identityType || undefined,
-      relation:       form.relation || undefined,
-      notes:          form.notes.trim() || undefined,
+      identityType: form.identityType || undefined,
+      relation: form.relation || undefined,
+      notes: form.notes.trim() || undefined,
     };
 
     setLoading(true);
@@ -188,7 +221,11 @@ export function GuarantorFormModal({ isOpen, onClose, onSaved, leases, guarantor
       onSaved(res.data);
       onClose();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Impossible d'enregistrer le garant.");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Impossible d'enregistrer le garant.",
+      );
     } finally {
       setLoading(false);
     }
@@ -202,11 +239,17 @@ export function GuarantorFormModal({ isOpen, onClose, onSaved, leases, guarantor
     >
       <form onSubmit={handleSubmit}>
         {error && (
-          <div style={{
-            padding: "10px 14px", marginBottom: 16,
-            borderRadius: "var(--r-sm)", background: "var(--rouge-soft)",
-            border: "1px solid var(--rouge)", fontSize: 13, color: "var(--rouge)",
-          }}>
+          <div
+            style={{
+              padding: "10px 14px",
+              marginBottom: 16,
+              borderRadius: "var(--r-sm)",
+              background: "var(--rouge-soft)",
+              border: "1px solid var(--rouge)",
+              fontSize: 13,
+              color: "var(--rouge)",
+            }}
+          >
             {error}
           </div>
         )}
@@ -214,16 +257,34 @@ export function GuarantorFormModal({ isOpen, onClose, onSaved, leases, guarantor
         {/* ── Bail ── */}
         <SectionLabel>Bail concerné</SectionLabel>
         <div style={{ marginBottom: 16 }}>
-          <label style={{ display: "block", fontSize: 12, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--ink-soft)", marginBottom: 4 }}>
+          <label
+            style={{
+              display: "block",
+              fontSize: 12,
+              fontWeight: 500,
+              textTransform: "uppercase",
+              letterSpacing: "0.06em",
+              color: "var(--ink-soft)",
+              marginBottom: 4,
+            }}
+          >
             Contrat de bail
           </label>
           {leases.length === 0 ? (
-            <div style={{
-              height: 40, display: "flex", alignItems: "center", padding: "0 10px",
-              borderRadius: "var(--r-sm)", border: "1px solid var(--paper-line)",
-              background: "var(--paper-raised)", fontSize: 13, color: "var(--ink-soft)",
-              fontStyle: "italic",
-            }}>
+            <div
+              style={{
+                height: 40,
+                display: "flex",
+                alignItems: "center",
+                padding: "0 10px",
+                borderRadius: "var(--r-sm)",
+                border: "1px solid var(--paper-line)",
+                background: "var(--paper-raised)",
+                fontSize: 13,
+                color: "var(--ink-soft)",
+                fontStyle: "italic",
+              }}
+            >
               Aucun bail actif disponible
             </div>
           ) : (
@@ -234,14 +295,25 @@ export function GuarantorFormModal({ isOpen, onClose, onSaved, leases, guarantor
               required
               disabled={isEdit}
             >
-              {leases.length > 1 && <option value="">— Sélectionner un bail —</option>}
-              {leases.map(l => (
-                <option key={l.id} value={l.id}>{leaseLabel(l)}</option>
+              {leases.length > 1 && (
+                <option value="">— Sélectionner un bail —</option>
+              )}
+              {leases.map((l) => (
+                <option key={l.id} value={l.id}>
+                  {leaseLabel(l)}
+                </option>
               ))}
             </select>
           )}
           {isEdit && (
-            <p style={{ fontSize: 11, color: "var(--ink-soft)", marginTop: 4, fontStyle: "italic" }}>
+            <p
+              style={{
+                fontSize: 11,
+                color: "var(--ink-soft)",
+                marginTop: 4,
+                fontStyle: "italic",
+              }}
+            >
               Le bail ne peut pas être modifié après création.
             </p>
           )}
@@ -249,7 +321,14 @@ export function GuarantorFormModal({ isOpen, onClose, onSaved, leases, guarantor
 
         {/* ── Identité ── */}
         <SectionLabel>Identité</SectionLabel>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: 12,
+            marginBottom: 12,
+          }}
+        >
           <div style={{ gridColumn: "1 / -1" }}>
             <Input
               label="Nom complet"
@@ -260,19 +339,55 @@ export function GuarantorFormModal({ isOpen, onClose, onSaved, leases, guarantor
             />
           </div>
           <div>
-            <label style={{ display: "block", fontSize: 12, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--ink-soft)", marginBottom: 4 }}>
+            <label
+              style={{
+                display: "block",
+                fontSize: 12,
+                fontWeight: 500,
+                textTransform: "uppercase",
+                letterSpacing: "0.06em",
+                color: "var(--ink-soft)",
+                marginBottom: 4,
+              }}
+            >
               Relation
             </label>
-            <select style={SELECT_STYLE} value={form.relation} onChange={set("relation")}>
-              {RELATION_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            <select
+              style={SELECT_STYLE}
+              value={form.relation}
+              onChange={set("relation")}
+            >
+              {RELATION_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
             </select>
           </div>
           <div>
-            <label style={{ display: "block", fontSize: 12, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--ink-soft)", marginBottom: 4 }}>
+            <label
+              style={{
+                display: "block",
+                fontSize: 12,
+                fontWeight: 500,
+                textTransform: "uppercase",
+                letterSpacing: "0.06em",
+                color: "var(--ink-soft)",
+                marginBottom: 4,
+              }}
+            >
               Pièce d'identité
             </label>
-            <select style={SELECT_STYLE} value={form.identityType} onChange={set("identityType")}>
-              {IDENTITY_TYPE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            <select
+              style={SELECT_STYLE}
+              value={form.identityType}
+              onChange={set("identityType")}
+            >
+              {IDENTITY_TYPE_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
             </select>
           </div>
           <div style={{ gridColumn: "1 / -1" }}>
@@ -287,7 +402,14 @@ export function GuarantorFormModal({ isOpen, onClose, onSaved, leases, guarantor
 
         {/* ── Contact ── */}
         <SectionLabel>Contact</SectionLabel>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: 12,
+            marginBottom: 12,
+          }}
+        >
           <Input
             label="Téléphone principal"
             value={form.phone}
@@ -318,7 +440,14 @@ export function GuarantorFormModal({ isOpen, onClose, onSaved, leases, guarantor
 
         {/* ── Emploi ── */}
         <SectionLabel>Situation professionnelle</SectionLabel>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: 12,
+            marginBottom: 12,
+          }}
+        >
           <Input
             label="Employeur"
             value={form.employer}
@@ -350,23 +479,45 @@ export function GuarantorFormModal({ isOpen, onClose, onSaved, leases, guarantor
           rows={3}
           placeholder="Informations complémentaires…"
           style={{
-            width: "100%", padding: "10px 12px", marginBottom: 20,
-            borderRadius: "var(--r-sm)", border: "1px solid var(--paper-line)",
-            background: "var(--paper)", fontSize: 13, color: "var(--ink)",
-            resize: "vertical", outline: "none", fontFamily: "var(--font-sans)",
+            width: "100%",
+            padding: "10px 12px",
+            marginBottom: 20,
+            borderRadius: "var(--r-sm)",
+            border: "1px solid var(--paper-line)",
+            background: "var(--paper)",
+            fontSize: 13,
+            color: "var(--ink)",
+            resize: "vertical",
+            outline: "none",
+            fontFamily: "var(--font-sans)",
             boxSizing: "border-box",
           }}
         />
 
         {/* ── Actions ── */}
-        <div style={{
-          display: "flex", justifyContent: "flex-end", gap: 10,
-          paddingTop: 16, borderTop: "1px solid var(--paper-line)",
-        }}>
-          <button type="button" className="ep-btn ep-btn-ghost" onClick={onClose} disabled={loading}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            gap: 10,
+            paddingTop: 16,
+            borderTop: "1px solid var(--paper-line)",
+          }}
+        >
+          <button
+            type="button"
+            className="ep-btn ep-btn-ghost"
+            onClick={onClose}
+            disabled={loading}
+          >
             Annuler
           </button>
-          <button type="submit" className="ep-btn ep-btn-primary" disabled={loading || leases.length === 0} style={{ minWidth: 140 }}>
+          <button
+            type="submit"
+            className="ep-btn ep-btn-primary"
+            disabled={loading || leases.length === 0}
+            style={{ minWidth: 140 }}
+          >
             {loading && <Loader2 size={13} className="animate-spin" />}
             {isEdit ? "Enregistrer" : "Ajouter le garant"}
           </button>

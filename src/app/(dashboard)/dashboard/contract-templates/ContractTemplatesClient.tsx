@@ -3,9 +3,19 @@
 import { useEffect, useState, useCallback } from "react";
 import dynamic from "next/dynamic";
 import {
-  FileText, Plus, Pencil, Trash2, Eye,
-  Loader2, AlertTriangle, X, Code2, Copy, Check,
-  BookOpen, Save,
+  FileText,
+  Plus,
+  Pencil,
+  Trash2,
+  Eye,
+  Loader2,
+  AlertTriangle,
+  X,
+  Code2,
+  Copy,
+  Check,
+  BookOpen,
+  Save,
 } from "lucide-react";
 import { contractTemplateService } from "@/lib/services/contract-template.service";
 import { leaseService } from "@/lib/services/lease.service";
@@ -15,22 +25,26 @@ import { useToast } from "@/components/ui/Toast";
 
 // ─── Monaco Editor (chargement dynamique — pas de SSR) ───────────────────────
 
-const MonacoEditor = dynamic(
-  () => import("@monaco-editor/react"),
-  {
-    ssr: false,
-    loading: () => (
-      <div style={{
-        display: "flex", alignItems: "center", justifyContent: "center",
-        height: "100%", background: "#1e1e1e", color: "rgba(255,255,255,0.4)",
-        fontSize: 13, gap: 8,
-      }}>
-        <Loader2 size={16} className="animate-spin" />
-        Chargement de l'éditeur…
-      </div>
-    ),
-  }
-);
+const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
+  ssr: false,
+  loading: () => (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        height: "100%",
+        background: "#1e1e1e",
+        color: "rgba(255,255,255,0.4)",
+        fontSize: 13,
+        gap: 8,
+      }}
+    >
+      <Loader2 size={16} className="animate-spin" />
+      Chargement de l'éditeur…
+    </div>
+  ),
+});
 import type {
   ContractTemplate,
   ContractTemplatePayload,
@@ -42,7 +56,9 @@ import type {
 
 function fmt(iso: string) {
   return new Date(iso).toLocaleDateString("fr-FR", {
-    day: "2-digit", month: "short", year: "numeric",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
   });
 }
 
@@ -110,7 +126,9 @@ function VariableBadge({ variable }: { variable: ContractVariable }) {
       onClick={handleCopy}
       title={variable.description ?? variable.label}
       style={{
-        display: "flex", alignItems: "center", gap: 5,
+        display: "flex",
+        alignItems: "center",
+        gap: 5,
         padding: "4px 9px",
         borderRadius: "var(--r-sm)",
         border: "1px solid var(--paper-line)",
@@ -119,16 +137,27 @@ function VariableBadge({ variable }: { variable: ContractVariable }) {
         transition: "border-color 0.15s",
         textAlign: "left",
       }}
-      onMouseEnter={e => (e.currentTarget.style.borderColor = "var(--terracotta)")}
-      onMouseLeave={e => (e.currentTarget.style.borderColor = "var(--paper-line)")}
+      onMouseEnter={(e) =>
+        (e.currentTarget.style.borderColor = "var(--terracotta)")
+      }
+      onMouseLeave={(e) =>
+        (e.currentTarget.style.borderColor = "var(--paper-line)")
+      }
     >
-      <code style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--terracotta)" }}>
+      <code
+        style={{
+          fontFamily: "var(--font-mono)",
+          fontSize: 11,
+          color: "var(--terracotta)",
+        }}
+      >
         {variable.key}
       </code>
-      {copied
-        ? <Check size={10} style={{ color: "var(--sauge)", flexShrink: 0 }} />
-        : <Copy size={10} style={{ color: "var(--ink-soft)", flexShrink: 0 }} />
-      }
+      {copied ? (
+        <Check size={10} style={{ color: "var(--sauge)", flexShrink: 0 }} />
+      ) : (
+        <Copy size={10} style={{ color: "var(--ink-soft)", flexShrink: 0 }} />
+      )}
     </button>
   );
 }
@@ -145,12 +174,15 @@ function VariablesDrawer({
   onClose: () => void;
 }) {
   // Grouper par catégorie
-  const groups = variables.reduce<Record<string, ContractVariable[]>>((acc, v) => {
-    const cat = v.category ?? "Autre";
-    if (!acc[cat]) acc[cat] = [];
-    acc[cat].push(v);
-    return acc;
-  }, {});
+  const groups = variables.reduce<Record<string, ContractVariable[]>>(
+    (acc, v) => {
+      const cat = v.category ?? "Autre";
+      if (!acc[cat]) acc[cat] = [];
+      acc[cat].push(v);
+      return acc;
+    },
+    {},
+  );
 
   const CATEGORY_LABELS: Record<string, string> = {
     tenant: "Locataire",
@@ -162,67 +194,119 @@ function VariablesDrawer({
   };
 
   return (
-    <div style={{
-      position: "fixed", inset: 0, zIndex: 70,
-      display: "flex", justifyContent: "flex-end",
-    }}>
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 70,
+        display: "flex",
+        justifyContent: "flex-end",
+      }}
+    >
       <div
         style={{ flex: 1, background: "rgba(0,0,0,0.3)" }}
         onClick={onClose}
       />
-      <aside style={{
-        width: 340,
-        background: "var(--paper)",
-        borderLeft: "1px solid var(--paper-line)",
-        display: "flex", flexDirection: "column",
-        height: "100%",
-      }}>
+      <aside
+        style={{
+          width: 340,
+          background: "var(--paper)",
+          borderLeft: "1px solid var(--paper-line)",
+          display: "flex",
+          flexDirection: "column",
+          height: "100%",
+        }}
+      >
         {/* Header */}
-        <div style={{
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "16px 20px",
-          borderBottom: "1px solid var(--paper-line)",
-        }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "16px 20px",
+            borderBottom: "1px solid var(--paper-line)",
+          }}
+        >
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <Code2 size={16} style={{ color: "var(--terracotta)" }} />
-            <span style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 15 }}>
+            <span
+              style={{
+                fontFamily: "var(--font-display)",
+                fontWeight: 600,
+                fontSize: 15,
+              }}
+            >
               Variables disponibles
             </span>
           </div>
           <button
             onClick={onClose}
-            style={{ background: "none", border: "none", cursor: "pointer", color: "var(--ink-soft)", display: "flex", padding: 4 }}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              color: "var(--ink-soft)",
+              display: "flex",
+              padding: 4,
+            }}
           >
             <X size={16} />
           </button>
         </div>
 
-        <p style={{ fontSize: 12, color: "var(--ink-soft)", padding: "10px 20px 0", fontStyle: "italic" }}>
+        <p
+          style={{
+            fontSize: 12,
+            color: "var(--ink-soft)",
+            padding: "10px 20px 0",
+            fontStyle: "italic",
+          }}
+        >
           Cliquez sur une variable pour la copier dans le presse-papiers.
         </p>
 
         {/* Content */}
         <div style={{ flex: 1, overflowY: "auto", padding: "12px 20px" }}>
           {loading ? (
-            <div style={{ display: "flex", justifyContent: "center", padding: 30 }}>
-              <Loader2 size={20} className="animate-spin" style={{ color: "var(--ink-soft)" }} />
+            <div
+              style={{ display: "flex", justifyContent: "center", padding: 30 }}
+            >
+              <Loader2
+                size={20}
+                className="animate-spin"
+                style={{ color: "var(--ink-soft)" }}
+              />
             </div>
           ) : Object.keys(groups).length === 0 ? (
-            <p style={{ color: "var(--ink-soft)", fontSize: 13, textAlign: "center", paddingTop: 20 }}>
+            <p
+              style={{
+                color: "var(--ink-soft)",
+                fontSize: 13,
+                textAlign: "center",
+                paddingTop: 20,
+              }}
+            >
               Aucune variable disponible
             </p>
           ) : (
             Object.entries(groups).map(([cat, vars]) => (
               <div key={cat} style={{ marginBottom: 20 }}>
-                <div style={{
-                  fontFamily: "var(--font-mono)", fontSize: 9.5,
-                  textTransform: "uppercase", letterSpacing: "0.1em",
-                  color: "var(--ink-soft)", marginBottom: 8,
-                }}>
+                <div
+                  style={{
+                    fontFamily: "var(--font-mono)",
+                    fontSize: 9.5,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.1em",
+                    color: "var(--ink-soft)",
+                    marginBottom: 8,
+                  }}
+                >
                   {CATEGORY_LABELS[cat] ?? cat}
                 </div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                  {vars.map(v => <VariableBadge key={v.key} variable={v} />)}
+                  {vars.map((v) => (
+                    <VariableBadge key={v.key} variable={v} />
+                  ))}
                 </div>
               </div>
             ))
@@ -427,7 +511,8 @@ const EDITOR_TABS: { id: EditorTab; label: string; placeholder: string }[] = [
   {
     id: "content",
     label: "Corps principal",
-    placeholder: "<p>Entre les soussignés :</p>\n<p>{{tenant.fullName}}, ci-après dénommé le locataire,</p>\n<p>Il a été convenu ce qui suit…</p>",
+    placeholder:
+      "<p>Entre les soussignés :</p>\n<p>{{tenant.fullName}}, ci-après dénommé le locataire,</p>\n<p>Il a été convenu ce qui suit…</p>",
   },
   {
     id: "specialClauses",
@@ -437,12 +522,16 @@ const EDITOR_TABS: { id: EditorTab; label: string; placeholder: string }[] = [
   {
     id: "footer",
     label: "Pied de page",
-    placeholder: "<!-- Mentions légales, signatures -->\n<p>Fait à ________, le {{generatedAt}}</p>",
+    placeholder:
+      "<!-- Mentions légales, signatures -->\n<p>Fait à ________, le {{generatedAt}}</p>",
   },
 ];
 
 function TemplateFormModal({
-  isOpen, onClose, onSaved, template,
+  isOpen,
+  onClose,
+  onSaved,
+  template,
 }: {
   isOpen: boolean;
   onClose: () => void;
@@ -467,7 +556,10 @@ function TemplateFormModal({
   }, [isOpen, template]);
 
   async function loadVariables() {
-    if (variables.length > 0) { setShowVars(true); return; }
+    if (variables.length > 0) {
+      setShowVars(true);
+      return;
+    }
     setVarsLoading(true);
     try {
       const vars = await contractTemplateService.getVariables();
@@ -482,14 +574,20 @@ function TemplateFormModal({
 
   function setField(field: keyof FormData) {
     return (e: React.ChangeEvent<HTMLInputElement>) => {
-      setForm(prev => ({ ...prev, [field]: e.target.value }));
+      setForm((prev) => ({ ...prev, [field]: e.target.value }));
     };
   }
 
   async function handleSubmit(e?: React.FormEvent | React.MouseEvent) {
     e?.preventDefault();
-    if (!form.name.trim()) { setError("Le nom du template est obligatoire."); return; }
-    if (!form.content.trim()) { setError("Le corps principal est obligatoire."); return; }
+    if (!form.name.trim()) {
+      setError("Le nom du template est obligatoire.");
+      return;
+    }
+    if (!form.content.trim()) {
+      setError("Le corps principal est obligatoire.");
+      return;
+    }
 
     const payload: ContractTemplatePayload = {
       name: form.name.trim(),
@@ -509,7 +607,11 @@ function TemplateFormModal({
       onSaved(res.data);
       onClose();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Impossible d'enregistrer le template.");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Impossible d'enregistrer le template.",
+      );
     } finally {
       setLoading(false);
     }
@@ -517,32 +619,55 @@ function TemplateFormModal({
 
   if (!isOpen) return null;
 
-  const currentTab = EDITOR_TABS.find(t => t.id === activeTab)!;
+  const currentTab = EDITOR_TABS.find((t) => t.id === activeTab)!;
 
   return (
     <>
       {/* ── Panneau plein écran ── */}
-      <div style={{
-        position: "fixed", inset: 0, zIndex: 55,
-        background: "var(--paper)",
-        display: "flex", flexDirection: "column",
-      }}>
+      <div
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 55,
+          background: "var(--paper)",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
         {/* Header */}
-        <div style={{
-          display: "flex", alignItems: "center", gap: 12,
-          padding: "12px 20px",
-          borderBottom: "1px solid var(--paper-line)",
-          background: "var(--paper-raised)",
-          flexShrink: 0,
-        }}>
-          <div style={{
-            width: 30, height: 30, borderRadius: "var(--r-sm)",
-            background: "var(--terracotta)", flexShrink: 0,
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            padding: "12px 20px",
+            borderBottom: "1px solid var(--paper-line)",
+            background: "var(--paper-raised)",
+            flexShrink: 0,
+          }}
+        >
+          <div
+            style={{
+              width: 30,
+              height: 30,
+              borderRadius: "var(--r-sm)",
+              background: "var(--terracotta)",
+              flexShrink: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
             <FileText size={14} style={{ color: "white" }} />
           </div>
-          <span style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 15, color: "var(--ink)" }}>
+          <span
+            style={{
+              fontFamily: "var(--font-display)",
+              fontWeight: 600,
+              fontSize: 15,
+              color: "var(--ink)",
+            }}
+          >
             {isEdit ? "Modifier le template" : "Nouveau template de contrat"}
           </span>
 
@@ -553,12 +678,19 @@ function TemplateFormModal({
             type="button"
             onClick={loadVariables}
             style={{
-              display: "flex", alignItems: "center", gap: 5,
-              fontFamily: "var(--font-mono)", fontSize: 10,
-              textTransform: "uppercase", letterSpacing: "0.07em",
-              color: "var(--terracotta)", background: "none",
-              border: "1px solid var(--terracotta)", borderRadius: "var(--r-sm)",
-              padding: "5px 10px", cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: 5,
+              fontFamily: "var(--font-mono)",
+              fontSize: 10,
+              textTransform: "uppercase",
+              letterSpacing: "0.07em",
+              color: "var(--terracotta)",
+              background: "none",
+              border: "1px solid var(--terracotta)",
+              borderRadius: "var(--r-sm)",
+              padding: "5px 10px",
+              cursor: "pointer",
             }}
           >
             <Code2 size={12} /> Variables
@@ -583,36 +715,49 @@ function TemplateFormModal({
             disabled={loading}
             style={{ fontSize: 13, minWidth: 140 }}
           >
-            {loading
-              ? <Loader2 size={13} className="animate-spin" />
-              : <Save size={13} />
-            }
+            {loading ? (
+              <Loader2 size={13} className="animate-spin" />
+            ) : (
+              <Save size={13} />
+            )}
             {isEdit ? "Enregistrer" : "Créer le template"}
           </button>
         </div>
 
         {/* Error banner */}
         {error && (
-          <div style={{
-            padding: "10px 20px", flexShrink: 0,
-            background: "var(--rouge-soft)", borderBottom: "1px solid var(--rouge)",
-            fontSize: 13, color: "var(--rouge)", display: "flex", alignItems: "center", gap: 8,
-          }}>
+          <div
+            style={{
+              padding: "10px 20px",
+              flexShrink: 0,
+              background: "var(--rouge-soft)",
+              borderBottom: "1px solid var(--rouge)",
+              fontSize: 13,
+              color: "var(--rouge)",
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+            }}
+          >
             <AlertTriangle size={14} /> {error}
           </div>
         )}
 
         {/* Body */}
         <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
-
           {/* ── Sidebar : méta ── */}
-          <aside style={{
-            width: 280, flexShrink: 0,
-            borderRight: "1px solid var(--paper-line)",
-            overflowY: "auto",
-            padding: "20px 16px",
-            display: "flex", flexDirection: "column", gap: 16,
-          }}>
+          <aside
+            style={{
+              width: 280,
+              flexShrink: 0,
+              borderRight: "1px solid var(--paper-line)",
+              overflowY: "auto",
+              padding: "20px 16px",
+              display: "flex",
+              flexDirection: "column",
+              gap: 16,
+            }}
+          >
             <SectionLabel>Informations</SectionLabel>
 
             <Input
@@ -634,10 +779,25 @@ function TemplateFormModal({
                 type="checkbox"
                 id="isDefaultPanel"
                 checked={form.isDefault}
-                onChange={e => setForm(prev => ({ ...prev, isDefault: e.target.checked }))}
-                style={{ width: 15, height: 15, accentColor: "var(--terracotta)", flexShrink: 0 }}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, isDefault: e.target.checked }))
+                }
+                style={{
+                  width: 15,
+                  height: 15,
+                  accentColor: "var(--terracotta)",
+                  flexShrink: 0,
+                }}
               />
-              <label htmlFor="isDefaultPanel" style={{ fontSize: 13, color: "var(--ink)", cursor: "pointer", lineHeight: 1.3 }}>
+              <label
+                htmlFor="isDefaultPanel"
+                style={{
+                  fontSize: 13,
+                  color: "var(--ink)",
+                  cursor: "pointer",
+                  lineHeight: 1.3,
+                }}
+              >
                 Template par défaut
               </label>
             </div>
@@ -646,28 +806,44 @@ function TemplateFormModal({
             <div style={{ marginTop: 8 }}>
               <SectionLabel>Sections</SectionLabel>
               <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                {EDITOR_TABS.map(tab => (
+                {EDITOR_TABS.map((tab) => (
                   <button
                     key={tab.id}
                     type="button"
                     onClick={() => setActiveTab(tab.id)}
                     style={{
-                      display: "flex", alignItems: "center", gap: 8,
-                      padding: "7px 10px", borderRadius: "var(--r-sm)",
-                      background: activeTab === tab.id ? "var(--terracotta-soft)" : "transparent",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      padding: "7px 10px",
+                      borderRadius: "var(--r-sm)",
+                      background:
+                        activeTab === tab.id
+                          ? "var(--terracotta-soft)"
+                          : "transparent",
                       border: `1px solid ${activeTab === tab.id ? "var(--terracotta)" : "transparent"}`,
-                      color: activeTab === tab.id ? "var(--terracotta)" : "var(--ink-soft)",
-                      fontSize: 13, fontWeight: activeTab === tab.id ? 600 : 400,
-                      cursor: "pointer", textAlign: "left",
+                      color:
+                        activeTab === tab.id
+                          ? "var(--terracotta)"
+                          : "var(--ink-soft)",
+                      fontSize: 13,
+                      fontWeight: activeTab === tab.id ? 600 : 400,
+                      cursor: "pointer",
+                      textAlign: "left",
                       transition: "all 0.15s",
                     }}
                   >
-                    <span style={{
-                      width: 6, height: 6, borderRadius: "50%", flexShrink: 0,
-                      background: form[tab.id]?.trim()
-                        ? "var(--sauge)"
-                        : "var(--paper-line)",
-                    }} />
+                    <span
+                      style={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: "50%",
+                        flexShrink: 0,
+                        background: form[tab.id]?.trim()
+                          ? "var(--sauge)"
+                          : "var(--paper-line)",
+                      }}
+                    />
                     {tab.label}
                   </button>
                 ))}
@@ -675,34 +851,64 @@ function TemplateFormModal({
             </div>
 
             {/* Aide */}
-            <div style={{
-              marginTop: "auto",
-              padding: "10px 12px",
-              background: "var(--paper-raised)",
-              border: "1px solid var(--paper-line)",
-              borderRadius: "var(--r-sm)",
-              fontSize: 11.5, color: "var(--ink-soft)", lineHeight: 1.5,
-            }}>
-              Utilisez <code style={{ fontFamily: "var(--font-mono)", color: "var(--terracotta)", fontSize: 11 }}>{"{{variable}}"}</code> pour les données dynamiques. Cliquez sur <strong>Variables</strong> pour voir la liste.
+            <div
+              style={{
+                marginTop: "auto",
+                padding: "10px 12px",
+                background: "var(--paper-raised)",
+                border: "1px solid var(--paper-line)",
+                borderRadius: "var(--r-sm)",
+                fontSize: 11.5,
+                color: "var(--ink-soft)",
+                lineHeight: 1.5,
+              }}
+            >
+              Utilisez{" "}
+              <code
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  color: "var(--terracotta)",
+                  fontSize: 11,
+                }}
+              >
+                {"{{variable}}"}
+              </code>{" "}
+              pour les données dynamiques. Cliquez sur{" "}
+              <strong>Variables</strong> pour voir la liste.
             </div>
           </aside>
 
           {/* ── Zone Monaco ── */}
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          <div
+            style={{
+              flex: 1,
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
+            }}
+          >
             {/* Tab label */}
-            <div style={{
-              padding: "8px 16px",
-              borderBottom: "1px solid var(--paper-line)",
-              background: "var(--paper-raised)",
-              flexShrink: 0,
-              display: "flex", alignItems: "center", gap: 8,
-            }}>
+            <div
+              style={{
+                padding: "8px 16px",
+                borderBottom: "1px solid var(--paper-line)",
+                background: "var(--paper-raised)",
+                flexShrink: 0,
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+              }}
+            >
               <Code2 size={13} style={{ color: "var(--terracotta)" }} />
-              <span style={{
-                fontFamily: "var(--font-mono)", fontSize: 11,
-                textTransform: "uppercase", letterSpacing: "0.08em",
-                color: "var(--ink-soft)",
-              }}>
+              <span
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  fontSize: 11,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.08em",
+                  color: "var(--ink-soft)",
+                }}
+              >
                 HTML · {currentTab.label}
               </span>
             </div>
@@ -715,7 +921,9 @@ function TemplateFormModal({
                 language="html"
                 theme="vs-dark"
                 value={form[activeTab] as string}
-                onChange={value => setForm(prev => ({ ...prev, [activeTab]: value ?? "" }))}
+                onChange={(value) =>
+                  setForm((prev) => ({ ...prev, [activeTab]: value ?? "" }))
+                }
                 options={{
                   fontSize: 13,
                   lineHeight: 20,
@@ -724,7 +932,8 @@ function TemplateFormModal({
                   scrollBeyondLastLine: false,
                   tabSize: 2,
                   padding: { top: 12, bottom: 12 },
-                  fontFamily: "'IBM Plex Mono', 'Fira Code', 'Consolas', monospace",
+                  fontFamily:
+                    "'IBM Plex Mono', 'Fira Code', 'Consolas', monospace",
                   fontLigatures: true,
                   bracketPairColorization: { enabled: true },
                   formatOnPaste: true,
@@ -771,80 +980,141 @@ function PreviewModal({
     setError(null);
     setHtml(null);
     try {
-      const res = await contractTemplateService.preview(template.id, selectedLeaseId);
+      const res = await contractTemplateService.preview(
+        template.id,
+        selectedLeaseId,
+      );
       setHtml(res.data.html);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Impossible de générer l'aperçu.");
+      setError(
+        err instanceof Error ? err.message : "Impossible de générer l'aperçu.",
+      );
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div style={{
-      position: "fixed", inset: 0, zIndex: 60,
-      background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "stretch",
-    }}>
-      <div style={{
-        margin: "auto", width: "min(95vw, 900px)", height: "90vh",
-        background: "var(--paper)",
-        borderRadius: "var(--r-lg)",
-        overflow: "hidden",
-        display: "flex", flexDirection: "column",
-      }}>
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 60,
+        background: "rgba(0,0,0,0.6)",
+        display: "flex",
+        alignItems: "stretch",
+      }}
+    >
+      <div
+        style={{
+          margin: "auto",
+          width: "min(95vw, 900px)",
+          height: "90vh",
+          background: "var(--paper)",
+          borderRadius: "var(--r-lg)",
+          overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
         {/* Header */}
-        <div style={{
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "14px 20px",
-          borderBottom: "1px solid var(--paper-line)",
-          background: "var(--paper-raised)",
-        }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "14px 20px",
+            borderBottom: "1px solid var(--paper-line)",
+            background: "var(--paper-raised)",
+          }}
+        >
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <Eye size={15} style={{ color: "var(--terracotta)" }} />
-            <span style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 15 }}>
+            <span
+              style={{
+                fontFamily: "var(--font-display)",
+                fontWeight: 600,
+                fontSize: 15,
+              }}
+            >
               Aperçu — {template.name}
             </span>
           </div>
           <button
             onClick={onClose}
-            style={{ background: "none", border: "none", cursor: "pointer", color: "var(--ink-soft)", display: "flex" }}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              color: "var(--ink-soft)",
+              display: "flex",
+            }}
           >
             <X size={18} />
           </button>
         </div>
 
         {/* Lease selector */}
-        <div style={{
-          display: "flex", alignItems: "center", gap: 10,
-          padding: "10px 20px",
-          borderBottom: "1px solid var(--paper-line)",
-          background: "var(--paper-raised)",
-        }}>
-          <label style={{ fontSize: 12, color: "var(--ink-soft)", whiteSpace: "nowrap" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            padding: "10px 20px",
+            borderBottom: "1px solid var(--paper-line)",
+            background: "var(--paper-raised)",
+          }}
+        >
+          <label
+            style={{
+              fontSize: 12,
+              color: "var(--ink-soft)",
+              whiteSpace: "nowrap",
+            }}
+          >
             Bail de démonstration :
           </label>
           {leases.length === 0 ? (
-            <span style={{ fontSize: 12, color: "var(--ink-soft)", fontStyle: "italic" }}>
+            <span
+              style={{
+                fontSize: 12,
+                color: "var(--ink-soft)",
+                fontStyle: "italic",
+              }}
+            >
               Aucun bail disponible — l'aperçu utilisera des valeurs fictives
             </span>
           ) : (
             <select
               value={selectedLeaseId}
-              onChange={e => setSelectedLeaseId(e.target.value)}
+              onChange={(e) => setSelectedLeaseId(e.target.value)}
               style={{
-                height: 32, padding: "0 10px",
-                borderRadius: "var(--r-sm)", border: "1px solid var(--paper-line)",
-                background: "var(--paper)", fontSize: 12, color: "var(--ink)",
-                outline: "none", flex: 1, maxWidth: 360,
+                height: 32,
+                padding: "0 10px",
+                borderRadius: "var(--r-sm)",
+                border: "1px solid var(--paper-line)",
+                background: "var(--paper)",
+                fontSize: 12,
+                color: "var(--ink)",
+                outline: "none",
+                flex: 1,
+                maxWidth: 360,
               }}
             >
-              {leases.map(l => {
+              {leases.map((l) => {
                 const label = [
                   l.contractNumber,
-                  l.unit?.reference ?? l.unit?.name,
-                  l.tenant?.fullName ?? `${l.tenant?.firstName ?? ""} ${l.tenant?.lastName ?? ""}`.trim(),
-                ].filter(Boolean).join(" · ");
-                return <option key={l.id} value={l.id}>{label || l.id}</option>;
+                  l.unit?.unitNumber ?? l.unit?.label,
+                  l.tenant?.fullName ??
+                    `${l.tenant?.firstName ?? ""} ${l.tenant?.lastName ?? ""}`.trim(),
+                ]
+                  .filter(Boolean)
+                  .join(" · ");
+                return (
+                  <option key={l.id} value={l.id}>
+                    {label || l.id}
+                  </option>
+                );
               })}
             </select>
           )}
@@ -854,7 +1124,11 @@ function PreviewModal({
             disabled={loading || (!selectedLeaseId && leases.length > 0)}
             style={{ fontSize: 12, padding: "6px 14px", flexShrink: 0 }}
           >
-            {loading ? <Loader2 size={12} className="animate-spin" /> : <Eye size={12} />}
+            {loading ? (
+              <Loader2 size={12} className="animate-spin" />
+            ) : (
+              <Eye size={12} />
+            )}
             Aperçu
           </button>
         </div>
@@ -862,25 +1136,46 @@ function PreviewModal({
         {/* Preview area */}
         <div style={{ flex: 1, overflow: "auto", background: "#f5f5f5" }}>
           {error && (
-            <div style={{
-              margin: 20, padding: "12px 16px",
-              background: "var(--rouge-soft)", border: "1px solid var(--rouge)",
-              borderRadius: "var(--r-sm)", color: "var(--rouge)", fontSize: 13,
-              display: "flex", gap: 8, alignItems: "center",
-            }}>
+            <div
+              style={{
+                margin: 20,
+                padding: "12px 16px",
+                background: "var(--rouge-soft)",
+                border: "1px solid var(--rouge)",
+                borderRadius: "var(--r-sm)",
+                color: "var(--rouge)",
+                fontSize: 13,
+                display: "flex",
+                gap: 8,
+                alignItems: "center",
+              }}
+            >
               <AlertTriangle size={14} /> {error}
             </div>
           )}
           {loading && (
-            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: 200 }}>
-              <Loader2 size={24} className="animate-spin" style={{ color: "var(--ink-soft)" }} />
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                height: 200,
+              }}
+            >
+              <Loader2
+                size={24}
+                className="animate-spin"
+                style={{ color: "var(--ink-soft)" }}
+              />
             </div>
           )}
           {html && !loading && (
             <iframe
               srcDoc={html}
               style={{
-                width: "100%", height: "100%", border: "none",
+                width: "100%",
+                height: "100%",
+                border: "none",
                 background: "white",
               }}
               title="Aperçu du contrat"
@@ -888,12 +1183,20 @@ function PreviewModal({
             />
           )}
           {!html && !loading && !error && (
-            <div style={{
-              display: "flex", flexDirection: "column", alignItems: "center",
-              justifyContent: "center", height: 200, color: "var(--ink-soft)",
-            }}>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                height: 200,
+                color: "var(--ink-soft)",
+              }}
+            >
               <Eye size={32} style={{ opacity: 0.2, marginBottom: 10 }} />
-              <p style={{ fontSize: 13 }}>Sélectionnez un bail et cliquez sur "Aperçu"</p>
+              <p style={{ fontSize: 13 }}>
+                Sélectionnez un bail et cliquez sur "Aperçu"
+              </p>
             </div>
           )}
         </div>
@@ -916,88 +1219,163 @@ function TemplateCard({
   onPreview: () => void;
 }) {
   return (
-    <div style={{
-      background: "var(--paper)",
-      border: `1px solid ${template.isDefault ? "var(--terracotta)" : "var(--paper-line)"}`,
-      borderRadius: "var(--r-md)",
-      overflow: "hidden",
-      transition: "box-shadow 0.15s",
-    }}
-      onMouseEnter={e => (e.currentTarget.style.boxShadow = "0 2px 12px rgba(0,0,0,0.07)")}
-      onMouseLeave={e => (e.currentTarget.style.boxShadow = "none")}
+    <div
+      style={{
+        background: "var(--paper)",
+        border: `1px solid ${template.isDefault ? "var(--terracotta)" : "var(--paper-line)"}`,
+        borderRadius: "var(--r-md)",
+        overflow: "hidden",
+        transition: "box-shadow 0.15s",
+      }}
+      onMouseEnter={(e) =>
+        (e.currentTarget.style.boxShadow = "0 2px 12px rgba(0,0,0,0.07)")
+      }
+      onMouseLeave={(e) => (e.currentTarget.style.boxShadow = "none")}
     >
       {/* Header */}
-      <div style={{
-        display: "flex", alignItems: "flex-start", gap: 10,
-        padding: "12px 14px",
-        borderBottom: "1px solid var(--paper-line)",
-        background: template.isDefault ? "var(--terracotta-soft)" : "var(--paper-raised)",
-      }}>
-        <div style={{
-          width: 34, height: 34, flexShrink: 0,
-          background: template.isDefault ? "var(--terracotta)" : "var(--paper-line)",
-          borderRadius: "var(--r-sm)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
-          <FileText size={16} style={{ color: template.isDefault ? "white" : "var(--ink-soft)" }} />
+      <div
+        style={{
+          display: "flex",
+          alignItems: "flex-start",
+          gap: 10,
+          padding: "12px 14px",
+          borderBottom: "1px solid var(--paper-line)",
+          background: template.isDefault
+            ? "var(--terracotta-soft)"
+            : "var(--paper-raised)",
+        }}
+      >
+        <div
+          style={{
+            width: 34,
+            height: 34,
+            flexShrink: 0,
+            background: template.isDefault
+              ? "var(--terracotta)"
+              : "var(--paper-line)",
+            borderRadius: "var(--r-sm)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <FileText
+            size={16}
+            style={{ color: template.isDefault ? "white" : "var(--ink-soft)" }}
+          />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <span style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 14, color: "var(--ink)" }}>
+            <span
+              style={{
+                fontFamily: "var(--font-display)",
+                fontWeight: 600,
+                fontSize: 14,
+                color: "var(--ink)",
+              }}
+            >
               {template.name}
             </span>
             {template.isDefault && (
-              <span style={{
-                fontFamily: "var(--font-mono)", fontSize: 9.5,
-                textTransform: "uppercase", letterSpacing: "0.07em",
-                color: "var(--terracotta)",
-                background: "var(--terracotta-soft)",
-                border: "1px solid var(--terracotta)",
-                borderRadius: 10, padding: "1px 7px",
-              }}>
+              <span
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  fontSize: 9.5,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.07em",
+                  color: "var(--terracotta)",
+                  background: "var(--terracotta-soft)",
+                  border: "1px solid var(--terracotta)",
+                  borderRadius: 10,
+                  padding: "1px 7px",
+                }}
+              >
                 Défaut
               </span>
             )}
           </div>
           {template.description && (
-            <p style={{ fontSize: 12, color: "var(--ink-soft)", marginTop: 2, lineHeight: 1.4 }}>
+            <p
+              style={{
+                fontSize: 12,
+                color: "var(--ink-soft)",
+                marginTop: 2,
+                lineHeight: 1.4,
+              }}
+            >
               {template.description}
             </p>
           )}
-          <p style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, color: "var(--ink-soft)", marginTop: 4 }}>
-            {template.updatedAt ? `Modifié le ${fmt(template.updatedAt)}` : `Créé le ${fmt(template.createdAt)}`}
+          <p
+            style={{
+              fontFamily: "var(--font-mono)",
+              fontSize: 10.5,
+              color: "var(--ink-soft)",
+              marginTop: 4,
+            }}
+          >
+            {template.updatedAt
+              ? `Modifié le ${fmt(template.updatedAt)}`
+              : `Créé le ${fmt(template.createdAt)}`}
           </p>
         </div>
       </div>
 
       {/* Content preview */}
       <div style={{ padding: "10px 14px" }}>
-        <p style={{
-          fontSize: 12, color: "var(--ink-soft)", fontFamily: "var(--font-mono)",
-          overflow: "hidden", display: "-webkit-box",
-          WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
-          whiteSpace: "pre-wrap",
-        }}>
-          {template.content.replace(/<[^>]+>/g, " ").trim().slice(0, 180)}…
+        <p
+          style={{
+            fontSize: 12,
+            color: "var(--ink-soft)",
+            fontFamily: "var(--font-mono)",
+            overflow: "hidden",
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+            whiteSpace: "pre-wrap",
+          }}
+        >
+          {template.content
+            .replace(/<[^>]+>/g, " ")
+            .trim()
+            .slice(0, 180)}
+          …
         </p>
       </div>
 
       {/* Actions */}
-      <div style={{
-        display: "flex", alignItems: "center", gap: 6,
-        padding: "8px 14px",
-        borderTop: "1px solid var(--paper-line)",
-      }}>
-        <button className="ep-btn ep-btn-ghost" onClick={onPreview} style={{ fontSize: 11, padding: "4px 10px" }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          padding: "8px 14px",
+          borderTop: "1px solid var(--paper-line)",
+        }}
+      >
+        <button
+          className="ep-btn ep-btn-ghost"
+          onClick={onPreview}
+          style={{ fontSize: 11, padding: "4px 10px" }}
+        >
           <Eye size={11} /> Aperçu
         </button>
-        <button className="ep-btn ep-btn-ghost" onClick={onEdit} style={{ fontSize: 11, padding: "4px 10px" }}>
+        <button
+          className="ep-btn ep-btn-ghost"
+          onClick={onEdit}
+          style={{ fontSize: 11, padding: "4px 10px" }}
+        >
           <Pencil size={11} /> Modifier
         </button>
         <button
           className="ep-btn ep-btn-ghost"
           onClick={onDelete}
-          style={{ fontSize: 11, padding: "4px 10px", color: "var(--rouge)", marginLeft: "auto" }}
+          style={{
+            fontSize: 11,
+            padding: "4px 10px",
+            color: "var(--rouge)",
+            marginLeft: "auto",
+          }}
         >
           <Trash2 size={11} />
         </button>
@@ -1020,10 +1398,13 @@ export function ContractTemplatesClient() {
 
   // UI state
   const [formOpen, setFormOpen] = useState(false);
-  const [editingTemplate, setEditingTemplate] = useState<ContractTemplate | undefined>(undefined);
+  const [editingTemplate, setEditingTemplate] = useState<
+    ContractTemplate | undefined
+  >(undefined);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
-  const [previewTemplate, setPreviewTemplate] = useState<ContractTemplate | null>(null);
+  const [previewTemplate, setPreviewTemplate] =
+    useState<ContractTemplate | null>(null);
   const [showVarsPanel, setShowVarsPanel] = useState(false);
   const [varsLoading, setVarsLoading] = useState(false);
 
@@ -1053,11 +1434,16 @@ export function ContractTemplatesClient() {
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   // Load variables for the panel
   async function loadVariables() {
-    if (variables.length > 0) { setShowVarsPanel(true); return; }
+    if (variables.length > 0) {
+      setShowVarsPanel(true);
+      return;
+    }
     setVarsLoading(true);
     try {
       const vars = await contractTemplateService.getVariables();
@@ -1072,21 +1458,27 @@ export function ContractTemplatesClient() {
 
   // Upsert in list
   function handleSaved(t: ContractTemplate) {
-    setTemplates(prev => {
-      const idx = prev.findIndex(x => x.id === t.id);
+    setTemplates((prev) => {
+      const idx = prev.findIndex((x) => x.id === t.id);
       if (idx >= 0) {
         const next = [...prev];
         next[idx] = t;
         // Si ce template est default, décocher les autres
-        if (t.isDefault) return next.map(x => x.id === t.id ? x : { ...x, isDefault: false });
+        if (t.isDefault)
+          return next.map((x) =>
+            x.id === t.id ? x : { ...x, isDefault: false },
+          );
         return next;
       }
       if (t.isDefault) {
-        return [t, ...prev.map(x => ({ ...x, isDefault: false }))];
+        return [t, ...prev.map((x) => ({ ...x, isDefault: false }))];
       }
       return [t, ...prev];
     });
-    toast({ variant: "success", title: editingTemplate ? "Template mis à jour" : "Template créé" });
+    toast({
+      variant: "success",
+      title: editingTemplate ? "Template mis à jour" : "Template créé",
+    });
   }
 
   async function handleDelete() {
@@ -1094,10 +1486,14 @@ export function ContractTemplatesClient() {
     setDeleteLoading(true);
     try {
       await contractTemplateService.delete(deletingId);
-      setTemplates(prev => prev.filter(t => t.id !== deletingId));
+      setTemplates((prev) => prev.filter((t) => t.id !== deletingId));
       toast({ variant: "success", title: "Template supprimé" });
     } catch (err: unknown) {
-      toast({ variant: "danger", title: err instanceof Error ? err.message : "Erreur lors de la suppression" });
+      toast({
+        variant: "danger",
+        title:
+          err instanceof Error ? err.message : "Erreur lors de la suppression",
+      });
     } finally {
       setDeleteLoading(false);
       setDeletingId(null);
@@ -1119,7 +1515,8 @@ export function ContractTemplatesClient() {
           <div className="ep-eyebrow">Gestion locative</div>
           <h1 className="ep-page-title">Modèles de contrat</h1>
           <p className="ep-page-desc">
-            Personnalisez le PDF généré pour vos baux avec des templates HTML et des variables dynamiques.
+            Personnalisez le PDF généré pour vos baux avec des templates HTML et
+            des variables dynamiques.
           </p>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
@@ -1132,7 +1529,10 @@ export function ContractTemplatesClient() {
           </button>
           <button
             className="ep-btn ep-btn-primary"
-            onClick={() => { setEditingTemplate(undefined); setFormOpen(true); }}
+            onClick={() => {
+              setEditingTemplate(undefined);
+              setFormOpen(true);
+            }}
           >
             <Plus size={14} /> Nouveau template
           </button>
@@ -1143,7 +1543,16 @@ export function ContractTemplatesClient() {
       <div style={{ padding: "24px 32px", maxWidth: 1100, margin: "0 auto" }}>
         {/* Loading */}
         {loading && (
-          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", padding: "60px 0", gap: 10, color: "var(--ink-soft)" }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              padding: "60px 0",
+              gap: 10,
+              color: "var(--ink-soft)",
+            }}
+          >
             <Loader2 size={20} className="animate-spin" />
             <span style={{ fontSize: 13 }}>Chargement des templates…</span>
           </div>
@@ -1151,33 +1560,59 @@ export function ContractTemplatesClient() {
 
         {/* Error */}
         {error && !loading && (
-          <div style={{
-            display: "flex", alignItems: "center", gap: 10,
-            padding: "14px 18px",
-            background: "var(--rouge-soft)", border: "1px solid var(--rouge)",
-            borderRadius: "var(--r-md)", color: "var(--rouge)", fontSize: 13,
-          }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              padding: "14px 18px",
+              background: "var(--rouge-soft)",
+              border: "1px solid var(--rouge)",
+              borderRadius: "var(--r-md)",
+              color: "var(--rouge)",
+              fontSize: 13,
+            }}
+          >
             <AlertTriangle size={16} /> {error}
           </div>
         )}
 
         {/* Empty state */}
         {!loading && !error && templates.length === 0 && (
-          <div style={{
-            display: "flex", flexDirection: "column", alignItems: "center",
-            justifyContent: "center", padding: "60px 0", gap: 14,
-            color: "var(--ink-soft)",
-          }}>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "60px 0",
+              gap: 14,
+              color: "var(--ink-soft)",
+            }}
+          >
             <FileText size={40} style={{ opacity: 0.18 }} />
             <div style={{ textAlign: "center" }}>
-              <p style={{ fontFamily: "var(--font-display)", fontSize: 16, fontWeight: 600, color: "var(--ink)", marginBottom: 6 }}>
+              <p
+                style={{
+                  fontFamily: "var(--font-display)",
+                  fontSize: 16,
+                  fontWeight: 600,
+                  color: "var(--ink)",
+                  marginBottom: 6,
+                }}
+              >
                 Aucun template de contrat
               </p>
-              <p style={{ fontSize: 13 }}>Créez votre premier modèle personnalisé pour vos baux.</p>
+              <p style={{ fontSize: 13 }}>
+                Créez votre premier modèle personnalisé pour vos baux.
+              </p>
             </div>
             <button
               className="ep-btn ep-btn-primary"
-              onClick={() => { setEditingTemplate(undefined); setFormOpen(true); }}
+              onClick={() => {
+                setEditingTemplate(undefined);
+                setFormOpen(true);
+              }}
             >
               <Plus size={14} /> Créer un template
             </button>
@@ -1186,33 +1621,63 @@ export function ContractTemplatesClient() {
 
         {/* Info banner */}
         {!loading && !error && templates.length > 0 && (
-          <div style={{
-            display: "flex", alignItems: "flex-start", gap: 10,
-            padding: "10px 14px", marginBottom: 20,
-            background: "var(--ocre-soft, rgba(180,140,60,0.08))",
-            border: "1px solid var(--ocre, rgba(180,140,60,0.3))",
-            borderRadius: "var(--r-sm)", fontSize: 12.5, color: "var(--ink-soft)",
-          }}>
-            <BookOpen size={14} style={{ flexShrink: 0, marginTop: 1, color: "var(--ocre, #b48c3c)" }} />
+          <div
+            style={{
+              display: "flex",
+              alignItems: "flex-start",
+              gap: 10,
+              padding: "10px 14px",
+              marginBottom: 20,
+              background: "var(--ocre-soft, rgba(180,140,60,0.08))",
+              border: "1px solid var(--ocre, rgba(180,140,60,0.3))",
+              borderRadius: "var(--r-sm)",
+              fontSize: 12.5,
+              color: "var(--ink-soft)",
+            }}
+          >
+            <BookOpen
+              size={14}
+              style={{
+                flexShrink: 0,
+                marginTop: 1,
+                color: "var(--ocre, #b48c3c)",
+              }}
+            />
             <span>
-              Utilisez des variables comme <code style={{ fontFamily: "var(--font-mono)", color: "var(--terracotta)", fontSize: 11 }}>{"{{tenant_full_name}}"}</code> dans votre contenu.
-              {" "}Le template <strong>par défaut</strong> est utilisé quand aucun template n'est précisé lors de la génération PDF.
+              Utilisez des variables comme{" "}
+              <code
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  color: "var(--terracotta)",
+                  fontSize: 11,
+                }}
+              >
+                {"{{tenant_full_name}}"}
+              </code>{" "}
+              dans votre contenu. Le template <strong>par défaut</strong> est
+              utilisé quand aucun template n'est précisé lors de la génération
+              PDF.
             </span>
           </div>
         )}
 
         {/* Grid */}
         {!loading && !error && sorted.length > 0 && (
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
-            gap: 16,
-          }}>
-            {sorted.map(t => (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
+              gap: 16,
+            }}
+          >
+            {sorted.map((t) => (
               <TemplateCard
                 key={t.id}
                 template={t}
-                onEdit={() => { setEditingTemplate(t); setFormOpen(true); }}
+                onEdit={() => {
+                  setEditingTemplate(t);
+                  setFormOpen(true);
+                }}
                 onDelete={() => setDeletingId(t.id)}
                 onPreview={() => setPreviewTemplate(t)}
               />
@@ -1224,7 +1689,10 @@ export function ContractTemplatesClient() {
       {/* Form Modal */}
       <TemplateFormModal
         isOpen={formOpen}
-        onClose={() => { setFormOpen(false); setEditingTemplate(undefined); }}
+        onClose={() => {
+          setFormOpen(false);
+          setEditingTemplate(undefined);
+        }}
         onSaved={handleSaved}
         template={editingTemplate}
       />
@@ -1237,30 +1705,54 @@ export function ContractTemplatesClient() {
       >
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-            <div style={{
-              width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
-              background: "var(--rouge-soft)", display: "flex", alignItems: "center", justifyContent: "center",
-            }}>
+            <div
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: "50%",
+                flexShrink: 0,
+                background: "var(--rouge-soft)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
               <AlertTriangle size={16} style={{ color: "var(--rouge)" }} />
             </div>
             <div>
-              <p style={{ fontSize: 14, fontWeight: 600, color: "var(--ink)", marginBottom: 4 }}>
+              <p
+                style={{
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: "var(--ink)",
+                  marginBottom: 4,
+                }}
+              >
                 Confirmer la suppression
               </p>
               <p style={{ fontSize: 13, color: "var(--ink-soft)" }}>
-                Ce template sera définitivement supprimé. Les contrats déjà générés ne seront pas affectés.
+                Ce template sera définitivement supprimé. Les contrats déjà
+                générés ne seront pas affectés.
               </p>
             </div>
           </div>
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
-            <button className="ep-btn ep-btn-ghost" onClick={() => setDeletingId(null)} disabled={deleteLoading}>
+            <button
+              className="ep-btn ep-btn-ghost"
+              onClick={() => setDeletingId(null)}
+              disabled={deleteLoading}
+            >
               Annuler
             </button>
             <button
               className="ep-btn ep-btn-primary"
               onClick={handleDelete}
               disabled={deleteLoading}
-              style={{ background: "var(--rouge)", borderColor: "var(--rouge)", minWidth: 120 }}
+              style={{
+                background: "var(--rouge)",
+                borderColor: "var(--rouge)",
+                minWidth: 120,
+              }}
             >
               {deleteLoading && <Loader2 size={13} className="animate-spin" />}
               Supprimer
