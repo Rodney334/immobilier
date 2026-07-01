@@ -18,47 +18,47 @@ const NAV_GROUPS = [
   {
     label: "Aperçu",
     items: [
-      { label: "Tableau de bord", href: "/dashboard", icon: LayoutDashboard, badge: null },
+      { label: "Tableau de bord", href: "/dashboard", icon: LayoutDashboard, badge: null, superAdminOnly: false },
     ],
   },
   {
     label: "Gestion locative",
     items: [
-      { label: "Contrats & baux", href: "/dashboard/leases",        icon: FileText,          badge: null    },
-      { label: "Échéances",       href: "/dashboard/schedules",     icon: CalendarClock,     badge: "alert" },
-      { label: "Paiements",       href: "/dashboard/payments",      icon: CreditCard,        badge: null    },
-      { label: "Ajustements",     href: "/dashboard/adjustments",   icon: SlidersHorizontal, badge: null    },
-      { label: "Reçus",           href: "/dashboard/receipts",      icon: Receipt,           badge: null    },
-      { label: "Garanties",       href: "/dashboard/deposits",           icon: ShieldCheck, badge: null    },
-      { label: "Modèles de contrat", href: "/dashboard/contract-templates", icon: FileCode,    badge: null    },
+      { label: "Contrats & baux",    href: "/dashboard/leases",             icon: FileText,          badge: null,    superAdminOnly: false },
+      { label: "Échéances",          href: "/dashboard/schedules",          icon: CalendarClock,     badge: "alert", superAdminOnly: false },
+      { label: "Paiements",          href: "/dashboard/payments",           icon: CreditCard,        badge: null,    superAdminOnly: false },
+      { label: "Ajustements",        href: "/dashboard/adjustments",        icon: SlidersHorizontal, badge: null,    superAdminOnly: false },
+      { label: "Reçus",              href: "/dashboard/receipts",           icon: Receipt,           badge: null,    superAdminOnly: false },
+      { label: "Garanties",          href: "/dashboard/deposits",           icon: ShieldCheck,       badge: null,    superAdminOnly: false },
+      { label: "Modèles de contrat", href: "/dashboard/contract-templates", icon: FileCode,          badge: null,    superAdminOnly: true  },
     ],
   },
   {
     label: "Parc immobilier",
     items: [
-      { label: "Quartiers",   href: "/dashboard/neighborhoods", icon: MapPin,        badge: null    },
-      { label: "Propriétés",  href: "/dashboard/properties",   icon: Building2,     badge: null    },
-      { label: "Locaux",      href: "/dashboard/units",        icon: DoorOpen,      badge: null    },
-      { label: "Locataires",  href: "/dashboard/tenants",      icon: Users,         badge: null    },
-      { label: "Incidents",   href: "/dashboard/incidents",    icon: AlertTriangle, badge: "alert" },
+      { label: "Quartiers",   href: "/dashboard/neighborhoods", icon: MapPin,        badge: null,    superAdminOnly: false },
+      { label: "Propriétés",  href: "/dashboard/properties",   icon: Building2,     badge: null,    superAdminOnly: false },
+      { label: "Locaux",      href: "/dashboard/units",        icon: DoorOpen,      badge: null,    superAdminOnly: false },
+      { label: "Locataires",  href: "/dashboard/tenants",      icon: Users,         badge: null,    superAdminOnly: false },
+      { label: "Incidents",   href: "/dashboard/incidents",    icon: AlertTriangle, badge: "alert", superAdminOnly: false },
     ],
   },
   {
     label: "Suivi",
     items: [
-      { label: "Rentabilité",     href: "/dashboard/profitability", icon: TrendingUp, badge: null },
-      { label: "Rapports",        href: "/dashboard/reports",       icon: BarChart3,  badge: null },
-      { label: "Journal d'audit", href: "/dashboard/audit-logs",    icon: ScrollText, badge: null },
-      { label: "Notifications",   href: "#",                        icon: Bell,       badge: null },
+      { label: "Rentabilité",     href: "/dashboard/profitability", icon: TrendingUp, badge: null, superAdminOnly: false },
+      { label: "Rapports",        href: "/dashboard/reports",       icon: BarChart3,  badge: null, superAdminOnly: false },
+      { label: "Journal d'audit", href: "/dashboard/audit-logs",   icon: ScrollText, badge: null, superAdminOnly: false },
+      { label: "Notifications",   href: "#",                        icon: Bell,       badge: null, superAdminOnly: false },
     ],
   },
   {
     label: "Administration",
     items: [
-      { label: "Utilisateurs", href: "/dashboard/users", icon: UserCog, badge: null },
+      { label: "Utilisateurs", href: "/dashboard/users", icon: UserCog, badge: null, superAdminOnly: false },
     ],
   },
-] as const;
+];
 
 // ─── Inner sidebar content (shared between mobile & desktop) ─────────────────
 
@@ -84,9 +84,12 @@ function SidebarContent({ collapsed, onClose }: { collapsed: boolean; onClose?: 
     ? user.name.split(" ").map((w: string) => w[0]).slice(0, 2).join("").toUpperCase()
     : "?";
 
+  const userRole = user?.role;
+  const isSuperAdmin = userRole === "superadmin";
+
   const roleName =
-    (user as { role?: string } | null)?.role === "SUPER_ADMIN" ? "Super Admin" :
-    (user as { role?: string } | null)?.role === "ADMIN" ? "Admin" : "Gestionnaire";
+    userRole === "superadmin" ? "Super Admin" :
+    userRole === "admin" ? "Admin" : "Gestionnaire";
 
   return (
     <div
@@ -170,7 +173,7 @@ function SidebarContent({ collapsed, onClose }: { collapsed: boolean; onClose?: 
             {collapsed && <div style={{ marginTop: 14, borderTop: "1px solid rgba(247,243,236,0.08)" }} />}
 
             {/* Items */}
-            {group.items.map(({ label, href, icon: Icon, badge }) => {
+            {group.items.filter((item) => !item.superAdminOnly || isSuperAdmin).map(({ label, href, icon: Icon, badge }) => {
               const active = isActive(href);
               return (
                 <Link

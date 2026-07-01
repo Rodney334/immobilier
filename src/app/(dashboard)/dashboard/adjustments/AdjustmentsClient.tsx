@@ -1,18 +1,12 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import {
-  Plus,
-  Loader2,
-  AlertTriangle,
-  ChevronLeft,
-  ChevronRight,
-  MoreVertical,
-  SlidersHorizontal,
-} from "lucide-react";
+import { Plus, Loader2, AlertTriangle, SlidersHorizontal } from "lucide-react";
 import { adjustmentService } from "@/lib/services/adjustment.service";
 import { useToast } from "@/components/ui/Toast";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { RowActionMenu } from "@/components/ui/RowActionMenu";
+import { PaginationBar } from "@/components/ui/PaginationBar";
 import type { Adjustment, AdjustmentType, PaginationMeta } from "@/types";
 
 function formatXOF(n: number) {
@@ -85,8 +79,6 @@ const TYPE_FILTERS: { value: AdjustmentType | "all"; label: string }[] = [
   { value: "WAIVER", label: "Dispense" },
 ];
 
-const PAGE_LIMIT = 20;
-
 function RowActions({
   adj,
   onDeleted,
@@ -94,40 +86,21 @@ function RowActions({
   adj: Adjustment;
   onDeleted: () => void;
 }) {
-  const [open, setOpen] = useState(false);
   const { toast } = useToast();
   async function handleDelete() {
-    setOpen(false);
     try {
       await adjustmentService.delete(adj.id);
-      toast({ variant: "success", title: "Ajustement supprime" });
+      toast({ variant: "success", title: "Ajustement supprimé" });
       onDeleted();
     } catch {
       toast({ variant: "danger", title: "Impossible de supprimer" });
     }
   }
   return (
-    <div className="relative">
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="w-7 h-7 rounded-md flex items-center justify-center text-primary/30 hover:text-primary hover:bg-primary/6 transition-colors"
-      >
-        <MoreVertical size={14} />
-      </button>
-      {open && (
-        <>
-          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-8 z-20 w-40 bg-white rounded-lg shadow-lg border border-border-custom py-1 text-[13px]">
-            <button
-              onClick={handleDelete}
-              className="w-full text-left px-4 py-2 hover:bg-danger/6 text-danger transition-colors"
-            >
-              Supprimer
-            </button>
-          </div>
-        </>
-      )}
-    </div>
+    <RowActionMenu
+      width={160}
+      items={[{ label: "Supprimer", onClick: handleDelete, variant: "danger" }]}
+    />
   );
 }
 
@@ -194,6 +167,7 @@ export function AdjustmentsClient() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -201,7 +175,7 @@ export function AdjustmentsClient() {
     try {
       const res = await adjustmentService.getAll({
         page,
-        limit: PAGE_LIMIT,
+        limit,
         type: typeFilter === "all" ? undefined : typeFilter,
         dateFrom: dateFrom || undefined,
         dateTo: dateTo || undefined,
@@ -213,7 +187,7 @@ export function AdjustmentsClient() {
     } finally {
       setLoading(false);
     }
-  }, [page, typeFilter, dateFrom, dateTo]);
+  }, [page, limit, typeFilter, dateFrom, dateTo]);
 
   useEffect(() => {
     load();
@@ -244,12 +218,12 @@ export function AdjustmentsClient() {
 
       <div className="px-6 py-3 border-b border-border-custom bg-surface shrink-0 space-y-3">
         <div className="flex items-center gap-1.5 flex-wrap">
-          {TYPE_FILTERS.map((f) => {
+          {TYPE_FILTERS.map((f, i) => {
             const count =
               f.value !== "all" ? (countByType[f.value] ?? 0) : undefined;
             return (
               <button
-                key={f.value}
+                key={i}
                 onClick={() => setTypeFilter(f.value)}
                 className="ep-chip"
                 data-active={typeFilter === f.value ? "true" : "false"}
@@ -294,7 +268,20 @@ export function AdjustmentsClient() {
       </div>
 
       {error && (
-        <div style={{ margin: "0 32px 16px", display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: "var(--r-sm)", background: "var(--rouge-soft)", border: "1px solid var(--rouge)", fontSize: 13, color: "var(--rouge)" }}>
+        <div
+          style={{
+            margin: "0 32px 16px",
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            padding: "10px 14px",
+            borderRadius: "var(--r-sm)",
+            background: "var(--rouge-soft)",
+            border: "1px solid var(--rouge)",
+            fontSize: 13,
+            color: "var(--rouge)",
+          }}
+        >
           <AlertTriangle size={14} /> {error}
         </div>
       )}
@@ -328,22 +315,16 @@ export function AdjustmentsClient() {
                         "Montant",
                         "Raison",
                         "",
-                      ].map((h) => (
-                        <th
-                          key={h}
-                          className="ep-th"
-                        >
+                      ].map((h, i) => (
+                        <th key={i} className="ep-th">
                           {h}
                         </th>
                       ))}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border-custom bg-surface">
-                    {adjustments.map((a) => (
-                      <tr
-                        key={a.id}
-                        className="ep-tr"
-                      >
+                    {adjustments.map((a, i) => (
+                      <tr key={i} className="ep-tr">
                         <td className="ep-td ep-mono tabular-nums text-primary/60 whitespace-nowrap">
                           {formatDate(a.createdAt)}
                         </td>
@@ -374,24 +355,25 @@ export function AdjustmentsClient() {
             </div>
             {/* Cards mobiles */}
             <div className="lg:hidden p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-              {adjustments.map((a) => (
-                <AdjustmentCard key={a.id} adj={a} onDeleted={load} />
+              {adjustments.map((a, i) => (
+                <AdjustmentCard key={i} adj={a} onDeleted={load} />
               ))}
             </div>
           </>
         )}
       </div>
 
-      {pagination && pagination.totalPages > 1 && (
-        <div className="ep-pagination">
-          <span>{(page - 1) * PAGE_LIMIT + 1}–{Math.min(page * PAGE_LIMIT, pagination.total)} sur {pagination.total} ajustements</span>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <button className="ep-page-btn" onClick={() => setPage((p) => p - 1)} disabled={page <= 1}><ChevronLeft size={13} /></button>
-            <span style={{ fontSize: 12, fontFamily: "var(--font-mono)", padding: "0 8px" }}>Page {page} / {pagination.totalPages}</span>
-            <button className="ep-page-btn" onClick={() => setPage((p) => p + 1)} disabled={page >= pagination.totalPages}><ChevronRight size={13} /></button>
-          </div>
-        </div>
-      )}
+      <PaginationBar
+        total={pagination?.total ?? 0}
+        page={page}
+        limit={limit}
+        itemLabel="ajustements"
+        onPage={setPage}
+        onLimit={(l) => {
+          setLimit(l);
+          setPage(1);
+        }}
+      />
     </div>
   );
 }

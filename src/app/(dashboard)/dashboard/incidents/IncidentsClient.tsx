@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { incidentService } from "@/lib/services/incident.service";
 import { IncidentFormModal } from "@/components/features/incidents/IncidentFormModal";
+import { PaginationBar } from "@/components/ui/PaginationBar";
 import { Badge } from "@/components/ui/Badge";
 import type {
   Incident,
@@ -27,6 +28,7 @@ import type {
 } from "@/types";
 
 // ─── Config ───────────────────────────────────────────────────────────────────
+
 
 const STATUS_CONFIG: Record<
   IncidentStatus,
@@ -373,32 +375,44 @@ export function IncidentsClient() {
   const [stats, setStats] = useState<IncidentStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [total, setTotal] = useState(0);
 
   const [activeFilter, setActiveFilter] = useState<FilterChip>("ALL");
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Incident | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (p: number, filter: FilterChip) => {
     setLoading(true);
     setError(null);
     try {
+      const params: Record<string, unknown> = { page: p, limit };
+      if (filter === "OPEN")        params.status = "OPEN";
+      if (filter === "IN_PROGRESS") params.status = "IN_PROGRESS";
+      if (filter === "RESOLVED")    params.status = "RESOLVED";
+      if (filter === "CRITICAL")    params.priority = "CRITICAL";
+
       const [incRes, statsRes] = await Promise.allSettled([
-        incidentService.getAll({ limit: 100 }),
+        incidentService.getAll(params as Parameters<typeof incidentService.getAll>[0]),
         incidentService.getStats(),
       ]);
-      if (incRes.status === "fulfilled") setIncidents(incRes.value.data);
+      if (incRes.status === "fulfilled") {
+        setIncidents(incRes.value.data);
+        setTotal(incRes.value.total ?? 0);
+      } else {
+        setError("Impossible de charger les incidents.");
+      }
       if (statsRes.status === "fulfilled") setStats(statsRes.value.data);
-    } catch {
-      setError("Impossible de charger les incidents.");
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    load(page, activeFilter);
+  }, [page, limit, activeFilter, load]);
 
   // Filter chips
   const CHIPS: { key: FilterChip; label: string }[] = [
@@ -409,38 +423,19 @@ export function IncidentsClient() {
     { key: "CRITICAL", label: "Critique" },
   ];
 
-  const filtered = incidents.filter((i) => {
-    if (activeFilter === "ALL") return true;
-    if (activeFilter === "CRITICAL") return i.priority === "CRITICAL";
-    return i.status === activeFilter;
-  });
+  function handleFilterChange(f: FilterChip) {
+    setActiveFilter(f);
+    setPage(1);
+  }
 
-  // Active incidents (open + in_progress) for the main list
-  const activeIncidents = filtered.filter(
-    (i) => i.status === "OPEN" || i.status === "IN_PROGRESS",
-  );
-  const showActive =
-    activeFilter === "ALL" ||
-    activeFilter === "CRITICAL" ||
-    activeFilter === "OPEN" ||
-    activeFilter === "IN_PROGRESS";
-
-  const displayList = showActive ? activeIncidents : filtered;
+  // Pagination
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+  const from = total === 0 ? 0 : (page - 1) * limit + 1;
+  const to = Math.min(page * limit, total);
 
   const handleSaved = (saved: Incident) => {
-    setIncidents((prev) => {
-      const idx = prev.findIndex((i) => i.id === saved.id);
-      if (idx >= 0) {
-        const c = [...prev];
-        c[idx] = saved;
-        return c;
-      }
-      return [saved, ...prev];
-    });
-    incidentService
-      .getStats()
-      .then((r) => setStats(r.data))
-      .catch(() => {});
+    // Recharger la page courante pour refléter l'état serveur
+    load(page, activeFilter);
   };
 
   const handleDelete = async (id: string) => {
@@ -448,11 +443,12 @@ export function IncidentsClient() {
     setDeletingId(id);
     try {
       await incidentService.delete(id);
-      setIncidents((prev) => prev.filter((i) => i.id !== id));
-      incidentService
-        .getStats()
-        .then((r) => setStats(r.data))
-        .catch(() => {});
+      // Si on était sur la dernière page et qu'elle est maintenant vide, reculer
+      const newTotal = total - 1;
+      const newTotalPages = Math.max(1, Math.ceil(newTotal / limit));
+      const newPage = page > newTotalPages ? newTotalPages : page;
+      setPage(newPage);
+      load(newPage, activeFilter);
     } catch {
       alert("Erreur lors de la suppression.");
     } finally {
@@ -460,18 +456,11 @@ export function IncidentsClient() {
     }
   };
 
-  // Stats helpers — byStatus est partiel (seulement les statuts avec incidents)
+  // Stats depuis l'endpoint /stats (indépendant de la pagination)
   const openCount = stats?.byStatus?.OPEN ?? 0;
   const inProgressCount = stats?.byStatus?.IN_PROGRESS ?? 0;
   const resolvedCount = stats?.byStatus?.RESOLVED ?? 0;
-  // byPriority n'existe pas dans l'API — on compte depuis la liste locale
-  const criticalCount = incidents.filter(
-    (i) => i.priority === "CRITICAL",
-  ).length;
-  const totalCost = incidents.reduce(
-    (s, i) => s + (parseCost(i.actualCost) || parseCost(i.estimatedCost)),
-    0,
-  );
+  const totalCost = stats?.totalActualCost ?? 0;
 
   return (
     <div className="min-h-full bg-bg">
@@ -511,7 +500,7 @@ export function IncidentsClient() {
           <KpiCard
             label="Ouverts"
             value={openCount}
-            sub={criticalCount > 0 ? `${criticalCount} critique` : undefined}
+            sub={undefined}
             valueColor="#A32D2D"
           />
           <KpiCard
@@ -543,7 +532,7 @@ export function IncidentsClient() {
               key={c.key + i}
               label={c.label}
               active={activeFilter === c.key}
-              onClick={() => setActiveFilter(c.key)}
+              onClick={() => handleFilterChange(c.key)}
             />
           ))}
         </div>
@@ -561,29 +550,35 @@ export function IncidentsClient() {
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* Left — incident list */}
-            <div className="bg-surface border border-border-custom rounded-xl p-4">
-              <p className="text-[13px] font-medium text-primary mb-3">
-                {showActive
-                  ? "Incidents actifs"
-                  : (STATUS_CONFIG[activeFilter as IncidentStatus]?.label ??
-                    "Incidents")}
-                {displayList.length > 0 && (
-                  <span className="ml-1.5 text-[11px] font-normal text-primary/40">
-                    ({displayList.length})
+            <div className="bg-surface border border-border-custom rounded-xl p-4 flex flex-col">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-[13px] font-medium text-primary">
+                  {activeFilter === "ALL" ? "Tous les incidents"
+                    : activeFilter === "CRITICAL" ? "Incidents critiques"
+                    : (STATUS_CONFIG[activeFilter as IncidentStatus]?.label ?? "Incidents")}
+                  {total > 0 && (
+                    <span className="ml-1.5 text-[11px] font-normal text-primary/40">
+                      ({total})
+                    </span>
+                  )}
+                </p>
+                {total > 0 && (
+                  <span className="text-[11px] text-primary/40 font-mono">
+                    {from}–{to} / {total}
                   </span>
                 )}
-              </p>
+              </div>
 
-              {displayList.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-10 gap-2">
+              {incidents.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-10 gap-2 flex-1">
                   <AlertTriangle size={24} className="text-primary/15" />
                   <p className="text-[12px] text-primary/40">
                     Aucun incident pour ce filtre
                   </p>
                 </div>
               ) : (
-                <div className="space-y-2">
-                  {displayList.map((inc, i) => (
+                <div className="space-y-2 flex-1">
+                  {incidents.map((inc, i) => (
                     <IncidentRow
                       key={inc.id + i}
                       incident={inc}
@@ -597,6 +592,16 @@ export function IncidentsClient() {
                   ))}
                 </div>
               )}
+
+              {/* Pagination bar */}
+              <PaginationBar
+                total={total}
+                page={page}
+                limit={limit}
+                itemLabel="incidents"
+                onPage={setPage}
+                onLimit={(l) => { setLimit(l); setPage(1); }}
+              />
             </div>
 
             {/* Right — stats */}

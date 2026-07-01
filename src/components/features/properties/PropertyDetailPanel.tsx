@@ -129,20 +129,20 @@ export function PropertyDetailPanel({
   onDelete,
 }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>("details");
-  const [units, setUnits] = useState<Unit[]>([]);
-  const [loadingU, setLoadingU] = useState(false);
-  const [unitError, setUnitError] = useState<string | null>(null);
+  // const [units, setUnits] = useState<Unit[]>([]);
+  // const [loadingU, setLoadingU] = useState(false);
+  // const [unitError, setUnitError] = useState<string | null>(null);
 
   // Reload units when switching to units tab or when property changes
   useEffect(() => {
     if (activeTab !== "units") return;
-    setLoadingU(true);
-    setUnitError(null);
-    unitService
-      .getAll({ property: property.id, limit: 100 })
-      .then((res) => setUnits(res.data))
-      .catch(() => setUnitError("Impossible de charger les locaux."))
-      .finally(() => setLoadingU(false));
+    // setLoadingU(true);
+    // setUnitError(null);
+    // unitService
+    //   .getAll({ property: property.id, limit: 100 })
+    //   .then((res) => setUnits(res.data))
+    //   .catch(() => setUnitError("Impossible de charger les locaux."))
+    //   .finally(() => setLoadingU(false));
   }, [activeTab, property.id]);
 
   // Reset tab on property change
@@ -150,7 +150,9 @@ export function PropertyDetailPanel({
     setActiveTab("details");
   }, [property.id]);
 
-  const occupiedCount = units.filter((u) => u.status === "OCCUPIED").length;
+  const occupiedCount = property.units.filter(
+    (u) => u.status === "OCCUPIED",
+  ).length;
 
   return (
     <aside
@@ -289,63 +291,68 @@ export function PropertyDetailPanel({
         {/* Units tab */}
         {activeTab === "units" && (
           <div className="px-5">
-            {loadingU ? (
-              <div className="space-y-1 pt-2">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center gap-3 py-3 border-b border-border-custom"
-                  >
-                    <div className="w-8 h-8 rounded-lg bg-primary/6 animate-pulse shrink-0" />
-                    <div className="flex-1 space-y-1.5">
-                      <div className="h-3 bg-primary/8 rounded w-2/3 animate-pulse" />
-                      <div className="h-3 bg-primary/5 rounded w-1/3 animate-pulse" />
-                    </div>
+            {
+              // loadingU ? (
+              //   <div className="space-y-1 pt-2">
+              //     {Array.from({ length: 4 }).map((_, i) => (
+              //       <div
+              //         key={i}
+              //         className="flex items-center gap-3 py-3 border-b border-border-custom"
+              //       >
+              //         <div className="w-8 h-8 rounded-lg bg-primary/6 animate-pulse shrink-0" />
+              //         <div className="flex-1 space-y-1.5">
+              //           <div className="h-3 bg-primary/8 rounded w-2/3 animate-pulse" />
+              //           <div className="h-3 bg-primary/5 rounded w-1/3 animate-pulse" />
+              //         </div>
+              //       </div>
+              //     ))}
+              //   </div>
+              // ) :
+              // : unitError ? (
+              //   <p className="text-[13px] text-danger py-6 text-center">
+              //     {unitError}
+              //   </p>
+              // )
+              property.units.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <div className="w-10 h-10 rounded-full bg-primary/6 flex items-center justify-center mb-3">
+                    <DoorOpen
+                      size={18}
+                      className="text-primary/30"
+                      aria-hidden="true"
+                    />
                   </div>
-                ))}
-              </div>
-            ) : unitError ? (
-              <p className="text-[13px] text-danger py-6 text-center">
-                {unitError}
-              </p>
-            ) : units.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="w-10 h-10 rounded-full bg-primary/6 flex items-center justify-center mb-3">
-                  <DoorOpen
-                    size={18}
-                    className="text-primary/30"
-                    aria-hidden="true"
-                  />
+                  <p className="text-[13px] font-medium text-primary/50">
+                    Aucun local
+                  </p>
+                  <p className="text-[12px] text-primary/30 mt-0.5">
+                    Aucun local n&apos;est rattaché à ce bien.
+                  </p>
                 </div>
-                <p className="text-[13px] font-medium text-primary/50">
-                  Aucun local
-                </p>
-                <p className="text-[12px] text-primary/30 mt-0.5">
-                  Aucun local n&apos;est rattaché à ce bien.
-                </p>
-              </div>
-            ) : (
-              <>
-                {/* Summary */}
-                <div className="flex items-center gap-4 py-3 mb-1">
-                  <span className="text-[12px] text-primary/45">
-                    <span className="font-semibold text-success">
-                      {occupiedCount}
-                    </span>{" "}
-                    occupé{occupiedCount > 1 ? "s" : ""}
-                  </span>
-                  <span className="text-[12px] text-primary/45">
-                    <span className="font-semibold text-secondary">
-                      {units.length - occupiedCount}
-                    </span>{" "}
-                    vacant{units.length - occupiedCount > 1 ? "s" : ""}
-                  </span>
-                </div>
-                {units.map((u) => (
-                  <UnitRow key={u.id} unit={u} />
-                ))}
-              </>
-            )}
+              ) : (
+                <>
+                  {/* Summary */}
+                  <div className="flex items-center gap-4 py-3 mb-1">
+                    <span className="text-[12px] text-primary/45">
+                      <span className="font-semibold text-success">
+                        {occupiedCount}
+                      </span>{" "}
+                      occupé{occupiedCount > 1 ? "s" : ""}
+                    </span>
+                    <span className="text-[12px] text-primary/45">
+                      <span className="font-semibold text-secondary">
+                        {property.units.length - occupiedCount}
+                      </span>{" "}
+                      vacant
+                      {property.units.length - occupiedCount > 1 ? "s" : ""}
+                    </span>
+                  </div>
+                  {property.units.map((u) => (
+                    <UnitRow key={u.id} unit={u} />
+                  ))}
+                </>
+              )
+            }
           </div>
         )}
       </div>

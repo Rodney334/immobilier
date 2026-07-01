@@ -8,7 +8,6 @@ import {
   Loader2,
   AlertTriangle,
   X,
-  MoreVertical,
   ExternalLink,
 } from "lucide-react";
 import { neighborhoodService } from "@/lib/services/neighborhood.service";
@@ -16,6 +15,7 @@ import { propertyService } from "@/lib/services/property.service";
 import { useToast } from "@/components/ui/Toast";
 import { Modal } from "@/components/ui/Modal";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { RowActionMenu } from "@/components/ui/RowActionMenu";
 import type {
   Neighborhood,
   CreateNeighborhoodPayload,
@@ -308,51 +308,15 @@ function RowMenu({
   onDelete: () => void;
   onViewProps: () => void;
 }) {
-  const [open, setOpen] = useState(false);
   return (
-    <div className="relative" onClick={(e) => e.stopPropagation()}>
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="w-7 h-7 rounded-md flex items-center justify-center text-primary/30 hover:text-primary hover:bg-primary/6 transition-colors"
-      >
-        <MoreVertical size={14} />
-      </button>
-      {open && (
-        <>
-          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-8 z-20 w-44 bg-white rounded-lg shadow-lg border border-border-custom py-1 text-[13px]">
-            <button
-              onClick={() => {
-                setOpen(false);
-                onEdit();
-              }}
-              className="w-full text-left px-4 py-2 hover:bg-primary/4 text-primary/70 hover:text-primary transition-colors flex items-center gap-2"
-            >
-              Modifier
-            </button>
-            <button
-              onClick={() => {
-                setOpen(false);
-                onViewProps();
-              }}
-              className="w-full text-left px-4 py-2 hover:bg-primary/4 text-primary/70 hover:text-primary transition-colors flex items-center gap-2"
-            >
-              <ExternalLink size={12} /> Voir les proprietes
-            </button>
-            <div className="my-1 border-t border-border-custom" />
-            <button
-              onClick={() => {
-                setOpen(false);
-                onDelete();
-              }}
-              className="w-full text-left px-4 py-2 hover:bg-danger/6 text-danger transition-colors"
-            >
-              Supprimer
-            </button>
-          </div>
-        </>
-      )}
-    </div>
+    <RowActionMenu
+      width={176}
+      items={[
+        { label: "Modifier", onClick: onEdit },
+        { label: "Voir les propriétés", icon: <ExternalLink size={12} />, onClick: onViewProps },
+        { label: "Supprimer", onClick: onDelete, variant: "danger", dividerBefore: true },
+      ]}
+    />
   );
 }
 

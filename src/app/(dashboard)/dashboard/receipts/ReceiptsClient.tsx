@@ -6,9 +6,6 @@ import {
   Receipt,
   Loader2,
   AlertTriangle,
-  ChevronLeft,
-  ChevronRight,
-  MoreVertical,
   Download,
   Eye,
   FileEdit,
@@ -19,6 +16,8 @@ import { paymentService } from "@/lib/services/payment.service";
 import { useToast } from "@/components/ui/Toast";
 import { Modal } from "@/components/ui/Modal";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { RowActionMenu } from "@/components/ui/RowActionMenu";
+import { PaginationBar } from "@/components/ui/PaginationBar";
 import type {
   Receipt as ReceiptType,
   ReceiptStatus,
@@ -94,7 +93,6 @@ function ReceiptRowActions({
   onDownload: () => void;
   onCancel: () => void;
 }) {
-  const [open, setOpen] = useState(false);
   const isCancelled = receipt.status === "CANCELLED";
 
   return (
@@ -106,7 +104,7 @@ function ReceiptRowActions({
       {!isCancelled && (
         <button
           onClick={onDownload}
-          title="Telecharger PDF"
+          title="Télécharger PDF"
           className="w-7 h-7 rounded-md flex items-center justify-center text-primary/35 hover:text-primary hover:bg-primary/6 transition-colors"
         >
           <Download size={13} />
@@ -114,65 +112,15 @@ function ReceiptRowActions({
       )}
 
       {/* Menu ⋮ */}
-      <div className="relative">
-        <button
-          onClick={() => setOpen((v) => !v)}
-          className="w-7 h-7 rounded-md flex items-center justify-center text-primary/30 hover:text-primary hover:bg-primary/6 transition-colors"
-        >
-          <MoreVertical size={14} />
-        </button>
-        {open && (
-          <>
-            <div
-              className="fixed inset-0 z-10"
-              onClick={() => setOpen(false)}
-            />
-            <div className="absolute right-0 top-8 z-20 w-52 bg-white rounded-lg shadow-lg border border-border-custom py-1 text-[13px]">
-              <button
-                onClick={() => {
-                  setOpen(false);
-                  onViewDetails();
-                }}
-                className="w-full text-left px-4 py-2 hover:bg-primary/4 text-primary/70 hover:text-primary transition-colors flex items-center gap-2"
-              >
-                <Eye size={13} /> Voir les details
-              </button>
-              <button
-                onClick={() => {
-                  setOpen(false);
-                  onEditNotes();
-                }}
-                className="w-full text-left px-4 py-2 hover:bg-primary/4 text-primary/70 hover:text-primary transition-colors flex items-center gap-2"
-              >
-                <FileEdit size={13} /> Modifier les notes
-              </button>
-              <button
-                onClick={() => {
-                  setOpen(false);
-                  onDownload();
-                }}
-                className="w-full text-left px-4 py-2 hover:bg-primary/4 text-primary/70 hover:text-primary transition-colors flex items-center gap-2"
-              >
-                <Download size={13} /> Telecharger PDF
-              </button>
-              {!isCancelled && (
-                <>
-                  <div className="my-1 border-t border-border-custom" />
-                  <button
-                    onClick={() => {
-                      setOpen(false);
-                      onCancel();
-                    }}
-                    className="w-full text-left px-4 py-2 hover:bg-danger/6 text-danger transition-colors flex items-center gap-2"
-                  >
-                    <Ban size={13} /> Annuler le recu
-                  </button>
-                </>
-              )}
-            </div>
-          </>
-        )}
-      </div>
+      <RowActionMenu
+        width={208}
+        items={[
+          { label: "Voir les détails", icon: <Eye size={13} />, onClick: onViewDetails },
+          { label: "Modifier les notes", icon: <FileEdit size={13} />, onClick: onEditNotes },
+          { label: "Télécharger PDF", icon: <Download size={13} />, onClick: onDownload },
+          { label: "Annuler le reçu", icon: <Ban size={13} />, onClick: onCancel, variant: "danger", dividerBefore: true, hidden: isCancelled },
+        ]}
+      />
     </div>
   );
 }
@@ -343,31 +291,7 @@ function ReceiptDetailPanel({
 
 // ─── Pagination bar ───────────────────────────────────────────────────────────
 
-function PaginationBar({
-  meta,
-  onPage,
-}: {
-  meta: PaginationMeta;
-  onPage: (p: number) => void;
-}) {
-  const { page, totalPages, total, limit } = meta;
-  const from = (page - 1) * limit + 1;
-  const to = Math.min(page * limit, total);
-  return (
-    <div className="ep-pagination">
-      <span>{from}–{to} sur {total} recu{total > 1 ? "s" : ""}</span>
-      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        <button className="ep-page-btn" onClick={() => onPage(page - 1)} disabled={page <= 1}><ChevronLeft size={13} /></button>
-        <span style={{ fontSize: 12, fontFamily: "var(--font-mono)", padding: "0 8px" }}>Page {page} / {totalPages}</span>
-        <button className="ep-page-btn" onClick={() => onPage(page + 1)} disabled={page >= totalPages}><ChevronRight size={13} /></button>
-      </div>
-    </div>
-  );
-}
-
 // ─── Main ─────────────────────────────────────────────────────────────────────
-
-const PAGE_LIMIT = 15;
 
 const now = new Date();
 const YEAR_OPTIONS = Array.from({ length: 5 }, (_, i) => now.getFullYear() - i);
@@ -387,6 +311,7 @@ export function ReceiptsClient() {
   const [month, setMonth] = useState<number | "">("");
   const [year, setYear] = useState<number | "">(now.getFullYear());
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
   const [selected, setSelected] = useState<ReceiptType | null>(null);
 
   // Modals
@@ -423,7 +348,7 @@ export function ReceiptsClient() {
     try {
       const res = await receiptService.getAll({
         page,
-        limit: PAGE_LIMIT,
+        limit,
         status: statusFilter !== "all" ? statusFilter : undefined,
         search: debouncedQ || undefined,
         month: month !== "" ? month : undefined,
@@ -437,7 +362,7 @@ export function ReceiptsClient() {
     } finally {
       setLoading(false);
     }
-  }, [page, statusFilter, debouncedQ, month, year]);
+  }, [page, limit, statusFilter, debouncedQ, month, year]);
 
   useEffect(() => {
     load();
@@ -759,9 +684,14 @@ export function ReceiptsClient() {
             )}
           </div>
 
-          {pagination && pagination.totalPages > 1 && (
-            <PaginationBar meta={pagination} onPage={setPage} />
-          )}
+          <PaginationBar
+            total={pagination?.total ?? 0}
+            page={page}
+            limit={limit}
+            itemLabel="reçus"
+            onPage={setPage}
+            onLimit={(l) => { setLimit(l); setPage(1); }}
+          />
         </div>
 
         {/* Detail panel */}

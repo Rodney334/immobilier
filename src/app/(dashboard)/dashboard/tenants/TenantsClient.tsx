@@ -8,14 +8,13 @@ import {
   Users,
   Loader2,
   AlertTriangle,
-  ChevronLeft,
-  ChevronRight,
   ChevronRight as ArrowRight,
 } from "lucide-react";
 import { tenantService } from "@/lib/services/tenant.service";
 import { TenantFormModal } from "@/components/features/tenants/TenantFormModal";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { PaginationBar } from "@/components/ui/PaginationBar";
 import type { Tenant, TenantStatus, PaginationMeta } from "@/types";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -146,33 +145,7 @@ function TenantRow({
   );
 }
 
-// ─── Pagination bar ───────────────────────────────────────────────────────────
-
-function PaginationBar({
-  meta,
-  onPage,
-}: {
-  meta: PaginationMeta;
-  onPage: (p: number) => void;
-}) {
-  const { page, totalPages, total, limit } = meta;
-  const from = (page - 1) * limit + 1;
-  const to = Math.min(page * limit, total);
-  return (
-    <div className="ep-pagination">
-      <span>{from}–{to} sur {total} locataire{total > 1 ? "s" : ""}</span>
-      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        <button className="ep-page-btn" onClick={() => onPage(page - 1)} disabled={page <= 1}><ChevronLeft size={13} /></button>
-        <span style={{ fontSize: 12, fontFamily: "var(--font-mono)", padding: "0 8px" }}>Page {page} / {totalPages}</span>
-        <button className="ep-page-btn" onClick={() => onPage(page + 1)} disabled={page >= totalPages}><ChevronRight size={13} /></button>
-      </div>
-    </div>
-  );
-}
-
 // ─── Main ─────────────────────────────────────────────────────────────────────
-
-const PAGE_LIMIT = 15;
 
 export function TenantsClient() {
   const router = useRouter();
@@ -183,6 +156,7 @@ export function TenantsClient() {
   const [search, setSearch] = useState("");
   const [debouncedQ, setDebouncedQ] = useState("");
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
   const [formOpen, setFormOpen] = useState(false);
 
   useEffect(() => {
@@ -199,7 +173,7 @@ export function TenantsClient() {
     try {
       const res = await tenantService.getAll({
         page,
-        limit: PAGE_LIMIT,
+        limit,
         search: debouncedQ || undefined,
       });
       setTenants(res.data);
@@ -209,7 +183,7 @@ export function TenantsClient() {
     } finally {
       setLoading(false);
     }
-  }, [page, debouncedQ]);
+  }, [page, limit, debouncedQ]);
 
   useEffect(() => {
     load();
@@ -318,9 +292,14 @@ export function TenantsClient() {
             )}
           </div>
 
-          {pagination && pagination.totalPages > 1 && (
-            <PaginationBar meta={pagination} onPage={setPage} />
-          )}
+          <PaginationBar
+            total={pagination?.total ?? 0}
+            page={page}
+            limit={limit}
+            itemLabel="locataires"
+            onPage={setPage}
+            onLimit={(l) => { setLimit(l); setPage(1); }}
+          />
         </div>
       </div>
 

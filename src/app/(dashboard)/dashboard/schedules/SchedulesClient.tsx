@@ -8,11 +8,12 @@ import {
   Loader2,
   AlertTriangle,
   Plus,
-  MoreVertical,
 } from "lucide-react";
 import { rentScheduleService } from "@/lib/services/rent-schedule.service";
 import { useToast } from "@/components/ui/Toast";
 import { Badge } from "@/components/ui/Badge";
+import { RowActionMenu } from "@/components/ui/RowActionMenu";
+import { PaginationBar } from "@/components/ui/PaginationBar";
 import type { RentSchedule, RentScheduleStatus, PaginationMeta } from "@/types";
 
 const MONTHS_FR = [
@@ -79,7 +80,6 @@ const FILTERS: { value: RentScheduleStatus | "all"; label: string }[] = [
   { value: "CANCELLED", label: "Annule" },
 ];
 
-const PAGE_LIMIT = 20;
 
 function RowActions({
   schedule,
@@ -88,40 +88,23 @@ function RowActions({
   schedule: RentSchedule;
   onRefresh: () => void;
 }) {
-  const [open, setOpen] = useState(false);
   const { toast } = useToast();
   async function handleRecalculate() {
-    setOpen(false);
     try {
       await rentScheduleService.recalculate(schedule.id);
-      toast({ variant: "success", title: "Recalcule" });
+      toast({ variant: "success", title: "Recalculé" });
       onRefresh();
     } catch {
       toast({ variant: "danger", title: "Erreur recalcul" });
     }
   }
   return (
-    <div className="relative">
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="w-7 h-7 rounded-md flex items-center justify-center text-primary/30 hover:text-primary hover:bg-primary/6 transition-colors"
-      >
-        <MoreVertical size={14} />
-      </button>
-      {open && (
-        <>
-          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-8 z-20 w-44 bg-white rounded-lg shadow-lg border border-border-custom py-1 text-[13px]">
-            <button
-              onClick={handleRecalculate}
-              className="w-full text-left px-4 py-2 hover:bg-primary/4 text-primary/70 hover:text-primary transition-colors"
-            >
-              Recalculer
-            </button>
-          </div>
-        </>
-      )}
-    </div>
+    <RowActionMenu
+      width={176}
+      items={[
+        { label: "Recalculer", onClick: handleRecalculate },
+      ]}
+    />
   );
 }
 
@@ -252,6 +235,7 @@ export function SchedulesClient() {
   const [schedules, setSchedules] = useState<RentSchedule[]>([]);
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [marking, setMarking] = useState(false);
@@ -262,7 +246,7 @@ export function SchedulesClient() {
     try {
       const res = await rentScheduleService.getAll({
         page,
-        limit: PAGE_LIMIT,
+        limit,
         month,
         year,
         status: status === "all" ? undefined : status,
@@ -274,7 +258,7 @@ export function SchedulesClient() {
     } finally {
       setLoading(false);
     }
-  }, [page, month, year, status]);
+  }, [page, limit, month, year, status]);
 
   useEffect(() => {
     load();
@@ -492,16 +476,14 @@ export function SchedulesClient() {
         )}
       </div>
 
-      {pagination && pagination.totalPages > 1 && (
-        <div className="ep-pagination">
-          <span>{(page - 1) * PAGE_LIMIT + 1}–{Math.min(page * PAGE_LIMIT, pagination.total)} sur {pagination.total} écheances</span>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <button className="ep-page-btn" onClick={() => setPage((p) => p - 1)} disabled={page <= 1}><ChevronLeft size={13} /></button>
-            <span style={{ fontSize: 12, fontFamily: "var(--font-mono)", padding: "0 8px" }}>Page {page} / {pagination.totalPages}</span>
-            <button className="ep-page-btn" onClick={() => setPage((p) => p + 1)} disabled={page >= pagination.totalPages}><ChevronRight size={13} /></button>
-          </div>
-        </div>
-      )}
+      <PaginationBar
+        total={pagination?.total ?? 0}
+        page={page}
+        limit={limit}
+        itemLabel="échéances"
+        onPage={setPage}
+        onLimit={(l) => { setLimit(l); setPage(1); }}
+      />
 
       {!loading && schedules.length > 0 && (
         <SummaryFooter schedules={schedules} />

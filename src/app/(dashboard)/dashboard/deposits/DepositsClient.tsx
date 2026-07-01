@@ -297,7 +297,6 @@ function DepositDetail({
               {/* {(deposit.lease?.tenant?.fullName ||
                 `${deposit.lease?.tenant?.firstName ?? ""} ${deposit.lease?.tenant?.lastName ?? ""}`.trim()) ||
                 "—"} */}
-              ######
               {deposit.tenantName}
             </p>
             {/* {deposit?.unit && (
@@ -323,7 +322,7 @@ function DepositDetail({
             },
             {
               label: "Remboursé",
-              value: formatCurrency(0),
+              value: formatCurrency(deposit.refundedAmount || 0),
             },
             {
               label: "Net remboursable",
@@ -442,7 +441,7 @@ export function DepositsClient() {
 
   useEffect(() => {
     leaseService
-      .getAll({ limit: 200, status: "ACTIVE" })
+      .getAll({ limit: 200 })
       .then((res) => setLeases(res.data))
       .catch(() => {})
       .finally(() => setLoadingLeases(false));
@@ -528,7 +527,7 @@ export function DepositsClient() {
               onChange={(e) => setSelectedLeaseId(e.target.value)}
               className="w-full h-11 px-3 rounded-lg border border-border-custom bg-white text-[14px] text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors"
             >
-              <option value="">— Choisir un bail actif —</option>
+              <option value="">— Choisir un bail —</option>
               {leases.map((l, i) => (
                 <option key={i} value={l.id}>
                   {leaseName(l)}

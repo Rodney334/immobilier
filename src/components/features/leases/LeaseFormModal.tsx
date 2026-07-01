@@ -17,6 +17,8 @@ import type {
 } from "@/types";
 
 const PERIODICITIES: { value: LeasePeriodicity; label: string }[] = [
+  { value: "DAILY", label: "Journalier" },
+  { value: "WEEKLY", label: "Hebdomadaire" },
   { value: "MONTHLY", label: "Mensuel" },
   { value: "QUARTERLY", label: "Trimestriel" },
   { value: "YEARLY", label: "Annuel" },
@@ -167,6 +169,16 @@ export function LeaseFormModal({ lease, isOpen, onClose, onSaved }: Props) {
           success: false,
         };
       }
+      if (
+        !depositAmount ||
+        isNaN(Number(depositAmount)) ||
+        Number(depositAmount) <= 0
+      ) {
+        return {
+          error: "La caution est obligatoire et doit etre superieure a 0.",
+          success: false,
+        };
+      }
       if (endDate && new Date(endDate) <= new Date(startDate)) {
         return {
           error: "La date de fin doit etre posterieure a la date de debut.",
@@ -180,10 +192,7 @@ export function LeaseFormModal({ lease, isOpen, onClose, onSaved }: Props) {
         startDate: new Date(startDate).toISOString(),
         endDate: endDate ? new Date(endDate).toISOString() : undefined,
         monthlyRent,
-        depositAmount:
-          depositAmount && Number(depositAmount) > 0
-            ? depositAmount
-            : undefined,
+        depositAmount,
         periodicity: periodicity || undefined,
         billingDay: billingDay ? parseInt(billingDay, 10) : undefined,
         status: "ACTIVE",
@@ -322,9 +331,11 @@ export function LeaseFormModal({ lease, isOpen, onClose, onSaved }: Props) {
           <Input
             name="depositAmount"
             type="number"
-            label="Caution (XOF, optionnel)"
+            label="Caution (XOF) *"
             placeholder="ex : 150000"
             defaultValue={lease?.depositAmount}
+            required
+            min={1}
           />
         </div>
 

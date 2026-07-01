@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
+import { useAuthStore } from "@/lib/stores/auth.store";
 import {
   FileText,
   Plus,
@@ -1387,7 +1389,16 @@ function TemplateCard({
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 export function ContractTemplatesClient() {
+  const router = useRouter();
+  const user = useAuthStore((s) => s.user);
   const { toast } = useToast();
+
+  // Guard : superadmin only
+  useEffect(() => {
+    if (user && user.role !== "superadmin") {
+      router.replace("/dashboard");
+    }
+  }, [user, router]);
 
   // Data
   const [templates, setTemplates] = useState<ContractTemplate[]>([]);

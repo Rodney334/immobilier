@@ -7,8 +7,6 @@ import {
   Building2,
   Loader2,
   AlertTriangle,
-  ChevronLeft,
-  ChevronRight,
 } from "lucide-react";
 import { propertyService } from "@/lib/services/property.service";
 import { PropertyDetailPanel } from "@/components/features/properties/PropertyDetailPanel";
@@ -16,6 +14,7 @@ import { PropertyFormModal } from "@/components/features/properties/PropertyForm
 import { Modal } from "@/components/ui/Modal";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { PaginationBar } from "@/components/ui/PaginationBar";
 import type { Property, PaginationMeta } from "@/types";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -157,34 +156,7 @@ function PropertyRow({
   );
 }
 
-// ─── Pagination bar ───────────────────────────────────────────────────────────
-
-function PaginationBar({
-  meta,
-  onPage,
-}: {
-  meta: PaginationMeta;
-  onPage: (p: number) => void;
-}) {
-  const { page, totalPages, total, limit } = meta;
-  const from = (page - 1) * limit + 1;
-  const to = Math.min(page * limit, total);
-
-  return (
-    <div className="ep-pagination">
-      <span>{from}–{to} sur {total} bien{total > 1 ? "s" : ""}</span>
-      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        <button className="ep-page-btn" onClick={() => onPage(page - 1)} disabled={page <= 1}><ChevronLeft size={13} /></button>
-        <span style={{ fontSize: 12, fontFamily: "var(--font-mono)", padding: "0 8px" }}>Page {page} / {totalPages}</span>
-        <button className="ep-page-btn" onClick={() => onPage(page + 1)} disabled={page >= totalPages}><ChevronRight size={13} /></button>
-      </div>
-    </div>
-  );
-}
-
 // ─── Main component ───────────────────────────────────────────────────────────
-
-const PAGE_LIMIT = 15;
 
 export function PropertiesClient() {
   const [properties, setProperties] = useState<Property[]>([]);
@@ -194,6 +166,7 @@ export function PropertiesClient() {
   const [search, setSearch] = useState("");
   const [debouncedQ, setDebouncedQ] = useState("");
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
   const [selected, setSelected] = useState<Property | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<Property | null>(null);
@@ -216,7 +189,7 @@ export function PropertiesClient() {
     try {
       const res = await propertyService.getAll({
         page,
-        limit: PAGE_LIMIT,
+        limit,
         search: debouncedQ || undefined,
       });
       setProperties(res.data);
@@ -226,7 +199,7 @@ export function PropertiesClient() {
     } finally {
       setLoading(false);
     }
-  }, [page, debouncedQ]);
+  }, [page, limit, debouncedQ]);
 
   useEffect(() => {
     load();
@@ -397,9 +370,14 @@ export function PropertiesClient() {
             )}
           </div>
 
-          {pagination && pagination.totalPages > 1 && (
-            <PaginationBar meta={pagination} onPage={setPage} />
-          )}
+          <PaginationBar
+            total={pagination?.total ?? 0}
+            page={page}
+            limit={limit}
+            itemLabel="biens"
+            onPage={setPage}
+            onLimit={(l) => { setLimit(l); setPage(1); }}
+          />
         </div>
 
         {/* Right panel */}

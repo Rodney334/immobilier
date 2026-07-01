@@ -2,8 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import {
-  Plus, Search, FileText, Loader2, AlertTriangle,
-  ChevronLeft, ChevronRight, Download,
+  Plus, Search, FileText, Loader2, AlertTriangle, Download,
 } from "lucide-react";
 import { leaseService } from "@/lib/services/lease.service";
 import { useToast } from "@/components/ui/Toast";
@@ -12,6 +11,7 @@ import { LeaseFormModal } from "@/components/features/leases/LeaseFormModal";
 import { LeaseTerminateModal } from "@/components/features/leases/LeaseTerminateModal";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { PaginationBar } from "@/components/ui/PaginationBar";
 import type { Lease, LeaseStatus, LeasePeriodicity, PaginationMeta } from "@/types";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -26,7 +26,7 @@ const STATUS_CONFIG: Record<LeaseStatus, { label: string; variant: "success"|"wa
 };
 
 const FREQ_LABELS: Record<LeasePeriodicity, string> = {
-  MONTHLY: "Mensuel", QUARTERLY: "Trimestriel", YEARLY: "Annuel",
+  DAILY: "Quotidien", WEEKLY: "Hebdomadaire", MONTHLY: "Mensuel", QUARTERLY: "Trimestriel", YEARLY: "Annuel",
 };
 
 const FILTER_OPTIONS: { value: LeaseStatus | "all"; label: string }[] = [
@@ -49,33 +49,7 @@ function fmtXOF(n: number) { return new Intl.NumberFormat("fr-FR").format(n) + "
 function daysUntil(iso: string) { return Math.ceil((new Date(iso).getTime() - Date.now()) / 86_400_000); }
 function initials(name: string) { return name.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase(); }
 
-// ─── Pagination ───────────────────────────────────────────────────────────────
-
-function Pagination({ meta, onPage }: { meta: PaginationMeta; onPage: (p: number) => void }) {
-  const { page, totalPages, total, limit } = meta;
-  const from = (page - 1) * limit + 1;
-  const to = Math.min(page * limit, total);
-  return (
-    <div className="ep-pagination">
-      <span>Affichage {from}–{to} sur {total} contrat{total > 1 ? "s" : ""}</span>
-      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        <button className="ep-page-btn" onClick={() => onPage(page - 1)} disabled={page <= 1}>
-          <ChevronLeft size={13} />
-        </button>
-        <span style={{ fontSize: 12, fontFamily: "var(--font-mono)", padding: "0 8px" }}>
-          Page {page} / {totalPages}
-        </span>
-        <button className="ep-page-btn" onClick={() => onPage(page + 1)} disabled={page >= totalPages}>
-          <ChevronRight size={13} />
-        </button>
-      </div>
-    </div>
-  );
-}
-
 // ─── Main ─────────────────────────────────────────────────────────────────────
-
-const PAGE_LIMIT = 15;
 
 export function LeasesClient() {
   const { toast } = useToast();
@@ -87,6 +61,7 @@ export function LeasesClient() {
   const [search, setSearch]         = useState("");
   const [debouncedQ, setDebouncedQ] = useState("");
   const [page, setPage]             = useState(1);
+  const [limit, setLimit]           = useState(10);
   const [statusFilter, setStatusFilter] = useState<LeaseStatus | "all">("all");
   const [selected, setSelected]     = useState<Lease | null>(null);
   const [formOpen, setFormOpen]     = useState(false);
@@ -105,7 +80,7 @@ export function LeasesClient() {
     setLoading(true); setError(null);
     try {
       const res = await leaseService.getAll({
-        page, limit: PAGE_LIMIT,
+        page, limit,
         status: statusFilter === "all" ? undefined : statusFilter,
         search: debouncedQ || undefined,
       });
@@ -123,7 +98,7 @@ export function LeasesClient() {
     } catch { setError("Impossible de charger les contrats."); }
     finally { setLoading(false); }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, statusFilter, debouncedQ]);
+  }, [page, limit, statusFilter, debouncedQ]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -245,7 +220,7 @@ export function LeasesClient() {
                             onClick={() => setSelected(p => p?.id === l.id ? null : l)}
                             style={{ background: isSelected ? "rgba(193,98,45,0.06)" : undefined }}
                           >
-                            <td className="ep-td ep-mono">{l.id.slice(-8).toUpperCase()}</td>
+                            <td className="ep-td ep-mono">{(l.id ?? "").slice(-8).toUpperCase()}</td>
                             <td className="ep-td">
                               <div className="ep-person">
                                 <div className="ep-avatar">{tenantName !== "—" ? initials(tenantName) : "?"}</div>
@@ -280,9 +255,14 @@ export function LeasesClient() {
                 </div>
               )}
 
-              {pagination && pagination.totalPages > 1 && (
-                <Pagination meta={pagination} onPage={setPage} />
-              )}
+              <PaginationBar
+                total={pagination?.total ?? 0}
+                page={page}
+                limit={limit}
+                itemLabel="contrats"
+                onPage={setPage}
+                onLimit={(l) => { setLimit(l); setPage(1); }}
+              />
             </div>
           </div>
         </div>

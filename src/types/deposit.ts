@@ -27,6 +27,7 @@ export type Deposit = {
   tenantName: string;
   totalDeductions: number;
   refundableAmount?: number;
+  refundedAmount?: number;
   createdAt: string;
   unitLabel: string;
   // refundNotes?: string;

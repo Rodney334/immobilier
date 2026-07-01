@@ -22,6 +22,7 @@ function SubmitButton() {
   return (
     <button
       type="submit"
+      form="terminate-form"
       disabled={pending}
       className="h-10 px-5 bg-danger text-white rounded-lg text-[14px] font-medium hover:bg-danger/90 disabled:opacity-60 transition-colors flex items-center gap-2"
     >
@@ -84,7 +85,7 @@ export function LeaseTerminateModal({ lease, isOpen, onClose, onDone }: Props) {
         </div>
       }
     >
-      <form action={formAction} className="space-y-4">
+      <form id="terminate-form" action={formAction} className="space-y-4">
         <div className="px-4 py-3 rounded-lg bg-danger/5 border border-danger/15">
           <p className="text-[13px] text-danger leading-relaxed">
             Vous êtes sur le point de résilier le contrat de{" "}

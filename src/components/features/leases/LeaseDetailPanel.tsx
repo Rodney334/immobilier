@@ -15,11 +15,13 @@ import {
   Loader2,
   FileCode,
   ChevronDown,
+  UserPlus,
 } from "lucide-react";
 import { leaseService } from "@/lib/services/lease.service";
 import { contractTemplateService } from "@/lib/services/contract-template.service";
 import { Badge } from "@/components/ui/Badge";
-import type { Lease, LeaseStatus, LeasePeriodicity, ContractTemplate } from "@/types";
+import { GuarantorFormModal } from "@/components/features/guarantors/GuarantorFormModal";
+import type { Lease, LeaseStatus, LeasePeriodicity, ContractTemplate, Guarantor } from "@/types";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -39,6 +41,8 @@ const STATUS_CONFIG: Record<
 };
 
 const FREQ_LABELS: Record<LeasePeriodicity, string> = {
+  DAILY: "Quotidien",
+  WEEKLY: "Hebdomadaire",
   MONTHLY: "Mensuel",
   QUARTERLY: "Trimestriel",
   YEARLY: "Annuel",
@@ -253,6 +257,7 @@ export function LeaseDetailPanel({
   const [activeTab, setActiveTab] = useState<Tab>("details");
   const [generatingScheds, setGeneratingScheds] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [guarantorModalOpen, setGuarantorModalOpen] = useState(false);
 
   const cfg = STATUS_CONFIG[lease.status];
   const tenantName =
@@ -431,6 +436,11 @@ export function LeaseDetailPanel({
               onClick={handleGenerateSchedules}
               loading={generatingScheds}
             />
+            <ActionButton
+              icon={UserPlus}
+              label="Ajouter un garant"
+              onClick={() => setGuarantorModalOpen(true)}
+            />
             {isActive && (
               <ActionButton
                 icon={XCircle}
@@ -442,6 +452,16 @@ export function LeaseDetailPanel({
           </div>
         )}
       </div>
+
+      {/* Modal garant */}
+      <GuarantorFormModal
+        isOpen={guarantorModalOpen}
+        onClose={() => setGuarantorModalOpen(false)}
+        onSaved={(_g: Guarantor) => {
+          setGuarantorModalOpen(false);
+        }}
+        leases={[lease]}
+      />
     </aside>
   );
 }

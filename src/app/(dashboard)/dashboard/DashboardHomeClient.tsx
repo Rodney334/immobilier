@@ -795,7 +795,8 @@ export function DashboardHomeClient() {
               </p>
             </div>
           ) : (
-            <table className="w-full border-collapse">
+            <div style={{ overflowX: "auto" }}>
+            <table className="w-full border-collapse" style={{ minWidth: 600 }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid var(--paper-line)", background: "rgba(228,220,201,0.25)" }}>
                   {[
@@ -857,6 +858,7 @@ export function DashboardHomeClient() {
                 })}
               </tbody>
             </table>
+            </div>
           )}
         </div>
 

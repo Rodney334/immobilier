@@ -12,7 +12,12 @@ export type LeaseStatus =
   | "ARCHIVED";
 
 // Valeurs acceptées par l'API (periodicity)
-export type LeasePeriodicity = "MONTHLY" | "QUARTERLY" | "YEARLY";
+export type LeasePeriodicity =
+  | "DAILY"
+  | "WEEKLY"
+  | "MONTHLY"
+  | "QUARTERLY"
+  | "YEARLY";
 
 // Alias rétro-compatible
 export type PaymentFrequency = LeasePeriodicity;
@@ -28,8 +33,8 @@ export type Lease = {
   contractNumber?: string;
   startDate: string;
   endDate?: string;
-  monthlyRent: string;       // string — champ API
-  depositAmount?: string;    // string — champ API
+  monthlyRent: string; // string — champ API
+  depositAmount?: string; // string — champ API
   periodicity?: LeasePeriodicity;
   billingDay?: number;
   status: LeaseStatus;
@@ -48,8 +53,8 @@ export type CreateLeasePayload = {
   contractNumber?: string;
   startDate: string;
   endDate?: string;
-  monthlyRent: string;       // string requis par l'API (ex: "150000")
-  depositAmount?: string;    // string optionnel (ex: "150000")
+  monthlyRent: string; // string requis par l'API (ex: "150000")
+  depositAmount?: string; // string optionnel (ex: "150000")
   billingDay?: number;
   periodicity?: LeasePeriodicity;
   status?: LeaseStatus;
@@ -60,7 +65,12 @@ export type CreateLeasePayload = {
 export type UpdateLeasePayload = Partial<
   Pick<
     CreateLeasePayload,
-    "monthlyRent" | "endDate" | "depositAmount" | "periodicity" | "billingDay" | "notes"
+    | "monthlyRent"
+    | "endDate"
+    | "depositAmount"
+    | "periodicity"
+    | "billingDay"
+    | "notes"
   >
 >;
 
