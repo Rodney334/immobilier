@@ -230,7 +230,7 @@ export function PropertyDetailPanel({
                   className={`text-[11px] px-1.5 py-0.5 rounded-full
                   ${activeTab === "units" ? "bg-primary text-white" : "bg-primary/8 text-primary/60"}`}
                 >
-                  {property.totalUnits}
+                  {property.units.length}
                 </span>
               </span>
             )}
@@ -263,7 +263,7 @@ export function PropertyDetailPanel({
             <DetailRow
               icon={DoorOpen}
               label="Locaux"
-              value={`${property.totalUnits} local${property.totalUnits! > 1 ? "aux" : ""} au total`}
+              value={`${property.units.length} local${property.units.length! > 1 ? "aux" : ""} au total`}
             />
             <DetailRow
               icon={Calendar}
