@@ -13,6 +13,8 @@ export type UnitType =
   | "Warehouse"
   | "Other";
 
+export type LeaseCategory = "HABITATION" | "PROFESSIONNEL";
+
 // ─── Entité principale ────────────────────────────────────────────────────────
 
 export type Unit = {
@@ -27,6 +29,8 @@ export type Unit = {
   floor?: string;
   area?: string;
   baseRent: number;
+  depositAmount?: string; // caution/dépôt de garantie — string API
+  leaseCategory?: LeaseCategory; // détermine le template de contrat
   currency?: string;
   status: UnitStatus;
   commissionedAt?: string;
@@ -46,6 +50,8 @@ export type CreateUnitPayload = {
   floor?: string;
   area?: string; // string requis par l'API (ex: "35.50")
   baseRent: string; // string requis par l'API (ex: "150000")
+  depositAmount?: string; // caution (ex: "150000")
+  leaseCategory?: LeaseCategory;
   currency?: string;
   status?: UnitStatus;
   commissionedAt?: string;

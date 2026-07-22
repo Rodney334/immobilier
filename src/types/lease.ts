@@ -54,7 +54,7 @@ export type CreateLeasePayload = {
   startDate: string;
   endDate?: string;
   monthlyRent: string; // string requis par l'API (ex: "150000")
-  depositAmount?: string; // string optionnel (ex: "150000")
+  // depositAmount retiré du payload — calculé automatiquement depuis le local (Unit)
   billingDay?: number;
   periodicity?: LeasePeriodicity;
   status?: LeaseStatus;
@@ -67,7 +67,6 @@ export type UpdateLeasePayload = Partial<
     CreateLeasePayload,
     | "monthlyRent"
     | "endDate"
-    | "depositAmount"
     | "periodicity"
     | "billingDay"
     | "notes"

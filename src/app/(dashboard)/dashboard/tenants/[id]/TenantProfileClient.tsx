@@ -32,6 +32,7 @@ import { TenantFormModal } from "@/components/features/tenants/TenantFormModal";
 import { GuarantorFormModal } from "@/components/features/guarantors/GuarantorFormModal";
 import { Modal } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
+import { getPaymentMethodLabel } from "@/lib/constants/payment";
 import type {
   Tenant,
   Lease,
@@ -383,10 +384,10 @@ export function TenantProfileClient({ tenantId }: { tenantId: string }) {
       const adjs = Array.isArray(summary.adjustments)
         ? summary.adjustments
         : [];
-      const adjSum = adjs.reduce((s, a) => s + a.amount, 0);
+      const adjSum = adjs.reduce((s, a) => s + Number(a.amount), 0);
       setAdjTotal(adjSum);
-      setAdjPos(adjs.filter((a) => a.amount > 0).length);
-      setAdjNeg(adjs.filter((a) => a.amount < 0).length);
+      setAdjPos(adjs.filter((a) => Number(a.amount) > 0).length);
+      setAdjNeg(adjs.filter((a) => Number(a.amount) < 0).length);
 
       // Pre-populate tab data so no lazy fetch is needed
       const pmts = Array.isArray(summary.payments) ? summary.payments : [];
@@ -1078,7 +1079,7 @@ function PaymentsTab({ rows, loading }: { rows: Payment[]; loading: boolean }) {
                   {formatAmount(p.amount)}
                 </td>
                 <td className="px-5 py-3 text-[12px] text-primary/60">
-                  {p.paymentMethod ?? "—"}
+                  {getPaymentMethodLabel(p.paymentMethod)}
                 </td>
                 <td className="px-5 py-3 text-[12px] font-mono text-primary/40">
                   {p.reference ?? "—"}
@@ -1140,9 +1141,9 @@ function AdjustmentsTab({
                 {ADJ_TYPE_LABELS[a.type] ?? a.type}
               </td>
               <td className="px-5 py-3 text-[13px] font-semibold tabular-nums whitespace-nowrap">
-                <span className={a.amount < 0 ? "text-danger" : "text-success"}>
-                  {a.amount >= 0 ? "+" : ""}
-                  {fmt.format(a.amount)} FCFA
+                <span className={Number(a.amount) < 0 ? "text-danger" : "text-success"}>
+                  {Number(a.amount) >= 0 ? "+" : ""}
+                  {fmt.format(Number(a.amount))} FCFA
                 </span>
               </td>
               <td className="px-5 py-3 text-[12px] text-primary/60 max-w-xs truncate">

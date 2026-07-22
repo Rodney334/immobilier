@@ -245,13 +245,13 @@ function DetailPanel({
                 />
               ))}
             </div>
-          ) : neighborhood.properties.length === 0 ? (
+          ) : (neighborhood.properties ?? []).length === 0 ? (
             <p className="text-[12px] text-primary/40 italic">
               Aucune propriete dans ce quartier.
             </p>
           ) : (
             <div className="space-y-2">
-              {neighborhood.properties.map((p, i) => (
+              {(neighborhood.properties ?? []).map((p, i) => (
                 <div
                   key={p.id + i}
                   className="flex items-center justify-between p-3 rounded-lg border border-border-custom hover:border-primary/20 hover:bg-primary/3 transition-colors"
@@ -348,7 +348,7 @@ function NeighborhoodCard({
           <div className="min-w-0">
             <p className="text-[13px] font-semibold text-primary truncate">
               {neighborhood.name} - Propriétés liées :{" "}
-              {neighborhood.properties.length}
+              {(neighborhood.properties ?? []).length}
             </p>
             <p className="text-[12px] text-primary/50 font-mono truncate">
               {neighborhood.code}
@@ -602,7 +602,7 @@ export function NeighborhoodsClient() {
                             {n.description || "—"}
                           </td>
                           <td className="ep-td ep-mono text-primary/50">
-                            {n.properties.length}
+                            {(n.properties ?? []).length}
                           </td>
                           <td className="ep-td">
                             <RowMenu

@@ -20,6 +20,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { RowActionMenu } from "@/components/ui/RowActionMenu";
 import { PaginationBar } from "@/components/ui/PaginationBar";
 import type { Payment, PaymentStatus, PaginationMeta } from "@/types";
+import { getPaymentMethodLabel } from "@/lib/constants/payment";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -31,14 +32,6 @@ const STATUS_CONFIG: Record<
   REVERSED: { label: "En attente", variant: "warning" },
   CANCELLED: { label: "Annulé", variant: "neutral" },
   failed: { label: "Échoué", variant: "danger" },
-};
-
-const METHOD_LABELS: Record<string, string> = {
-  BANK_TRANSFER: "Virement",
-  CASH: "Espèces",
-  CHECK: "Chèque",
-  MOBILE_MONEY: "Mobile Money",
-  OTHER: "Autre",
 };
 
 const FILTER_OPTIONS: { label: string; value: PaymentStatus | "all" }[] = [
@@ -162,7 +155,7 @@ function PaymentCard({
         </div>
         <div>
           <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">Méthode</p>
-          <p className="text-[12px] text-primary/70">{payment.paymentMethod ? (METHOD_LABELS[payment.paymentMethod] ?? payment.paymentMethod) : "—"}</p>
+          <p className="text-[12px] text-primary/70">{getPaymentMethodLabel(payment.paymentMethod)}</p>
         </div>
         <div>
           <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">Référence</p>
@@ -219,7 +212,7 @@ function PaymentRow({
       </td>
       <td className="ep-td ep-amount">{formatAmount(parseFloat(payment.amount))}</td>
       <td className="ep-td" style={{ fontSize: 13, color: "var(--ink-soft)" }}>
-        {payment.paymentMethod ? (METHOD_LABELS[payment.paymentMethod] ?? payment.paymentMethod) : "—"}
+        {getPaymentMethodLabel(payment.paymentMethod)}
       </td>
       <td className="ep-td ep-mono">{payment.reference ?? "—"}</td>
       <td className="ep-td ep-mono">{formatDate(payment.paymentDate!)}</td>

@@ -18,6 +18,7 @@ import { paymentService } from "@/lib/services/payment.service";
 import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
 import type { Payment, PaymentStatus } from "@/types";
+import { getPaymentMethodLabel } from "@/lib/constants/payment";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -29,14 +30,6 @@ const STATUS_CONFIG: Record<
   REVERSED: { label: "Annulé", variant: "warning" },
   CANCELLED: { label: "Annulé", variant: "neutral" },
   failed: { label: "Échoué", variant: "danger" },
-};
-
-const METHOD_LABELS: Record<string, string> = {
-  bank_transfer: "Virement bancaire",
-  cash: "Espèces",
-  check: "Chèque",
-  mobile_money: "Mobile Money",
-  other: "Autre",
 };
 
 const fmt = new Intl.NumberFormat("fr-FR");
@@ -246,12 +239,7 @@ export function PaymentDetailPanel({
           <DetailRow
             icon={CreditCard}
             label="Méthode de paiement"
-            value={
-              payment.paymentMethod
-                ? (METHOD_LABELS[payment.paymentMethod] ??
-                  payment.paymentMethod)
-                : undefined
-            }
+            value={getPaymentMethodLabel(payment.paymentMethod)}
           />
           <DetailRow icon={Hash} label="Référence" value={payment.reference} />
           <DetailRow

@@ -7,6 +7,7 @@ import { useToast } from "@/components/ui/Toast";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { RowActionMenu } from "@/components/ui/RowActionMenu";
 import { PaginationBar } from "@/components/ui/PaginationBar";
+import { AdjustmentFormModal } from "@/components/features/adjustments/AdjustmentFormModal";
 import type { Adjustment, AdjustmentType, PaginationMeta } from "@/types";
 
 function formatXOF(n: number) {
@@ -135,7 +136,7 @@ function AdjustmentCard({
           <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">
             Montant
           </p>
-          <AmountCell type={adj.type} amount={adj.amount} />
+          <AmountCell type={adj.type} amount={Number(adj.amount)} />
         </div>
         <div>
           <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">
@@ -168,6 +169,7 @@ export function AdjustmentsClient() {
   const [dateTo, setDateTo] = useState("");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
+  const [formOpen, setFormOpen] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -210,7 +212,7 @@ export function AdjustmentsClient() {
           <h1 className="ep-page-title">Ajustements</h1>
         </div>
         <div className="ep-topbar-actions">
-          <button className="ep-btn ep-btn-primary">
+          <button className="ep-btn ep-btn-primary" onClick={() => setFormOpen(true)}>
             <Plus size={15} /> Nouvel ajustement
           </button>
         </div>
@@ -339,7 +341,7 @@ export function AdjustmentsClient() {
                           {a.lease ? `#${a.lease.contractNumber}` : "—"}
                         </td>
                         <td className="ep-td">
-                          <AmountCell type={a.type} amount={a.amount} />
+                          <AmountCell type={a.type} amount={Number(a.amount)} />
                         </td>
                         <td className="ep-td text-primary/50 max-w-40 truncate">
                           {a.reason}
@@ -373,6 +375,12 @@ export function AdjustmentsClient() {
           setLimit(l);
           setPage(1);
         }}
+      />
+
+      <AdjustmentFormModal
+        isOpen={formOpen}
+        onClose={() => setFormOpen(false)}
+        onSaved={() => { setFormOpen(false); load(); }}
       />
     </div>
   );

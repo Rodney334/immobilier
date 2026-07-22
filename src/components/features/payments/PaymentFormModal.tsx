@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/Input";
 import { paymentService } from "@/lib/services/payment.service";
 import type { Lease, Payment, PaymentMethod } from "@/types";
 import { leaseService } from "@/lib/services/lease.service";
+import { PAYMENT_METHODS } from "@/lib/constants/payment";
 
 type FormState = { error: string | null; success: boolean };
 
@@ -17,17 +18,6 @@ type Props = {
   onClose: () => void;
   onSaved: (p: Payment) => void;
 };
-
-const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
-  { value: "CASH", label: "Especes" },
-  { value: "BANK_TRANSFER", label: "Virement bancaire" },
-  { value: "MOBILE_MONEY", label: "Mobile Money" },
-  { value: "MTN_MOMO", label: "MTN MoMo" },
-  { value: "MOOV_MONEY", label: "MOOV Money" },
-  { value: "CHEQUE", label: "Cheque" },
-  { value: "CARD", label: "Card" },
-  { value: "OTHER", label: "Autre" },
-];
 
 function SubmitButton() {
   const { pending } = useFormStatus();

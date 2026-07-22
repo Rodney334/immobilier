@@ -23,6 +23,7 @@ import { leaseService } from "@/lib/services/lease.service";
 import { reportService } from "@/lib/services/report.service";
 import { paymentService } from "@/lib/services/payment.service";
 import { rentScheduleService } from "@/lib/services/rent-schedule.service";
+import { getPaymentMethodLabel } from "@/lib/constants/payment";
 import type {
   MonthlyPerformanceReport,
   AnnualPerformanceReport,
@@ -848,7 +849,7 @@ export function DashboardHomeClient() {
                         {moisConcerne}
                       </td>
                       <td className="px-5 py-3.5 text-[12px] text-primary/60">
-                        {p.paymentMethod ?? "—"}
+                        {getPaymentMethodLabel(p.paymentMethod)}
                       </td>
                       <td className="px-5 py-3.5">
                         <PaymentStatusBadge status={p.status} />

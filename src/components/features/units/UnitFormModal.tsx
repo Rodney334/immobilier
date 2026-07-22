@@ -7,7 +7,7 @@ import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
 import { unitService } from "@/lib/services/unit.service";
 import { propertyService } from "@/lib/services/property.service";
-import type { Unit, Property, CreateUnitPayload } from "@/types";
+import type { Unit, Property, CreateUnitPayload, LeaseCategory } from "@/types";
 
 type FormState = { error: string | null; success: boolean };
 
@@ -19,13 +19,18 @@ type Props = {
 };
 
 const UNIT_TYPES: { value: string; label: string }[] = [
-  { value: "BOUTIQUE", label: "Boutique" },
+  { value: "BOUTIQUE",    label: "Boutique" },
   { value: "APPARTEMENT", label: "Appartement" },
-  { value: "BUREAU", label: "Bureau" },
-  { value: "STUDIO", label: "Studio" },
-  { value: "VILLA", label: "Villa" },
-  { value: "ENTREPOT", label: "Entrepôt" },
-  { value: "AUTRE", label: "Autre" },
+  { value: "BUREAU",      label: "Bureau" },
+  { value: "STUDIO",      label: "Studio" },
+  { value: "VILLA",       label: "Villa" },
+  { value: "ENTREPOT",    label: "Entrepôt" },
+  { value: "AUTRE",       label: "Autre" },
+];
+
+const LEASE_CATEGORIES: { value: LeaseCategory; label: string }[] = [
+  { value: "HABITATION",    label: "Habitation" },
+  { value: "PROFESSIONNEL", label: "Professionnel" },
 ];
 
 function SubmitButton({ label }: { label: string }) {
@@ -59,54 +64,53 @@ export function UnitFormModal({ unit, isOpen, onClose, onSaved }: Props) {
 
   const [state, formAction] = useActionState(
     async (_prev: FormState, formData: FormData): Promise<FormState> => {
-      const propertyId = formData.get("propertyId") as string;
-      // const unitNumber = (formData.get("unitNumber") as string).trim();
-      const label = (formData.get("label") as string).trim();
-      const type = (formData.get("type") as string).trim();
-      const floor = (formData.get("floor") as string).trim();
-      const area = (formData.get("area") as string).trim();
-      const baseRent = (formData.get("baseRent") as string).trim();
+      const propertyId    = formData.get("propertyId") as string;
+      const label         = (formData.get("label") as string).trim();
+      const type          = (formData.get("type") as string).trim();
+      const leaseCategory = (formData.get("leaseCategory") as string).trim() as LeaseCategory | "";
+      const floor         = (formData.get("floor") as string).trim();
+      const area          = (formData.get("area") as string).trim();
+      const baseRent      = (formData.get("baseRent") as string).trim();
+      const depositAmount = (formData.get("depositAmount") as string).trim();
 
       if (!isEdit && !propertyId) {
-        return {
-          error: "Veuillez selectionner une propriete.",
-          success: false,
-        };
+        return { error: "Veuillez selectionner une propriete.", success: false };
       }
       if (!baseRent || isNaN(Number(baseRent)) || Number(baseRent) <= 0) {
-        return {
-          error: "Le loyer de base doit etre superieur a 0.",
-          success: false,
-        };
+        return { error: "Le loyer de base doit etre superieur a 0.", success: false };
+      }
+      if (depositAmount && (isNaN(Number(depositAmount)) || Number(depositAmount) < 0)) {
+        return { error: "La caution doit être un montant positif.", success: false };
       }
 
       const payload: CreateUnitPayload = {
-        propertyId: propertyId || unit!.propertyId,
-        // unitNumber: unitNumber || undefined,   // omis si vide → auto-généré
-        label: label || undefined,
-        type: type || undefined,
-        floor: floor || undefined,
-        area: area || undefined, // string ("35.50")
-        baseRent, // string ("150000")
+        propertyId:    propertyId || unit!.propertyId,
+        label:         label || undefined,
+        type:          type || undefined,
+        leaseCategory: leaseCategory || undefined,
+        floor:         floor || undefined,
+        area:          area || undefined,
+        baseRent,
+        depositAmount: depositAmount || undefined,
       };
 
       try {
         const res = isEdit
           ? await unitService.update(unit!.id, {
-              // unitNumber: payload.unitNumber,
-              label: payload.label,
-              type: payload.type,
-              floor: payload.floor,
-              area: payload.area,
-              baseRent: payload.baseRent,
+              label:         payload.label,
+              type:          payload.type,
+              leaseCategory: payload.leaseCategory,
+              floor:         payload.floor,
+              area:          payload.area,
+              baseRent:      payload.baseRent,
+              depositAmount: payload.depositAmount,
             })
           : await unitService.create(payload);
         onSaved(res.data);
         onClose();
         return { error: null, success: true };
       } catch (err: unknown) {
-        const msg =
-          err instanceof Error ? err.message : "Une erreur est survenue.";
+        const msg = err instanceof Error ? err.message : "Une erreur est survenue.";
         return { error: msg, success: false };
       }
     },
@@ -129,6 +133,7 @@ export function UnitFormModal({ unit, isOpen, onClose, onSaved }: Props) {
           </div>
         )}
 
+        {/* Propriété */}
         <div className="space-y-1.5">
           <label className="block text-[12px] font-medium uppercase tracking-[0.06em] text-primary/60">
             Propriete {!isEdit && <span className="text-danger">*</span>}
@@ -145,45 +150,51 @@ export function UnitFormModal({ unit, isOpen, onClose, onSaved }: Props) {
               defaultValue={unit?.propertyId ?? ""}
               className="w-full h-11 px-3 rounded-lg border border-border-custom bg-white text-[14px] text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 disabled:opacity-50 transition-colors"
             >
-              <option value="" disabled>
-                Selectionner une propriete
-              </option>
+              <option value="" disabled>Selectionner une propriete</option>
               {properties.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
+                <option key={p.id} value={p.id}>{p.name}</option>
               ))}
             </select>
           )}
         </div>
 
-        <div className="grid grid-cols-1 gap-3">
-          {/* <Input
-            name="unitNumber"
-            label="Numero de local"
-            placeholder="ex : L-001 (optionnel)"
-            defaultValue={unit?.unitNumber}
-            hint="Laissez vide pour auto-generation"
-          /> */}
+        {/* Type + Catégorie de bail */}
+        <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
             <label className="block text-[12px] font-medium uppercase tracking-[0.06em] text-primary/60">
-              Type
+              Type de local
             </label>
             <select
               name="type"
               defaultValue={unit?.type ?? ""}
               className="w-full h-11 px-3 rounded-lg border border-border-custom bg-white text-[14px] text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors"
             >
-              <option value="">Selectionner (optionnel)</option>
+              <option value="">Sélectionner (optionnel)</option>
               {UNIT_TYPES.map((t) => (
-                <option key={t.value} value={t.value}>
-                  {t.label}
-                </option>
+                <option key={t.value} value={t.value}>{t.label}</option>
               ))}
             </select>
           </div>
+
+          <div className="space-y-1.5">
+            <label className="block text-[12px] font-medium uppercase tracking-[0.06em] text-primary/60">
+              Catégorie de bail
+            </label>
+            <select
+              name="leaseCategory"
+              defaultValue={unit?.leaseCategory ?? ""}
+              className="w-full h-11 px-3 rounded-lg border border-border-custom bg-white text-[14px] text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors"
+            >
+              <option value="">Sélectionner (recommandé)</option>
+              {LEASE_CATEGORIES.map((c) => (
+                <option key={c.value} value={c.value}>{c.label}</option>
+              ))}
+            </select>
+            <p className="text-[11px] text-primary/40">Détermine le modèle de contrat utilisé</p>
+          </div>
         </div>
 
+        {/* Libellé */}
         <Input
           name="label"
           label="Libellé"
@@ -192,11 +203,12 @@ export function UnitFormModal({ unit, isOpen, onClose, onSaved }: Props) {
           hint="Nom descriptif du local (optionnel)"
         />
 
+        {/* Loyer + Étage */}
         <div className="grid grid-cols-2 gap-3">
           <Input
             name="baseRent"
             type="number"
-            label="Loyer (XOF) *"
+            label="Loyer de base (XOF) *"
             placeholder="ex : 75000"
             defaultValue={unit?.baseRent}
             required
@@ -209,14 +221,24 @@ export function UnitFormModal({ unit, isOpen, onClose, onSaved }: Props) {
           />
         </div>
 
-        <Input
-          name="area"
-          type="number"
-          label="Surface (m2)"
-          placeholder="ex : 35.50"
-          defaultValue={unit?.area}
-          hint="En mètres carrés (optionnel)"
-        />
+        {/* Caution + Surface */}
+        <div className="grid grid-cols-2 gap-3">
+          <Input
+            name="depositAmount"
+            type="number"
+            label="Caution / dépôt de garantie (XOF)"
+            placeholder="ex : 150000"
+            defaultValue={unit?.depositAmount}
+            hint="Reporté automatiquement sur le bail"
+          />
+          <Input
+            name="area"
+            type="number"
+            label="Surface (m²)"
+            placeholder="ex : 35.50"
+            defaultValue={unit?.area}
+          />
+        </div>
 
         <div className="flex items-center justify-end gap-3 pt-4 mt-2 border-t border-border-custom">
           <button
@@ -226,7 +248,7 @@ export function UnitFormModal({ unit, isOpen, onClose, onSaved }: Props) {
           >
             Annuler
           </button>
-          <SubmitButton label={isEdit ? "Enregistrer" : "Creer le local"} />
+          <SubmitButton label={isEdit ? "Enregistrer" : "Créer le local"} />
         </div>
       </form>
     </Modal>

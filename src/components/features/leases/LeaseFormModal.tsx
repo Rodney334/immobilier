@@ -149,7 +149,6 @@ export function LeaseFormModal({ lease, isOpen, onClose, onSaved }: Props) {
       const startDate = formData.get("startDate") as string;
       const endDate = (formData.get("endDate") as string).trim();
       const monthlyRent = (formData.get("monthlyRent") as string).trim();
-      const depositAmount = (formData.get("depositAmount") as string).trim();
       const periodicity = formData.get("periodicity") as LeasePeriodicity | "";
       const billingDay = (formData.get("billingDay") as string).trim();
 
@@ -169,16 +168,6 @@ export function LeaseFormModal({ lease, isOpen, onClose, onSaved }: Props) {
           success: false,
         };
       }
-      if (
-        !depositAmount ||
-        isNaN(Number(depositAmount)) ||
-        Number(depositAmount) <= 0
-      ) {
-        return {
-          error: "La caution est obligatoire et doit etre superieure a 0.",
-          success: false,
-        };
-      }
       if (endDate && new Date(endDate) <= new Date(startDate)) {
         return {
           error: "La date de fin doit etre posterieure a la date de debut.",
@@ -192,7 +181,6 @@ export function LeaseFormModal({ lease, isOpen, onClose, onSaved }: Props) {
         startDate: new Date(startDate).toISOString(),
         endDate: endDate ? new Date(endDate).toISOString() : undefined,
         monthlyRent,
-        depositAmount,
         periodicity: periodicity || undefined,
         billingDay: billingDay ? parseInt(billingDay, 10) : undefined,
         status: "ACTIVE",
@@ -203,7 +191,6 @@ export function LeaseFormModal({ lease, isOpen, onClose, onSaved }: Props) {
           ? await leaseService.update(lease!.id, {
               monthlyRent: payload.monthlyRent,
               periodicity: payload.periodicity,
-              depositAmount: payload.depositAmount,
               endDate: payload.endDate,
             })
           : await leaseService.create(payload);
@@ -295,48 +282,36 @@ export function LeaseFormModal({ lease, isOpen, onClose, onSaved }: Props) {
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          {/* Loyer — verrouillé sur baseRent en création, éditable en modification */}
-          <div className="space-y-1.5">
-            <label className="block text-[12px] font-medium uppercase tracking-[0.06em] text-primary/60">
-              Loyer mensuel (XOF) <span className="text-danger">*</span>
-            </label>
-            <input
-              name="monthlyRent"
-              type="number"
-              required
-              value={rentLocked ? autoRent : rentValue}
-              onChange={
-                rentLocked
-                  ? () => {} // readOnly — pas de modification
-                  : (e) => setRentValue(e.target.value)
-              }
-              readOnly={rentLocked}
-              placeholder="ex : 75000"
-              className={[
-                "w-full h-11 px-3 rounded-lg border border-border-custom text-[14px] text-primary",
-                "focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors",
-                rentLocked
-                  ? "bg-neutral cursor-not-allowed text-primary/50"
-                  : "bg-white",
-              ].join(" ")}
-            />
-            {rentLocked && selectedUnit && (
-              <p className="text-[11px] text-primary/40">
-                Défini par le loyer de base du local
-              </p>
-            )}
-          </div>
-
-          <Input
-            name="depositAmount"
+        {/* Loyer — verrouillé sur baseRent en création, éditable en modification */}
+        <div className="space-y-1.5">
+          <label className="block text-[12px] font-medium uppercase tracking-[0.06em] text-primary/60">
+            Loyer mensuel (XOF) <span className="text-danger">*</span>
+          </label>
+          <input
+            name="monthlyRent"
             type="number"
-            label="Caution (XOF) *"
-            placeholder="ex : 150000"
-            defaultValue={lease?.depositAmount}
             required
-            min={1}
+            value={rentLocked ? autoRent : rentValue}
+            onChange={
+              rentLocked
+                ? () => {}
+                : (e) => setRentValue(e.target.value)
+            }
+            readOnly={rentLocked}
+            placeholder="ex : 75000"
+            className={[
+              "w-full h-11 px-3 rounded-lg border border-border-custom text-[14px] text-primary",
+              "focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors",
+              rentLocked
+                ? "bg-neutral cursor-not-allowed text-primary/50"
+                : "bg-white",
+            ].join(" ")}
           />
+          {rentLocked && selectedUnit && (
+            <p className="text-[11px] text-primary/40">
+              Défini par le loyer de base du local
+            </p>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-3">

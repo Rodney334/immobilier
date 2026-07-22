@@ -11,11 +11,11 @@ export type AdjustmentValueMode = "FIXED" | "PERCENTAGE";
 
 export type Adjustment = {
   id: string;
-  scheduleId?: string;
+  rentScheduleId?: string;
   lease?: Lease;
   leaseId?: string;
   type: AdjustmentType;
-  amount: number;
+  amount: string; // string — champ API
   valueMode?: AdjustmentValueMode;
   reason: string;
   label?: string;
@@ -25,19 +25,21 @@ export type Adjustment = {
 };
 
 export type CreateAdjustmentPayload = {
-  scheduleId?: string;
+  rentScheduleId?: string;
   leaseId?: string;
   type: AdjustmentType;
-  amount: number;
+  label?: string;
+  amount: string; // string requis par l'API (ex: "10000")
   valueMode?: AdjustmentValueMode;
   reason: string;
-  appliedDate: string;
+  effectiveDate: string; // ISO datetime ex: "2026-10-03T08:00:00.000Z"
 };
 
 export type UpdateAdjustmentPayload = {
-  amount?: number;
+  amount?: string;
+  label?: string;
   reason?: string;
-  appliedDate?: string;
+  effectiveDate?: string;
 };
 
 export type AdjustmentFilterParams = {

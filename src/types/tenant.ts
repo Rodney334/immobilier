@@ -2,6 +2,8 @@
 
 export type TenantStatus = "ACTIVE" | "INACTIVE" | "BLACKLISTED";
 
+export type TenantType = "INDIVIDUAL" | "COMPANY";
+
 export type LeasePurpose =
   | "SHOP"
   | "OFFICE"
@@ -20,9 +22,10 @@ export type IdType = IdentityType;
 export type Tenant = {
   id: string;
   _id: string;
+  tenantType?: TenantType; // INDIVIDUAL (défaut) | COMPANY
   firstName?: string;
   lastName?: string;
-  fullName: string;
+  fullName: string; // nom complet (particulier) ou raison sociale (entreprise)
   phone?: string;
   secondaryPhone?: string;
   email?: string;
@@ -32,9 +35,15 @@ export type Tenant = {
   identityType?: string;
   emergencyContact?: string;
   notes?: string;
+  // Champs entreprise (tenantType === "COMPANY")
+  companyLegalForm?: string; // forme juridique (ex: SARL, SA, SAS)
+  companyRccm?: string; // numéro RCCM
+  companyIfu?: string; // numéro IFU
+  representativeName?: string; // nom du représentant légal
+  representativeTitle?: string; // fonction du représentant
   // Blacklist
-  blacklistReason?: string; // motif de mise en liste noire
-  blacklistedAt?: string; // date ISO de mise en liste noire
+  blacklistReason?: string;
+  blacklistedAt?: string;
   status: TenantStatus;
   isArchived?: boolean;
   createdAt: string;
@@ -47,7 +56,8 @@ export type Tenant = {
 // --- Payloads ---
 
 export type CreateTenantPayload = {
-  fullName: string; // obligatoire
+  tenantType?: TenantType;
+  fullName: string; // obligatoire — nom complet ou raison sociale
   firstName?: string;
   lastName?: string;
   phone?: string;
@@ -61,6 +71,12 @@ export type CreateTenantPayload = {
   status?: TenantStatus;
   leasePurpose?: string;
   leasePurposeDetails?: string;
+  // Champs entreprise
+  companyLegalForm?: string;
+  companyRccm?: string;
+  companyIfu?: string;
+  representativeName?: string;
+  representativeTitle?: string;
 };
 
 export type UpdateTenantPayload = Partial<CreateTenantPayload>;
