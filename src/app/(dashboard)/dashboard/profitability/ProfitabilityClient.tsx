@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { TrendingUp, Loader2, AlertTriangle } from "lucide-react";
 import { profitabilityService } from "@/lib/services/profitability.service";
-import type { ProfitabilityItem } from "@/types";
+import type { ProfitabilityItem, ProfitabilityFilterParams } from "@/types";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -30,74 +30,81 @@ function marginBadge(rate: number) {
   return { bg: "#FCEBEB", color: "#A32D2D" };
 }
 
+type PeriodMode = "year" | "semester" | "month";
+
 // ─── KPI card ─────────────────────────────────────────────────────────────────
 
 function KpiCard({ label, value, sub, valueColor }: {
-  label: string;
-  value: string;
-  sub?: string;
-  valueColor?: string;
+  label: string; value: string; sub?: string; valueColor?: string;
 }) {
   return (
-    <div className="bg-surface border border-border-custom rounded-xl px-4 py-3.5">
-      <p className="text-[11px] font-medium uppercase tracking-[0.05em] text-primary/50 mb-1.5">{label}</p>
-      <p className="text-[22px] font-medium" style={{ color: valueColor ?? "var(--color-text-primary)" }}>
+    <div
+      style={{
+        background: "var(--paper-raised)",
+        border: "1px solid var(--paper-line)",
+        borderRadius: "var(--r-md)",
+        padding: "14px 18px",
+        boxShadow: "var(--shadow-card)",
+      }}
+    >
+      <p style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--ink-soft)", marginBottom: 6 }}>
+        {label}
+      </p>
+      <p style={{ fontFamily: "var(--font-display)", fontSize: 22, fontWeight: 600, letterSpacing: "-0.01em", color: valueColor ?? "var(--ink)", lineHeight: 1.1 }}>
         {value}
       </p>
-      {sub && <p className="text-[11px] mt-1 text-primary/40">{sub}</p>}
+      {sub && <p style={{ fontSize: 11, marginTop: 4, color: "var(--ink-soft)" }}>{sub}</p>}
     </div>
   );
 }
 
-// ─── Double bar chart (collecté vs attendu) ───────────────────────────────────
+// ─── Chips de sélection de période ───────────────────────────────────────────
+
+function PeriodChip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      className={active ? "ep-chip active" : "ep-chip"}
+    >
+      {children}
+    </button>
+  );
+}
+
+// ─── Comparatif par propriété ─────────────────────────────────────────────────
 
 function PropertyBarChart({ items }: { items: ProfitabilityItem[] }) {
-  if (items.length === 0) {
-    return <p className="text-[12px] text-primary/40 py-8 text-center">Aucune donnée</p>;
-  }
-
+  if (items.length === 0) return <p style={{ fontSize: 12, color: "var(--ink-soft)", textAlign: "center", padding: "32px 0" }}>Aucune donnée</p>;
   const maxExpected = Math.max(...items.map((i) => i.revenue.totalRentExpected), 1);
 
   return (
-    <div className="space-y-3">
-      {/* Légende */}
-      <div className="flex gap-4">
-        <div className="flex items-center gap-1.5">
-          <div className="w-2 h-2 rounded-full" style={{ background: "#1D9E75" }} />
-          <span className="text-[11px] text-primary/50">Collecté</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-2 h-2 rounded-full" style={{ background: "#E36B45" }} />
-          <span className="text-[11px] text-primary/50">Attendu</span>
-        </div>
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <div style={{ display: "flex", gap: 16 }}>
+        {[{ color: "#1D9E75", label: "Collecté" }, { color: "#E36B45", label: "Attendu" }].map(({ color, label }) => (
+          <div key={label} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <div style={{ width: 8, height: 8, borderRadius: "50%", background: color }} />
+            <span style={{ fontSize: 11, color: "var(--ink-soft)" }}>{label}</span>
+          </div>
+        ))}
       </div>
-
       {items.map((item) => {
         const collected = item.revenue.totalRentCollected;
         const expected = item.revenue.totalRentExpected;
         const collectedPct = Math.min((collected / Math.max(expected, 1)) * 100, 100);
         const expectedPct = Math.min((expected / maxExpected) * 100, 100);
-
         return (
-          <div key={item.propertyId} className="flex items-center gap-2.5">
-            <span className="text-[11px] text-primary/60 w-24 shrink-0 truncate">
+          <div key={item.propertyId} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ fontSize: 11, color: "var(--ink-soft)", width: 96, flexShrink: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {item.propertyName}
             </span>
-            <div className="flex-1 flex flex-col gap-1">
-              <div className="h-2 rounded bg-border-custom overflow-hidden relative">
-                <div
-                  className="absolute inset-y-0 left-0 rounded transition-all duration-500"
-                  style={{ width: `${collectedPct}%`, background: "#1D9E75" }}
-                />
-              </div>
-              <div className="h-2 rounded bg-border-custom overflow-hidden relative">
-                <div
-                  className="absolute inset-y-0 left-0 rounded transition-all duration-500"
-                  style={{ width: `${expectedPct}%`, background: "#E36B45" }}
-                />
-              </div>
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 3 }}>
+              {[{ pct: collectedPct, color: "#1D9E75" }, { pct: expectedPct, color: "#E36B45" }].map(({ pct: p, color }, idx) => (
+                <div key={idx} style={{ height: 8, borderRadius: 4, background: "var(--paper-line)", overflow: "hidden", position: "relative" }}>
+                  <div style={{ position: "absolute", inset: "0 auto 0 0", width: `${p}%`, background: color, borderRadius: 4, transition: "width 0.5s" }} />
+                </div>
+              ))}
             </div>
-            <span className="text-[11px] text-primary/40 w-20 text-right shrink-0">
+            <span style={{ fontSize: 11, color: "var(--ink-soft)", width: 80, textAlign: "right", flexShrink: 0 }}>
               {fmt(collected)} / {fmt(expected)}
             </span>
           </div>
@@ -107,71 +114,169 @@ function PropertyBarChart({ items }: { items: ProfitabilityItem[] }) {
   );
 }
 
-// ─── Monthly bar chart (depuis monthlyBreakdown de l'item sélectionné) ────────
+// ─── Graphique mensuel ────────────────────────────────────────────────────────
 
-function MonthlyChart({ item }: { item: ProfitabilityItem | null }) {
+function MonthlyChart({ item, filterMonth }: { item: ProfitabilityItem | null; filterMonth?: number }) {
   if (!item) {
     return (
-      <div className="flex flex-col items-center justify-center py-10 gap-2">
-        <p className="text-[12px] text-primary/40">Cliquez sur une propriété pour voir le détail mensuel</p>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 0" }}>
+        <p style={{ fontSize: 12, color: "var(--ink-soft)" }}>Sélectionnez une propriété pour voir le détail</p>
       </div>
     );
   }
 
-  const breakdown = item.monthlyBreakdown ?? [];
+  const breakdown = (item.monthlyBreakdown ?? []).filter((m) =>
+    filterMonth ? m.month === filterMonth : true,
+  );
   const maxVal = Math.max(...breakdown.map((m) => Math.max(m.expected, m.collected)), 1);
   const currentMonth = new Date().getMonth() + 1;
-
-  const best = [...breakdown].sort((a, b) => b.collected - a.collected)[0];
   const totalCollected = breakdown.reduce((s, m) => s + m.collected, 0);
   const monthsWithData = breakdown.filter((m) => m.collected > 0).length || 1;
   const avg = totalCollected / monthsWithData;
+  const best = [...breakdown].sort((a, b) => b.collected - a.collected)[0];
 
   return (
     <div>
-      <div className="flex items-end gap-1.5 h-20 mb-3">
+      <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 80, marginBottom: 8 }}>
         {breakdown.map((m) => {
-          const collectedH = Math.max(Math.round((m.collected / maxVal) * 56), m.collected > 0 ? 4 : 0);
+          const h = Math.max(Math.round((m.collected / maxVal) * 56), m.collected > 0 ? 4 : 0);
           const isCurrent = m.month === currentMonth;
           const hasData = m.collected > 0 || m.expected > 0;
-
           return (
-            <div key={m.month} className="flex flex-col items-center gap-1 flex-1 min-w-0" title={`${MONTH_NAMES[m.month - 1]} : ${fmt(m.collected, false)} FCFA collecté`}>
-              <div
-                className="w-full rounded-t transition-all duration-500"
-                style={{
-                  height: `${collectedH}px`,
-                  background: isCurrent ? "#E36B45" : hasData ? "#1D9E75" : "var(--color-border-custom)",
-                  minHeight: hasData ? "3px" : "0",
-                }}
-              />
-              <span
-                className="text-[9px] truncate w-full text-center"
-                style={{ color: isCurrent ? "#E36B45" : "var(--color-text-secondary)", fontWeight: isCurrent ? 500 : 400 }}
-              >
+            <div key={m.month} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}
+              title={`${MONTH_NAMES[m.month - 1]} : ${fmt(m.collected, false)} FCFA`}>
+              <div style={{ width: "100%", height: `${h}px`, background: isCurrent ? "#E36B45" : hasData ? "#1D9E75" : "var(--paper-line)", borderRadius: "3px 3px 0 0", transition: "height 0.5s", minHeight: hasData ? 3 : 0 }} />
+              <span style={{ fontSize: 9, color: isCurrent ? "#E36B45" : "var(--ink-soft)", fontWeight: isCurrent ? 600 : 400 }}>
                 {MONTH_NAMES[m.month - 1]}
               </span>
             </div>
           );
         })}
       </div>
-      <div className="border-t border-border-custom pt-3 grid grid-cols-2 gap-2">
+      <div style={{ borderTop: "1px solid var(--paper-line)", paddingTop: 10, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
         <div>
-          <p className="text-[11px] text-primary/40">Meilleur mois</p>
-          <p className="text-[14px] font-medium text-primary mt-0.5">
-            {best?.collected > 0 ? MONTH_NAMES[best.month - 1] : "—"}
-          </p>
+          <p style={{ fontSize: 11, color: "var(--ink-soft)" }}>Meilleur mois</p>
+          <p style={{ fontSize: 14, fontWeight: 600, color: "var(--ink)", marginTop: 2 }}>{best?.collected > 0 ? MONTH_NAMES[best.month - 1] : "—"}</p>
         </div>
         <div>
-          <p className="text-[11px] text-primary/40">Moyenne/mois</p>
-          <p className="text-[14px] font-medium text-primary mt-0.5">{fmt(avg, false)} FCFA</p>
+          <p style={{ fontSize: 11, color: "var(--ink-soft)" }}>Moyenne/mois</p>
+          <p style={{ fontSize: 14, fontWeight: 600, color: "var(--ink)", marginTop: 2 }}>{fmt(avg, false)} FCFA</p>
         </div>
       </div>
     </div>
   );
 }
 
-// ─── Detail table ─────────────────────────────────────────────────────────────
+// ─── Tableau mensuel détaillé ─────────────────────────────────────────────────
+
+function MonthlyBreakdownTable({ item, semesterFilter }: {
+  item: ProfitabilityItem | null;
+  semesterFilter?: number;
+}) {
+  if (!item) return null;
+
+  // Regroupement semestriel : S1 = mois 1-6, S2 = mois 7-12
+  const breakdown = item.monthlyBreakdown ?? [];
+
+  // Vue par semestre : agrège les 6 mois de chaque semestre
+  function buildSemesterRows() {
+    const semesters = [
+      { label: "S1 (Jan–Juin)", months: [1, 2, 3, 4, 5, 6] },
+      { label: "S2 (Juil–Déc)", months: [7, 8, 9, 10, 11, 12] },
+    ];
+    return semesters.map(({ label, months }) => {
+      const rows = breakdown.filter((m) => months.includes(m.month));
+      const expected = rows.reduce((s, m) => s + m.expected, 0);
+      const collected = rows.reduce((s, m) => s + m.collected, 0);
+      const delta = rows.reduce((s, m) => s + m.delta, 0);
+      return { label, expected, collected, delta };
+    });
+  }
+
+  const monthRows = semesterFilter
+    ? breakdown.filter((m) => {
+        const s1 = [1, 2, 3, 4, 5, 6];
+        const s2 = [7, 8, 9, 10, 11, 12];
+        return semesterFilter === 1 ? s1.includes(m.month) : s2.includes(m.month);
+      })
+    : breakdown;
+
+  const semRows = buildSemesterRows();
+
+  return (
+    <div style={{ background: "var(--paper-raised)", border: "1px solid var(--paper-line)", borderRadius: "var(--r-md)", boxShadow: "var(--shadow-card)", overflow: "hidden" }}>
+      <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--paper-line)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div>
+          <p style={{ fontSize: 13, fontWeight: 600, color: "var(--ink)" }}>Ventilation — {item.propertyName}</p>
+          <p style={{ fontSize: 11, color: "var(--ink-soft)", marginTop: 2 }}>
+            {item.period?.label ?? String(item.year)}
+          </p>
+        </div>
+      </div>
+
+      {/* Vue par mois */}
+      <div>
+        <div style={{ padding: "8px 18px", background: "rgba(28,43,39,0.03)", borderBottom: "1px solid var(--paper-line)" }}>
+          <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--ink-soft)" }}>Par mois</p>
+        </div>
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+            <thead>
+              <tr style={{ borderBottom: "1px solid var(--paper-line)" }}>
+                {["Mois", "Attendu", "Collecté", "Écart"].map((h, i) => (
+                  <th key={h} style={{ padding: "8px 18px", textAlign: i === 0 ? "left" : "right", fontFamily: "var(--font-mono)", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--ink-soft)", fontWeight: 500 }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {monthRows.map((m) => {
+                const isPos = m.delta >= 0;
+                return (
+                  <tr key={m.month} style={{ borderBottom: "1px solid var(--paper-line)" }}
+                    onMouseEnter={(e) => (e.currentTarget as HTMLElement).style.background = "rgba(28,43,39,0.02)"}
+                    onMouseLeave={(e) => (e.currentTarget as HTMLElement).style.background = ""}>
+                    <td style={{ padding: "9px 18px", color: "var(--ink)", fontWeight: 500 }}>{MONTH_NAMES[m.month - 1]}</td>
+                    <td style={{ padding: "9px 18px", textAlign: "right", color: "var(--ink-soft)", fontFamily: "var(--font-mono)" }}>{fmt(m.expected, false)}</td>
+                    <td style={{ padding: "9px 18px", textAlign: "right", color: "#0F6E56", fontWeight: 600, fontFamily: "var(--font-mono)" }}>{fmt(m.collected, false)}</td>
+                    <td style={{ padding: "9px 18px", textAlign: "right", color: isPos ? "#0F6E56" : "#A32D2D", fontFamily: "var(--font-mono)", fontWeight: 500 }}>
+                      {m.delta !== 0 ? (isPos ? "+" : "") + fmt(m.delta, false) : "—"}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Vue par semestre */}
+      <div style={{ borderTop: "2px solid var(--paper-line)" }}>
+        <div style={{ padding: "8px 18px", background: "rgba(28,43,39,0.03)", borderBottom: "1px solid var(--paper-line)" }}>
+          <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--ink-soft)" }}>Par semestre</p>
+        </div>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+          <tbody>
+            {semRows.map((row) => {
+              const isPos = row.delta >= 0;
+              return (
+                <tr key={row.label} style={{ borderBottom: "1px solid var(--paper-line)" }}>
+                  <td style={{ padding: "10px 18px", color: "var(--ink)", fontWeight: 600, width: "40%" }}>{row.label}</td>
+                  <td style={{ padding: "10px 18px", textAlign: "right", color: "var(--ink-soft)", fontFamily: "var(--font-mono)" }}>{fmt(row.expected, false)}</td>
+                  <td style={{ padding: "10px 18px", textAlign: "right", color: "#0F6E56", fontWeight: 600, fontFamily: "var(--font-mono)" }}>{fmt(row.collected, false)}</td>
+                  <td style={{ padding: "10px 18px", textAlign: "right", color: isPos ? "#0F6E56" : "#A32D2D", fontFamily: "var(--font-mono)", fontWeight: 500 }}>
+                    {row.delta !== 0 ? (isPos ? "+" : "") + fmt(row.delta, false) : "—"}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ─── Tableau de rentabilité ───────────────────────────────────────────────────
 
 function DetailTable({ items, onSelect, selectedId }: {
   items: ProfitabilityItem[];
@@ -181,62 +286,47 @@ function DetailTable({ items, onSelect, selectedId }: {
   if (items.length === 0) return null;
 
   return (
-    <div className="bg-surface border border-border-custom rounded-xl overflow-hidden">
-      <div className="px-5 py-4 border-b border-border-custom">
-        <p className="text-[13px] font-medium text-primary">Tableau de rentabilité détaillé</p>
+    <div style={{ background: "var(--paper-raised)", border: "1px solid var(--paper-line)", borderRadius: "var(--r-md)", boxShadow: "var(--shadow-card)", overflow: "hidden" }}>
+      <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--paper-line)" }}>
+        <p style={{ fontSize: 13, fontWeight: 600, color: "var(--ink)" }}>Tableau de rentabilité détaillé</p>
       </div>
-      <div className="overflow-x-auto">
-        {/* Header */}
-        <div
-          className="grid gap-2 px-5 py-2 text-[10px] font-semibold uppercase tracking-[0.04em] text-primary/40 border-b border-border-custom"
-          style={{ gridTemplateColumns: "1fr 110px 110px 100px 80px" }}
-        >
-          <div>Propriété</div>
-          <div className="text-right">Attendu</div>
-          <div className="text-right">Collecté</div>
-          <div className="text-right">Charges</div>
-          <div className="text-right">Collecte</div>
+      <div style={{ overflowX: "auto" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 110px 110px 100px 80px", gap: 8, padding: "8px 18px", borderBottom: "1px solid var(--paper-line)" }}>
+          {["Propriété", "Attendu", "Collecté", "Charges", "Collecte"].map((h, i) => (
+            <div key={h} style={{ fontFamily: "var(--font-mono)", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--ink-soft)", textAlign: i > 0 ? "right" : "left" }}>{h}</div>
+          ))}
         </div>
 
         {items.map((item) => {
-          const { revenue, charges, occupancy, profitability } = item;
+          const { revenue, charges, occupancy } = item;
           const mb = marginBadge(revenue.collectionRate);
           const isSelected = selectedId === item.propertyId;
-
           return (
             <div
               key={item.propertyId}
               onClick={() => onSelect(item.propertyId)}
-              className={[
-                "grid gap-2 px-5 py-3 border-b border-border-custom last:border-0 cursor-pointer transition-colors",
-                isSelected ? "bg-primary/4" : "hover:bg-primary/2",
-              ].join(" ")}
-              style={{ gridTemplateColumns: "1fr 110px 110px 100px 80px" }}
+              style={{
+                display: "grid", gridTemplateColumns: "1fr 110px 110px 100px 80px", gap: 8,
+                padding: "12px 18px", borderBottom: "1px solid var(--paper-line)",
+                cursor: "pointer", background: isSelected ? "rgba(193,98,45,0.04)" : undefined,
+                transition: "background 0.15s",
+              }}
+              onMouseEnter={(e) => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = "rgba(28,43,39,0.02)"; }}
+              onMouseLeave={(e) => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = ""; }}
             >
               <div>
-                <p className="text-[13px] font-medium text-primary">{item.propertyName}</p>
-                <p className="text-[11px] text-primary/40">
-                  {occupancy.occupiedUnits} / {occupancy.totalUnits} local{occupancy.totalUnits > 1 ? "aux" : ""}
-                  {" · "}{pct(occupancy.occupancyRate)} occupé
+                <p style={{ fontSize: 13, fontWeight: 500, color: "var(--ink)" }}>{item.propertyName}</p>
+                <p style={{ fontSize: 11, color: "var(--ink-soft)", marginTop: 2 }}>
+                  {occupancy.occupiedUnits}/{occupancy.totalUnits} local{occupancy.totalUnits > 1 ? "aux" : ""} · {pct(occupancy.occupancyRate)} occupé
                 </p>
               </div>
-              <div className="text-right text-[13px] text-primary self-center">
-                {fmt(revenue.totalRentExpected, false)}
-              </div>
-              <div className="text-right text-[13px] font-medium self-center" style={{ color: "#0F6E56" }}>
-                {fmt(revenue.totalRentCollected, false)}
-              </div>
-              <div
-                className="text-right text-[13px] self-center"
-                style={{ color: charges.totalCharges > 0 ? "#A32D2D" : "var(--color-text-secondary)" }}
-              >
+              <div style={{ textAlign: "right", fontSize: 13, color: "var(--ink)", alignSelf: "center" }}>{fmt(revenue.totalRentExpected, false)}</div>
+              <div style={{ textAlign: "right", fontSize: 13, fontWeight: 600, color: "#0F6E56", alignSelf: "center" }}>{fmt(revenue.totalRentCollected, false)}</div>
+              <div style={{ textAlign: "right", fontSize: 13, color: charges.totalCharges > 0 ? "#A32D2D" : "var(--ink-soft)", alignSelf: "center" }}>
                 {charges.totalCharges > 0 ? fmt(charges.totalCharges, false) : "0"}
               </div>
-              <div className="text-right self-center">
-                <span
-                  className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-medium"
-                  style={{ background: mb.bg, color: mb.color }}
-                >
+              <div style={{ textAlign: "right", alignSelf: "center" }}>
+                <span style={{ display: "inline-flex", padding: "2px 7px", borderRadius: 10, fontSize: 10, fontWeight: 600, background: mb.bg, color: mb.color }}>
                   {pct(revenue.collectionRate)}
                 </span>
               </div>
@@ -252,20 +342,13 @@ function DetailTable({ items, onSelect, selectedId }: {
           const avgCollection = totalExpected > 0 ? (totalCollected / totalExpected) * 100 : 0;
           const mb = marginBadge(avgCollection);
           return (
-            <div
-              className="grid gap-2 px-5 py-3 bg-primary/3 border-t-2 border-border-custom"
-              style={{ gridTemplateColumns: "1fr 110px 110px 100px 80px" }}
-            >
-              <div className="text-[12px] font-semibold text-primary">Total</div>
-              <div className="text-right text-[12px] font-semibold text-primary">{fmt(totalExpected, false)}</div>
-              <div className="text-right text-[12px] font-semibold" style={{ color: "#0F6E56" }}>{fmt(totalCollected, false)}</div>
-              <div className="text-right text-[12px] font-semibold" style={{ color: totalCharges > 0 ? "#A32D2D" : "var(--color-text-secondary)" }}>
-                {totalCharges > 0 ? fmt(totalCharges, false) : "0"}
-              </div>
-              <div className="text-right">
-                <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-medium" style={{ background: mb.bg, color: mb.color }}>
-                  {pct(avgCollection)}
-                </span>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 110px 110px 100px 80px", gap: 8, padding: "12px 18px", background: "rgba(28,43,39,0.03)", borderTop: "2px solid var(--paper-line)" }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--ink)" }}>Total</div>
+              <div style={{ textAlign: "right", fontSize: 12, fontWeight: 700, color: "var(--ink)" }}>{fmt(totalExpected, false)}</div>
+              <div style={{ textAlign: "right", fontSize: 12, fontWeight: 700, color: "#0F6E56" }}>{fmt(totalCollected, false)}</div>
+              <div style={{ textAlign: "right", fontSize: 12, fontWeight: 700, color: totalCharges > 0 ? "#A32D2D" : "var(--ink-soft)" }}>{totalCharges > 0 ? fmt(totalCharges, false) : "0"}</div>
+              <div style={{ textAlign: "right" }}>
+                <span style={{ display: "inline-flex", padding: "2px 7px", borderRadius: 10, fontSize: 10, fontWeight: 600, background: mb.bg, color: mb.color }}>{pct(avgCollection)}</span>
               </div>
             </div>
           );
@@ -279,124 +362,156 @@ function DetailTable({ items, onSelect, selectedId }: {
 
 export function ProfitabilityClient() {
   const currentYear = new Date().getFullYear();
+  const currentMonth = new Date().getMonth() + 1;
+  const currentSemester = currentMonth <= 6 ? 1 : 2;
+
   const [year, setYear] = useState(currentYear);
+  const [periodMode, setPeriodMode] = useState<PeriodMode>("year");
+  const [month, setMonth] = useState(currentMonth);
+  const [semester, setSemester] = useState<1 | 2>(currentSemester);
+
   const [items, setItems] = useState<ProfitabilityItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  // Construit les params selon le mode actif
+  const filterParams: ProfitabilityFilterParams = {
+    year,
+    ...(periodMode === "month" ? { month } : {}),
+    ...(periodMode === "semester" ? { semester } : {}),
+  };
+
+  // Label de période — depuis l'API si disponible, sinon reconstruit
+  const periodLabel = items[0]?.period?.label
+    ?? (periodMode === "month" ? `${String(month).padStart(2, "0")}/${year}` : periodMode === "semester" ? `S${semester} ${year}` : String(year));
 
   useEffect(() => {
     setLoading(true);
     setError(null);
     setSelectedId(null);
     profitabilityService
-      .getAll({ year })
+      .getAll(filterParams)
       .then((res) => setItems(res.data ?? []))
       .catch(() => setError("Impossible de charger les données."))
       .finally(() => setLoading(false));
-  }, [year]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [year, periodMode, month, semester]);
 
   const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
   const selectedItem = items.find((i) => i.propertyId === selectedId) ?? null;
 
-  // KPIs agrégés
   const totalExpected = items.reduce((s, i) => s + i.revenue.totalRentExpected, 0);
   const totalCollected = items.reduce((s, i) => s + i.revenue.totalRentCollected, 0);
   const totalCharges = items.reduce((s, i) => s + i.charges.totalCharges, 0);
   const netIncome = items.reduce((s, i) => s + i.profitability.netIncome, 0);
   const collectRate = totalExpected > 0 ? (totalCollected / totalExpected) * 100 : 0;
-  const margin = totalCollected > 0 ? ((netIncome / totalCollected) * 100) : 0;
+  const margin = totalCollected > 0 ? (netIncome / totalCollected) * 100 : 0;
 
   return (
-    <div className="min-h-full bg-bg">
-      {/* Topbar */}
-      <div className="bg-surface border-b border-border-custom px-4 py-4 lg:px-6 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-primary/8 flex items-center justify-center shrink-0">
-            <TrendingUp size={17} className="text-primary" />
+    <div style={{ minHeight: "100%", background: "var(--paper)" }}>
+      {/* ── Topbar ── */}
+      <div className="ep-topbar" style={{ paddingBottom: 20 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ width: 36, height: 36, borderRadius: "var(--r-md)", background: "rgba(28,43,39,0.06)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <TrendingUp size={17} style={{ color: "var(--ink)" }} />
           </div>
-          <h1 className="text-[17px] font-medium text-primary">Rentabilité par propriété</h1>
+          <div>
+            <p className="ep-eyebrow" style={{ marginBottom: 1 }}>Suivi</p>
+            <h1 style={{ fontFamily: "var(--font-display)", fontSize: 22, fontWeight: 600, color: "var(--ink)", lineHeight: 1.2 }}>
+              Rentabilité — {periodLabel}
+            </h1>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
+
+        <div className="ep-topbar-actions">
+          {/* Année */}
           <select
             value={year}
             onChange={(e) => setYear(Number(e.target.value))}
-            className="h-9 px-3 rounded-lg border border-border-custom bg-surface text-[13px] text-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+            className="ep-chip"
+            style={{ height: 32, paddingLeft: 12, paddingRight: 12, cursor: "pointer" }}
           >
-            {years.map((y) => (
-              <option key={y} value={y}>Année {y}</option>
-            ))}
+            {years.map((y) => <option key={y} value={y}>{y}</option>)}
           </select>
 
+          {/* Mode période */}
+          <div style={{ display: "flex", gap: 4 }}>
+            <PeriodChip active={periodMode === "year"} onClick={() => setPeriodMode("year")}>Année complète</PeriodChip>
+            <PeriodChip active={periodMode === "semester"} onClick={() => setPeriodMode("semester")}>Semestre</PeriodChip>
+            <PeriodChip active={periodMode === "month"} onClick={() => setPeriodMode("month")}>Mois</PeriodChip>
+          </div>
+
+          {/* Sous-sélecteur selon mode */}
+          {periodMode === "semester" && (
+            <div style={{ display: "flex", gap: 4 }}>
+              {([1, 2] as const).map((s) => (
+                <PeriodChip key={s} active={semester === s} onClick={() => setSemester(s)}>S{s}</PeriodChip>
+              ))}
+            </div>
+          )}
+          {periodMode === "month" && (
+            <select
+              value={month}
+              onChange={(e) => setMonth(Number(e.target.value))}
+              className="ep-chip"
+              style={{ height: 32, paddingLeft: 12, paddingRight: 12, cursor: "pointer" }}
+            >
+              {MONTH_NAMES.map((name, i) => (
+                <option key={i + 1} value={i + 1}>{name}</option>
+              ))}
+            </select>
+          )}
         </div>
       </div>
 
-      {/* Content */}
+      {/* ── Content ── */}
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="animate-spin text-primary/30" size={26} />
+        <div style={{ display: "flex", justifyContent: "center", padding: "80px 0" }}>
+          <Loader2 size={26} className="animate-spin" style={{ color: "var(--ink-soft)", opacity: 0.4 }} />
         </div>
       ) : error ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-3">
-          <AlertTriangle size={26} className="text-danger/50" />
-          <p className="text-[13px] text-primary/50">{error}</p>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "80px 0", gap: 8 }}>
+          <AlertTriangle size={26} style={{ color: "var(--rouge)", opacity: 0.5 }} />
+          <p style={{ fontSize: 13, color: "var(--ink-soft)" }}>{error}</p>
         </div>
       ) : (
-        <div className="px-4 py-5 lg:px-6 space-y-4">
+        <div style={{ padding: "0 32px 40px", display: "flex", flexDirection: "column", gap: 16 }}>
+
           {/* KPIs */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <KpiCard
-              label="Revenus attendus"
-              value={fmt(totalExpected) + " FCFA"}
-              sub={`Année ${year}`}
-            />
-            <KpiCard
-              label="Revenus collectés"
-              value={fmt(totalCollected) + " FCFA"}
-              sub={`↑ ${pct(collectRate)} taux collecte`}
-              valueColor="#0F6E56"
-            />
-            <KpiCard
-              label="Charges totales"
-              value={fmt(totalCharges) + " FCFA"}
-              sub="Maintenance + ajustements"
-              valueColor={totalCharges > 0 ? "#A32D2D" : undefined}
-            />
-            <KpiCard
-              label="Bénéfice net"
-              value={fmt(netIncome) + " FCFA"}
-              sub={`Marge : ${pct(margin)}`}
-              valueColor="#0F6E56"
-            />
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+            <KpiCard label="Revenus attendus" value={fmt(totalExpected) + " FCFA"} sub={periodLabel} />
+            <KpiCard label="Revenus collectés" value={fmt(totalCollected) + " FCFA"} sub={`↑ ${pct(collectRate)} taux collecte`} valueColor="#0F6E56" />
+            <KpiCard label="Charges totales" value={fmt(totalCharges) + " FCFA"} sub="Maintenance + ajustements" valueColor={totalCharges > 0 ? "#A32D2D" : undefined} />
+            <KpiCard label="Bénéfice net" value={fmt(netIncome) + " FCFA"} sub={`Marge : ${pct(margin)}`} valueColor="#0F6E56" />
           </div>
 
           {/* Charts */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {/* Comparatif */}
-            <div className="bg-surface border border-border-custom rounded-xl p-4">
-              <div className="mb-3">
-                <p className="text-[13px] font-medium text-primary">Comparatif par propriété</p>
-                <p className="text-[11px] text-primary/40 mt-0.5">Collecté vs attendu · {year}</p>
-              </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+            <div style={{ background: "var(--paper-raised)", border: "1px solid var(--paper-line)", borderRadius: "var(--r-md)", boxShadow: "var(--shadow-card)", padding: 18 }}>
+              <p style={{ fontSize: 13, fontWeight: 600, color: "var(--ink)", marginBottom: 3 }}>Comparatif par propriété</p>
+              <p style={{ fontSize: 11, color: "var(--ink-soft)", marginBottom: 14 }}>Collecté vs attendu · {periodLabel}</p>
               <PropertyBarChart items={items} />
             </div>
-
-            {/* Mensuel */}
-            <div className="bg-surface border border-border-custom rounded-xl p-4">
-              <div className="mb-3">
-                <p className="text-[13px] font-medium text-primary">Revenus mensuels</p>
-                <p className="text-[11px] text-primary/40 mt-0.5">
-                  {selectedItem
-                    ? `${selectedItem.propertyName} · ${year}`
-                    : `Collecté par mois · ${year}`}
-                </p>
-              </div>
-              <MonthlyChart item={selectedItem} />
+            <div style={{ background: "var(--paper-raised)", border: "1px solid var(--paper-line)", borderRadius: "var(--r-md)", boxShadow: "var(--shadow-card)", padding: 18 }}>
+              <p style={{ fontSize: 13, fontWeight: 600, color: "var(--ink)", marginBottom: 3 }}>Revenus mensuels</p>
+              <p style={{ fontSize: 11, color: "var(--ink-soft)", marginBottom: 14 }}>
+                {selectedItem ? `${selectedItem.propertyName} · ${periodLabel}` : `Sélectionnez une propriété · ${periodLabel}`}
+              </p>
+              <MonthlyChart item={selectedItem} filterMonth={periodMode === "month" ? month : undefined} />
             </div>
           </div>
 
           {/* Tableau détaillé */}
           <DetailTable items={items} onSelect={setSelectedId} selectedId={selectedId} />
+
+          {/* Tableau mensuel + semestriel — visible dès qu'une propriété est sélectionnée */}
+          {selectedItem && (
+            <MonthlyBreakdownTable
+              item={selectedItem}
+              semesterFilter={periodMode === "semester" ? semester : undefined}
+            />
+          )}
         </div>
       )}
     </div>

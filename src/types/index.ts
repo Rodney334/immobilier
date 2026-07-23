@@ -22,3 +22,5 @@ export * from './deposit';
 export * from './guarantor';
 export * from './profitability';
 export * from './contract-template';
+export * from './owner';
+export * from './payment-history';

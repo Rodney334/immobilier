@@ -166,6 +166,19 @@ export type AnnualReportParams = {
   year?: number;
 };
 
+export type SemesterReportParams = {
+  year?: number;
+  semester: 1 | 2;
+};
+
+// ─── Rapport semestriel ───────────────────────────────────────────────────────
+// Même structure qu'AnnualPerformanceReport + semester + period.label
+
+export type SemesterPerformanceReport = AnnualPerformanceReport & {
+  semester: 1 | 2;
+  period?: { label: string; semester: number; monthsCount: number };
+};
+
 export type OutstandingBalancesParams = {
   asOfDate?: string;
 };

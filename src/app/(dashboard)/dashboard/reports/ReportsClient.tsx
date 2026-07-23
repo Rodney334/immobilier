@@ -11,136 +11,157 @@ import {
   RefreshCw,
   Users,
   AlertTriangle,
+  FileText,
 } from "lucide-react";
 import { reportService } from "@/lib/services/report.service";
 import type {
   AnnualPerformanceReport,
+  SemesterPerformanceReport,
   OutstandingBalancesReport,
   TenantPerformanceReport,
 } from "@/types";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const fmt = new Intl.NumberFormat("fr-FR");
+const fmtNum = new Intl.NumberFormat("fr-FR");
 
-const MONTH_LABELS = [
-  "Jan",
-  "Fév",
-  "Mar",
-  "Avr",
-  "Mai",
-  "Juin",
-  "Juil",
-  "Août",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Déc",
-];
+const MONTH_LABELS = ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Août", "Sep", "Oct", "Nov", "Déc"];
 
 function formatAmount(n: number) {
-  return `${fmt.format(n)} XOF`;
+  return `${fmtNum.format(n)} FCFA`;
 }
 
 function pct(n: number) {
-  // API renvoie déjà en pourcentage (ex: 29.63), pas en décimal (0.2963)
   return `${n.toFixed(1)} %`;
 }
 
+type PeriodMode = "year" | "semester";
+
 // ─── KPI card ─────────────────────────────────────────────────────────────────
 
-function KpiCard({
-  title,
-  value,
-  sub,
-  icon: Icon,
-  color = "primary",
-}: {
-  title: string;
-  value: string;
-  sub?: string;
-  icon: React.ElementType;
-  color?: "primary" | "success" | "danger" | "secondary";
+function KpiCard({ label, value, sub, valueColor }: {
+  label: string; value: string; sub?: string; valueColor?: string;
 }) {
-  const colorMap = {
-    primary: "bg-primary/8 text-primary/60",
-    success: "bg-success/10 text-success",
-    danger: "bg-danger/10 text-danger",
-    secondary: "bg-secondary/10 text-secondary",
-  };
   return (
-    <div className="bg-surface border border-border-custom rounded-xl p-5">
-      <div className="mb-3">
-        <div
-          className={`w-9 h-9 rounded-lg flex items-center justify-center ${colorMap[color]}`}
-        >
-          <Icon size={16} aria-hidden="true" />
-        </div>
-      </div>
-      <p className="text-[11px] font-medium uppercase tracking-[0.06em] text-primary/40 mb-1">
-        {title}
+    <div style={{
+      background: "var(--paper-raised)",
+      border: "1px solid var(--paper-line)",
+      borderRadius: "var(--r-md)",
+      padding: "14px 18px",
+      boxShadow: "var(--shadow-card)",
+    }}>
+      <p style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--ink-soft)", marginBottom: 6 }}>
+        {label}
       </p>
-      <p className="text-[22px] font-bold text-primary tabular-nums leading-tight">
+      <p style={{ fontFamily: "var(--font-display)", fontSize: 22, fontWeight: 600, letterSpacing: "-0.01em", color: valueColor ?? "var(--ink)", lineHeight: 1.1 }}>
         {value}
       </p>
-      {sub && <p className="text-[12px] text-primary/40 mt-0.5">{sub}</p>}
+      {sub && <p style={{ fontSize: 11, marginTop: 4, color: "var(--ink-soft)" }}>{sub}</p>}
     </div>
+  );
+}
+
+// ─── Period chip ──────────────────────────────────────────────────────────────
+
+function PeriodChip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button onClick={onClick} className={active ? "ep-chip active" : "ep-chip"}>
+      {children}
+    </button>
   );
 }
 
 // ─── Bar chart ────────────────────────────────────────────────────────────────
 
-function MonthlyBarChart({ report }: { report: AnnualPerformanceReport }) {
-  const currentMonth = new Date().getMonth(); // 0-indexed
-  const maxRevenue = Math.max(...report.months.map((b) => b.paidAmount), 1);
+function PerformanceBarChart({
+  report,
+  periodMode,
+  semester,
+  periodLabel,
+}: {
+  report: AnnualPerformanceReport | SemesterPerformanceReport;
+  periodMode: PeriodMode;
+  semester: 1 | 2;
+  periodLabel: string;
+}) {
+  const currentMonth = new Date().getMonth() + 1; // 1-indexed
+
+  // En mode semestre, on ne montre que les 6 mois du semestre
+  const semesterMonths = semester === 1 ? [1, 2, 3, 4, 5, 6] : [7, 8, 9, 10, 11, 12];
+  const months = periodMode === "semester"
+    ? report.months.filter((m) => semesterMonths.includes(m.month))
+    : report.months;
+
+  const maxRevenue = Math.max(...months.map((b) => b.paidAmount), 1);
 
   return (
-    <div className="bg-surface border border-border-custom rounded-xl p-5">
-      <div className="flex items-center justify-between mb-4">
+    <div style={{ background: "var(--paper-raised)", border: "1px solid var(--paper-line)", borderRadius: "var(--r-md)", padding: 18, boxShadow: "var(--shadow-card)" }}>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 16 }}>
         <div>
-          <h3 className="text-[14px] font-semibold text-primary">
-            Revenus encaissés — {report.year}
-          </h3>
-          <p className="text-[12px] text-primary/40 mt-0.5">
-            Total : {formatAmount(report.totals.paidAmount)} / attendus{" "}
-            {formatAmount(report.totals.expectedAmount)}
+          <p style={{ fontSize: 13, fontWeight: 600, color: "var(--ink)" }}>
+            Revenus encaissés — {periodLabel}
+          </p>
+          <p style={{ fontSize: 11, color: "var(--ink-soft)", marginTop: 2 }}>
+            Total : {formatAmount(report.totals.paidAmount)} · Attendus : {formatAmount(report.totals.expectedAmount)}
           </p>
         </div>
-        <BarChart3 size={16} className="text-primary/30" />
+        <BarChart3 size={15} style={{ color: "var(--ink-soft)", opacity: 0.4, marginTop: 2 }} />
       </div>
-      <div className="flex items-end gap-1.5 h-32">
-        {MONTH_LABELS.map((label, i) => {
-          const bar = report.months.find((b) => b.month === i + 1);
-          const revenue = bar?.paidAmount ?? 0;
-          const heightPct = (revenue / maxRevenue) * 100;
-          const isCurrent = i === currentMonth;
+
+      {/* Légende */}
+      <div style={{ display: "flex", gap: 16, marginBottom: 12 }}>
+        {[{ color: "#1D9E75", label: "Encaissé" }, { color: "var(--paper-line)", label: "Non encaissé" }].map(({ color, label }) => (
+          <div key={label} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <div style={{ width: 8, height: 8, borderRadius: 2, background: color }} />
+            <span style={{ fontSize: 11, color: "var(--ink-soft)" }}>{label}</span>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display: "flex", alignItems: "flex-end", gap: 3, height: 96 }}>
+        {months.map((bar) => {
+          const h = Math.max((bar.paidAmount / maxRevenue) * 80, bar.paidAmount > 0 ? 3 : 0);
+          const isCurrent = bar.month === currentMonth;
           return (
-            <div
-              key={label}
-              className="flex-1 flex flex-col items-center gap-1 group"
-            >
-              <div className="relative w-full flex items-end h-24">
-                <div
-                  className={`w-full rounded-t-sm transition-all ${
-                    isCurrent
-                      ? "bg-secondary"
-                      : "bg-secondary/30 group-hover:bg-secondary/50"
-                  }`}
-                  style={{ height: `${Math.max(heightPct, 2)}%` }}
-                  title={`${label} : ${formatAmount(revenue)}`}
-                />
+            <div key={bar.month} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+              <div style={{ width: "100%", height: 80, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}
+                title={`${MONTH_LABELS[bar.month - 1]} : ${formatAmount(bar.paidAmount)}`}>
+                <div style={{
+                  width: "100%",
+                  height: `${h}px`,
+                  background: isCurrent ? "#E36B45" : "#1D9E75",
+                  borderRadius: "3px 3px 0 0",
+                  transition: "height 0.5s",
+                  opacity: isCurrent ? 1 : 0.75,
+                }} />
               </div>
-              <span
-                className={`text-[10px] ${
-                  isCurrent ? "text-secondary font-semibold" : "text-primary/30"
-                }`}
-              >
-                {label}
+              <span style={{ fontSize: 9, color: isCurrent ? "#E36B45" : "var(--ink-soft)", fontWeight: isCurrent ? 600 : 400 }}>
+                {MONTH_LABELS[bar.month - 1]}
               </span>
             </div>
           );
         })}
       </div>
+
+      {/* Meilleurs / pires mois — mode annuel seulement */}
+      {periodMode === "year" && "bestMonths" in report && report.bestMonths && report.bestMonths.length > 0 && (
+        <div style={{ borderTop: "1px solid var(--paper-line)", paddingTop: 10, marginTop: 10, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+          <div>
+            <p style={{ fontSize: 11, color: "var(--ink-soft)" }}>Meilleur mois</p>
+            <p style={{ fontSize: 13, fontWeight: 600, color: "#0F6E56", marginTop: 2 }}>
+              {MONTH_LABELS[(report.bestMonths[0]?.month ?? 1) - 1]} — {formatAmount(report.bestMonths[0]?.paidAmount ?? 0)}
+            </p>
+          </div>
+          <div>
+            <p style={{ fontSize: 11, color: "var(--ink-soft)" }}>Mois difficile</p>
+            <p style={{ fontSize: 13, fontWeight: 600, color: "#A32D2D", marginTop: 2 }}>
+              {report.worstMonths && report.worstMonths.length > 0
+                ? `${MONTH_LABELS[(report.worstMonths[0]?.month ?? 1) - 1]} — ${formatAmount(report.worstMonths[0]?.paidAmount ?? 0)}`
+                : "—"}
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -149,66 +170,43 @@ function MonthlyBarChart({ report }: { report: AnnualPerformanceReport }) {
 
 function OutstandingTable({ report }: { report: OutstandingBalancesReport }) {
   return (
-    <div className="bg-surface border border-border-custom rounded-xl overflow-hidden">
-      <div className="flex items-center justify-between px-5 py-4 border-b border-border-custom">
+    <div style={{ background: "var(--paper-raised)", border: "1px solid var(--paper-line)", borderRadius: "var(--r-md)", boxShadow: "var(--shadow-card)", overflow: "hidden" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 18px", borderBottom: "1px solid var(--paper-line)" }}>
         <div>
-          <h3 className="text-[14px] font-semibold text-primary">
-            Soldes impayés
-          </h3>
-          <p className="text-[12px] text-primary/40 mt-0.5">
-            {report.totalOutstandingSchedules} échéance
-            {report.totalOutstandingSchedules > 1 ? "s" : ""} · Total :{" "}
-            {formatAmount(report.totalOutstandingAmount)}
+          <p style={{ fontSize: 13, fontWeight: 600, color: "var(--ink)" }}>Soldes impayés</p>
+          <p style={{ fontSize: 11, color: "var(--ink-soft)", marginTop: 2 }}>
+            {report.totalOutstandingSchedules} échéance{report.totalOutstandingSchedules > 1 ? "s" : ""} · Total : {formatAmount(report.totalOutstandingAmount)}
           </p>
         </div>
-        <AlertCircle size={16} className="text-danger" />
+        <AlertCircle size={15} style={{ color: "#A32D2D", opacity: 0.7 }} />
       </div>
       {report.tenants.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-10 text-primary/30">
-          <TrendingUp size={28} className="mb-2 text-success/60" />
-          <p className="text-[13px]">Aucun impayé — tout est à jour !</p>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 0", gap: 8 }}>
+          <TrendingUp size={26} style={{ color: "#0F6E56", opacity: 0.4 }} />
+          <p style={{ fontSize: 13, color: "var(--ink-soft)" }}>Aucun impayé — tout est à jour !</p>
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
             <thead>
-              <tr className="border-b border-border-custom bg-neutral">
-                {[
-                  "Locataire",
-                  "Bien / Local",
-                  "1re échéance",
-                  "Nbre éch.",
-                  "Montant dû",
-                ].map((h, i) => (
-                  <th
-                    key={i}
-                    className="px-4 py-2.5 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-primary/40"
-                  >
-                    {h}
-                  </th>
+              <tr style={{ borderBottom: "1px solid var(--paper-line)", background: "rgba(28,43,39,0.02)" }}>
+                {["Locataire", "Bien / Local", "1re échéance", "Éch.", "Montant dû"].map((h, i) => (
+                  <th key={h} style={{ padding: "8px 16px", textAlign: i < 2 ? "left" : i === 4 ? "right" : "center", fontFamily: "var(--font-mono)", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--ink-soft)", fontWeight: 500 }}>{h}</th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-border-custom">
+            <tbody>
               {report.tenants.map((t) => (
-                <tr key={t.tenantId} className="hover:bg-primary/2">
-                  <td className="px-4 py-3 text-[13px] font-medium text-primary">
-                    {t.tenantName}
+                <tr key={t.tenantId} style={{ borderBottom: "1px solid var(--paper-line)" }}
+                  onMouseEnter={(e) => (e.currentTarget as HTMLElement).style.background = "rgba(28,43,39,0.02)"}
+                  onMouseLeave={(e) => (e.currentTarget as HTMLElement).style.background = ""}>
+                  <td style={{ padding: "10px 16px", fontWeight: 500, color: "var(--ink)" }}>{t.tenantName}</td>
+                  <td style={{ padding: "10px 16px", color: "var(--ink-soft)" }}>{t.propertyName} · {t.unitNumber}</td>
+                  <td style={{ padding: "10px 16px", textAlign: "center", color: "var(--ink-soft)", fontSize: 12 }}>
+                    {new Date(t.oldestDueDate).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })}
                   </td>
-                  <td className="px-4 py-3 text-[13px] text-primary/60">
-                    {t.propertyName} · {t.unitNumber}
-                  </td>
-                  <td className="px-4 py-3 text-[12px] text-primary/50">
-                    {new Date(t.oldestDueDate).toLocaleDateString("fr-FR", {
-                      day: "2-digit",
-                      month: "short",
-                      year: "numeric",
-                    })}
-                  </td>
-                  <td className="px-4 py-3 text-[13px] text-danger font-medium tabular-nums">
-                    {t.schedulesCount}
-                  </td>
-                  <td className="px-4 py-3 text-[13px] font-bold text-danger tabular-nums whitespace-nowrap">
+                  <td style={{ padding: "10px 16px", textAlign: "center", color: "#A32D2D", fontWeight: 600 }}>{t.schedulesCount}</td>
+                  <td style={{ padding: "10px 16px", textAlign: "right", color: "#A32D2D", fontWeight: 700, fontFamily: "var(--font-mono)", whiteSpace: "nowrap" }}>
                     {formatAmount(t.outstandingAmount)}
                   </td>
                 </tr>
@@ -223,79 +221,48 @@ function OutstandingTable({ report }: { report: OutstandingBalancesReport }) {
 
 // ─── Tenant performance table ─────────────────────────────────────────────────
 
-const CLASSIFICATION_LABELS: Record<string, { label: string; color: string }> =
-  {
-    EXCELLENT: { label: "Excellent", color: "text-success" },
-    BON: { label: "Bon", color: "text-success" },
-    MOYEN: { label: "Moyen", color: "text-secondary" },
-    A_RISQUE: { label: "À risque", color: "text-danger" },
-  };
+const CLS_MAP: Record<string, { label: string; bg: string; color: string }> = {
+  EXCELLENT: { label: "Excellent", bg: "#E1F5EE", color: "#0F6E56" },
+  BON: { label: "Bon", bg: "#E1F5EE", color: "#0F6E56" },
+  MOYEN: { label: "Moyen", bg: "#FAEEDA", color: "#854F0B" },
+  A_RISQUE: { label: "À risque", bg: "#FCEBEB", color: "#A32D2D" },
+};
 
 function TenantPerformanceTable({ data }: { data: TenantPerformanceReport[] }) {
   return (
-    <div className="bg-surface border border-border-custom rounded-xl overflow-hidden">
-      <div className="flex items-center justify-between px-5 py-4 border-b border-border-custom">
-        <h3 className="text-[14px] font-semibold text-primary">
-          Performance des locataires
-        </h3>
-        <Users size={16} className="text-primary/30" />
+    <div style={{ background: "var(--paper-raised)", border: "1px solid var(--paper-line)", borderRadius: "var(--r-md)", boxShadow: "var(--shadow-card)", overflow: "hidden" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 18px", borderBottom: "1px solid var(--paper-line)" }}>
+        <p style={{ fontSize: 13, fontWeight: 600, color: "var(--ink)" }}>Performance des locataires</p>
+        <Users size={15} style={{ color: "var(--ink-soft)", opacity: 0.5 }} />
       </div>
       {data.length === 0 ? (
-        <p className="text-[13px] text-primary/40 text-center py-8">
-          Aucune donnée.
-        </p>
+        <p style={{ fontSize: 13, color: "var(--ink-soft)", textAlign: "center", padding: "32px 0" }}>Aucune donnée.</p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
             <thead>
-              <tr className="border-b border-border-custom bg-neutral">
-                {[
-                  "Locataire",
-                  "Bien / Local",
-                  "Payé",
-                  "Attendu",
-                  "Taux recouvrement",
-                  "Classification",
-                ].map((h, i) => (
-                  <th
-                    key={i}
-                    className="px-4 py-2.5 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-primary/40"
-                  >
-                    {h}
-                  </th>
+              <tr style={{ borderBottom: "1px solid var(--paper-line)", background: "rgba(28,43,39,0.02)" }}>
+                {["Locataire", "Bien / Local", "Payé", "Attendu", "Recouvrement", "Statut"].map((h, i) => (
+                  <th key={h} style={{ padding: "8px 16px", textAlign: i < 2 ? "left" : i === 5 ? "center" : "right", fontFamily: "var(--font-mono)", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--ink-soft)", fontWeight: 500 }}>{h}</th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-border-custom">
+            <tbody>
               {data.map((t) => {
-                const cls = CLASSIFICATION_LABELS[t.classification] ?? {
-                  label: t.classification,
-                  color: "text-primary/60",
-                };
+                const cls = CLS_MAP[t.classification] ?? { label: t.classification, bg: "rgba(28,43,39,0.06)", color: "var(--ink-soft)" };
                 return (
-                  <tr
-                    key={t.tenantId + t.leaseId}
-                    className="hover:bg-primary/2"
-                  >
-                    <td className="px-4 py-3 text-[13px] font-medium text-primary">
-                      {t.tenantName}
-                    </td>
-                    <td className="px-4 py-3 text-[13px] text-primary/60">
-                      {t.propertyName} · {t.unitNumber}
-                    </td>
-                    <td className="px-4 py-3 text-[13px] text-primary/70 tabular-nums whitespace-nowrap">
-                      {formatAmount(t.paidAmount)}
-                    </td>
-                    <td className="px-4 py-3 text-[13px] text-primary/60 tabular-nums whitespace-nowrap">
-                      {formatAmount(t.expectedAmount)}
-                    </td>
-                    <td className="px-4 py-3 text-[13px] font-semibold tabular-nums text-primary/70">
-                      {pct(t.recoveryRate)}
-                    </td>
-                    <td
-                      className={`px-4 py-3 text-[12px] font-semibold ${cls.color}`}
-                    >
-                      {cls.label}
+                  <tr key={t.tenantId + t.leaseId} style={{ borderBottom: "1px solid var(--paper-line)" }}
+                    onMouseEnter={(e) => (e.currentTarget as HTMLElement).style.background = "rgba(28,43,39,0.02)"}
+                    onMouseLeave={(e) => (e.currentTarget as HTMLElement).style.background = ""}>
+                    <td style={{ padding: "10px 16px", fontWeight: 500, color: "var(--ink)" }}>{t.tenantName}</td>
+                    <td style={{ padding: "10px 16px", color: "var(--ink-soft)" }}>{t.propertyName} · {t.unitNumber}</td>
+                    <td style={{ padding: "10px 16px", textAlign: "right", color: "#0F6E56", fontFamily: "var(--font-mono)", whiteSpace: "nowrap" }}>{formatAmount(t.paidAmount)}</td>
+                    <td style={{ padding: "10px 16px", textAlign: "right", color: "var(--ink-soft)", fontFamily: "var(--font-mono)", whiteSpace: "nowrap" }}>{formatAmount(t.expectedAmount)}</td>
+                    <td style={{ padding: "10px 16px", textAlign: "right", fontWeight: 600, color: "var(--ink)" }}>{pct(t.recoveryRate)}</td>
+                    <td style={{ padding: "10px 16px", textAlign: "center" }}>
+                      <span style={{ display: "inline-flex", padding: "2px 8px", borderRadius: 10, fontSize: 10, fontWeight: 600, background: cls.bg, color: cls.color }}>
+                        {cls.label}
+                      </span>
                     </td>
                   </tr>
                 );
@@ -312,44 +279,54 @@ function TenantPerformanceTable({ data }: { data: TenantPerformanceReport[] }) {
 
 export function ReportsClient() {
   const currentYear = new Date().getFullYear();
+  const currentMonth = new Date().getMonth() + 1;
+  const currentSemester: 1 | 2 = currentMonth <= 6 ? 1 : 2;
+
   const [year, setYear] = useState(currentYear);
-  const [annual, setAnnual] = useState<AnnualPerformanceReport | null>(null);
-  const [outstanding, setOutstanding] =
-    useState<OutstandingBalancesReport | null>(null);
+  const [periodMode, setPeriodMode] = useState<PeriodMode>("year");
+  const [semester, setSemester] = useState<1 | 2>(currentSemester);
+
+  const [annualReport, setAnnualReport] = useState<AnnualPerformanceReport | SemesterPerformanceReport | null>(null);
+  const [outstanding, setOutstanding] = useState<OutstandingBalancesReport | null>(null);
   const [tenantPerf, setTenantPerf] = useState<TenantPerformanceReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [downloading, setDownloading] = useState(false);
 
+  // Label de période depuis l'API ou reconstruit
+  const apiPeriodLabel = (annualReport as SemesterPerformanceReport)?.period?.label;
+  const periodLabel = apiPeriodLabel
+    ?? (periodMode === "semester" ? `S${semester} ${year}` : String(year));
+
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const [annualRes, outstandingRes, tenantRes] = await Promise.allSettled([
-        reportService.getAnnualPerformance({ year }),
+      const perfPromise = periodMode === "semester"
+        ? reportService.getSemesterPerformance({ year, semester })
+        : reportService.getAnnualPerformance({ year });
+
+      const [perfRes, outstandingRes, tenantRes] = await Promise.allSettled([
+        perfPromise,
         reportService.getOutstandingBalances(),
         reportService.getTenantPerformance({ period: "annual" }),
       ]);
-      if (annualRes.status === "fulfilled") setAnnual(annualRes.value.data);
-      if (outstandingRes.status === "fulfilled")
-        setOutstanding(outstandingRes.value.data);
-      if (tenantRes.status === "fulfilled")
-        setTenantPerf(tenantRes.value.data ?? []);
-      if (
-        annualRes.status === "rejected" &&
-        outstandingRes.status === "rejected" &&
-        tenantRes.status === "rejected"
-      ) {
+
+      if (perfRes.status === "fulfilled") setAnnualReport(perfRes.value.data);
+      else setAnnualReport(null);
+
+      if (outstandingRes.status === "fulfilled") setOutstanding(outstandingRes.value.data);
+      if (tenantRes.status === "fulfilled") setTenantPerf(tenantRes.value.data ?? []);
+
+      if (perfRes.status === "rejected" && outstandingRes.status === "rejected" && tenantRes.status === "rejected") {
         setError("Impossible de charger les rapports.");
       }
     } finally {
       setLoading(false);
     }
-  }, [year]);
+  }, [year, periodMode, semester]);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useEffect(() => { load(); }, [load]);
 
   async function handleDownloadPdf() {
     setDownloading(true);
@@ -358,148 +335,178 @@ export function ReportsClient() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `rapport-Estate Mangement-${year}.pdf`;
+      a.download = `rapport-${year}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
-    } catch {
-      // silencieux
-    } finally {
-      setDownloading(false);
-    }
+    } catch { /* silencieux */ }
+    finally { setDownloading(false); }
   }
 
-  const recoveryColor = !annual
-    ? "primary"
-    : annual.totals.recoveryRate >= 90
-      ? "success"
-      : annual.totals.recoveryRate >= 70
-        ? "secondary"
-        : "danger";
+  const recoveryColor = !annualReport ? "var(--ink)"
+    : annualReport.totals.recoveryRate >= 90 ? "#0F6E56"
+    : annualReport.totals.recoveryRate >= 70 ? "#854F0B"
+    : "#A32D2D";
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
-      {/* Toolbar */}
-      <div className="flex items-center justify-between px-6 py-4 bg-surface border-b border-border-custom shrink-0">
-        <div>
-          <h1 className="font-semibold text-[20px] text-primary">Rapports</h1>
-          <p className="text-[12px] text-primary/40 mt-0.5">
-            Analyse de performance — {year}
-          </p>
+    <div style={{ minHeight: "100%", background: "var(--paper)" }}>
+      {/* ── Topbar ── */}
+      <div className="ep-topbar" style={{ paddingBottom: 20 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ width: 36, height: 36, borderRadius: "var(--r-md)", background: "rgba(28,43,39,0.06)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <FileText size={17} style={{ color: "var(--ink)" }} />
+          </div>
+          <div>
+            <p className="ep-eyebrow" style={{ marginBottom: 1 }}>Analyse</p>
+            <h1 style={{ fontFamily: "var(--font-display)", fontSize: 22, fontWeight: 600, color: "var(--ink)", lineHeight: 1.2 }}>
+              Rapports — {periodLabel}
+            </h1>
+          </div>
         </div>
-        <div className="flex items-center gap-3">
+
+        <div className="ep-topbar-actions">
+          {/* Année */}
           <select
             value={year}
             onChange={(e) => setYear(Number(e.target.value))}
-            className="h-9 px-3 rounded-lg border border-border-custom bg-white text-[13px] text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-colors"
+            className="ep-chip"
+            style={{ height: 32, paddingLeft: 12, paddingRight: 12, cursor: "pointer" }}
           >
-            {[currentYear, currentYear - 1, currentYear - 2].map((y) => (
-              <option key={y} value={y}>
-                {y}
-              </option>
+            {[currentYear, currentYear - 1, currentYear - 2, currentYear - 3].map((y) => (
+              <option key={y} value={y}>{y}</option>
             ))}
           </select>
+
+          {/* Mode période */}
+          <div style={{ display: "flex", gap: 4 }}>
+            <PeriodChip active={periodMode === "year"} onClick={() => setPeriodMode("year")}>Année</PeriodChip>
+            <PeriodChip active={periodMode === "semester"} onClick={() => setPeriodMode("semester")}>Semestre</PeriodChip>
+          </div>
+
+          {/* Sous-sélecteur semestre */}
+          {periodMode === "semester" && (
+            <div style={{ display: "flex", gap: 4 }}>
+              {([1, 2] as const).map((s) => (
+                <PeriodChip key={s} active={semester === s} onClick={() => setSemester(s)}>S{s}</PeriodChip>
+              ))}
+            </div>
+          )}
+
+          {/* Refresh */}
           <button
             onClick={load}
             disabled={loading}
-            className="w-9 h-9 flex items-center justify-center rounded-lg border border-border-custom text-primary/50 hover:text-primary hover:bg-primary/4 disabled:opacity-50 transition-colors"
+            className="ep-btn ep-btn-ghost"
+            style={{ width: 34, height: 34, padding: 0, display: "flex", alignItems: "center", justifyContent: "center" }}
             aria-label="Actualiser"
           >
             <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
           </button>
+
+          {/* PDF */}
           <button
             onClick={handleDownloadPdf}
             disabled={downloading || loading}
-            className="flex items-center gap-2 h-9 px-4 bg-primary text-white rounded-lg text-[13px] font-medium hover:bg-[#263447] disabled:opacity-60 transition-colors"
+            className="ep-btn ep-btn-primary"
+            style={{ gap: 6 }}
           >
-            {downloading ? (
-              <Loader2 size={14} className="animate-spin" />
-            ) : (
-              <Download size={14} />
-            )}
+            {downloading ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
             Exporter PDF
           </button>
         </div>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
-        {error && (
-          <div className="flex items-center gap-2 px-4 py-3 rounded-lg bg-danger/8 border border-danger/20 text-[13px] text-danger">
-            <AlertTriangle size={14} /> {error}
-          </div>
-        )}
+      {/* ── Content ── */}
+      {error && (
+        <div style={{ margin: "0 32px 16px", display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: "var(--r-md)", background: "#FCEBEB", border: "1px solid rgba(163,45,45,0.15)", fontSize: 13, color: "#A32D2D" }}>
+          <AlertTriangle size={14} /> {error}
+        </div>
+      )}
 
-        {loading ? (
-          <div className="flex items-center justify-center h-48">
-            <Loader2 size={24} className="animate-spin text-primary/30" />
-          </div>
-        ) : (
-          <>
-            {annual && (
-              <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-                <KpiCard
-                  title="Revenus encaissés"
-                  value={formatAmount(annual.totals.paidAmount)}
-                  sub={`Attendus : ${formatAmount(annual.totals.expectedAmount)}`}
-                  icon={BarChart3}
-                  color="primary"
-                />
-                <KpiCard
-                  title="Taux de recouvrement"
-                  value={pct(annual.totals.recoveryRate)}
-                  sub={`Paiements à temps : ${pct(annual.totals.onTimeRate)}`}
-                  icon={TrendingUp}
-                  color={
-                    recoveryColor as
-                      | "primary"
-                      | "success"
-                      | "danger"
-                      | "secondary"
-                  }
-                />
-                <KpiCard
-                  title="Impayés cumulés"
-                  value={formatAmount(annual.totals.outstandingAmount)}
-                  sub={`${annual.totals.unpaidCount} échéance${annual.totals.unpaidCount > 1 ? "s" : ""} impayée${annual.totals.unpaidCount > 1 ? "s" : ""}`}
-                  icon={
-                    annual.totals.outstandingAmount > 0
-                      ? TrendingDown
-                      : TrendingUp
-                  }
-                  color={
-                    annual.totals.outstandingAmount > 0 ? "danger" : "success"
-                  }
-                />
-                <KpiCard
-                  title="Soldes impayés"
-                  value={
-                    outstanding
-                      ? formatAmount(outstanding.totalOutstandingAmount)
-                      : "—"
-                  }
-                  sub={
-                    outstanding
-                      ? `${outstanding.tenants.length} locataire${outstanding.tenants.length > 1 ? "s" : ""} concerné${outstanding.tenants.length > 1 ? "s" : ""}`
-                      : undefined
-                  }
-                  icon={AlertCircle}
-                  color={
-                    !outstanding || outstanding.totalOutstandingAmount === 0
-                      ? "success"
-                      : "danger"
-                  }
-                />
+      {loading ? (
+        <div style={{ display: "flex", justifyContent: "center", padding: "80px 0" }}>
+          <Loader2 size={26} className="animate-spin" style={{ color: "var(--ink-soft)", opacity: 0.4 }} />
+        </div>
+      ) : (
+        <div style={{ padding: "0 32px 40px", display: "flex", flexDirection: "column", gap: 16 }}>
+          {/* KPIs */}
+          {annualReport && (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+              <KpiCard
+                label="Revenus encaissés"
+                value={formatAmount(annualReport.totals.paidAmount)}
+                sub={`Attendus : ${formatAmount(annualReport.totals.expectedAmount)}`}
+              />
+              <KpiCard
+                label="Taux de recouvrement"
+                value={pct(annualReport.totals.recoveryRate)}
+                sub={`À temps : ${pct(annualReport.totals.onTimeRate)}`}
+                valueColor={recoveryColor}
+              />
+              <KpiCard
+                label="Impayés cumulés"
+                value={formatAmount(annualReport.totals.outstandingAmount)}
+                sub={`${annualReport.totals.unpaidCount} échéance${annualReport.totals.unpaidCount > 1 ? "s" : ""} impayée${annualReport.totals.unpaidCount > 1 ? "s" : ""}`}
+                valueColor={annualReport.totals.outstandingAmount > 0 ? "#A32D2D" : "#0F6E56"}
+              />
+              <KpiCard
+                label="Soldes impayés"
+                value={outstanding ? formatAmount(outstanding.totalOutstandingAmount) : "—"}
+                sub={outstanding ? `${outstanding.tenants.length} locataire${outstanding.tenants.length > 1 ? "s" : ""} concerné${outstanding.tenants.length > 1 ? "s" : ""}` : undefined}
+                valueColor={!outstanding || outstanding.totalOutstandingAmount === 0 ? "#0F6E56" : "#A32D2D"}
+              />
+            </div>
+          )}
+
+          {/* Bar chart */}
+          {annualReport && (
+            <PerformanceBarChart
+              report={annualReport}
+              periodMode={periodMode}
+              semester={semester}
+              periodLabel={periodLabel}
+            />
+          )}
+
+          {/* Comparaison N-1 — mode annuel seulement */}
+          {periodMode === "year" && annualReport && (() => {
+            const cmp = annualReport.comparisonWithPreviousYear;
+            if (!cmp) return null;
+            const items = [
+              { label: "Revenus encaissés", delta: cmp.paidAmountDelta, fmt: (v: number) => formatAmount(Math.abs(v)) },
+              { label: "Revenus attendus", delta: cmp.expectedAmountDelta, fmt: (v: number) => formatAmount(Math.abs(v)) },
+              { label: "Taux à temps", delta: cmp.onTimeRateDelta, fmt: (v: number) => pct(Math.abs(v)) },
+              { label: "Taux recouvrement", delta: cmp.overdueCountDelta, fmt: (v: number) => String(Math.abs(v)) + " dossier" + (Math.abs(v) > 1 ? "s" : "") },
+            ];
+            return (
+              <div style={{ background: "var(--paper-raised)", border: "1px solid var(--paper-line)", borderRadius: "var(--r-md)", boxShadow: "var(--shadow-card)", padding: "14px 18px" }}>
+                <p style={{ fontSize: 13, fontWeight: 600, color: "var(--ink)", marginBottom: 12 }}>Évolution vs {year - 1}</p>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+                  {items.map(({ label, delta, fmt: fmtDelta }) => {
+                    const isPos = delta >= 0;
+                    const isZero = delta === 0;
+                    return (
+                      <div key={label}>
+                        <p style={{ fontSize: 11, color: "var(--ink-soft)", marginBottom: 4 }}>{label}</p>
+                        <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                          {!isZero && (isPos
+                            ? <TrendingUp size={13} style={{ color: "#0F6E56" }} />
+                            : <TrendingDown size={13} style={{ color: "#A32D2D" }} />)}
+                          <span style={{ fontSize: 14, fontWeight: 600, color: isZero ? "var(--ink-soft)" : isPos ? "#0F6E56" : "#A32D2D" }}>
+                            {isZero ? "–" : (isPos ? "+" : "-") + fmtDelta(delta)}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            )}
+            );
+          })()}
 
-            {annual && <MonthlyBarChart report={annual} />}
-            {outstanding && <OutstandingTable report={outstanding} />}
-            {tenantPerf.length > 0 && (
-              <TenantPerformanceTable data={tenantPerf} />
-            )}
-          </>
-        )}
-      </div>
+          {outstanding && <OutstandingTable report={outstanding} />}
+          {tenantPerf.length > 0 && <TenantPerformanceTable data={tenantPerf} />}
+        </div>
+      )}
     </div>
   );
 }

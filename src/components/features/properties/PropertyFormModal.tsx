@@ -7,7 +7,8 @@ import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
 import { propertyService } from "@/lib/services/property.service";
 import { neighborhoodService } from "@/lib/services/neighborhood.service";
-import type { Property, Neighborhood, CreatePropertyPayload } from "@/types";
+import { ownerService } from "@/lib/services/owner.service";
+import type { Property, Neighborhood, Owner, CreatePropertyPayload } from "@/types";
 
 type FormState = { error: string | null; success: boolean };
 
@@ -54,15 +55,20 @@ export function PropertyFormModal({
 
   const [neighborhoods, setNeighborhoods] = useState<Neighborhood[]>([]);
   const [loadingNbh, setLoadingNbh] = useState(false);
+  const [owners, setOwners] = useState<Owner[]>([]);
 
   useEffect(() => {
     if (!isOpen) return;
     setLoadingNbh(true);
     neighborhoodService
-      .getAll({ limit: 200 })
+      .getAll({ limit: 100 })
       .then((res) => setNeighborhoods(res.data))
       .catch(() => {})
       .finally(() => setLoadingNbh(false));
+    ownerService
+      .getAll({ limit: 100 })
+      .then((res) => setOwners(res.data))
+      .catch(() => {});
   }, [isOpen]);
 
   const [state, formAction] = useActionState(
@@ -83,10 +89,13 @@ export function PropertyFormModal({
         };
       }
 
+      const ownerId = (formData.get("ownerId") as string).trim();
+
       const payload: CreatePropertyPayload = {
         name,
         type,
         neighborhoodId,
+        ownerId: ownerId || undefined,
         address: address || undefined,
         commune: commune || undefined,
         landmark: landmark || undefined,
@@ -176,6 +185,24 @@ export function PropertyFormModal({
               ))}
             </select>
           </div>
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="block text-[12px] font-medium uppercase tracking-[0.06em] text-primary/60">
+            Propriétaire (optionnel)
+          </label>
+          <select
+            name="ownerId"
+            defaultValue={property?.ownerId ?? ""}
+            className="w-full h-11 px-3 rounded-lg border border-border-custom bg-white text-[14px] text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors duration-150"
+          >
+            <option value="">— Sans propriétaire —</option>
+            {owners.map((o) => (
+              <option key={o.id} value={o.id}>
+                {o.fullName}
+              </option>
+            ))}
+          </select>
         </div>
 
         <Input

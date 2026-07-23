@@ -1,5 +1,6 @@
 import type { Neighborhood } from "./neighborhood";
 import { Unit } from "./unit";
+import type { Owner } from "./owner";
 
 export type PropertyType =
   | "Apartment"
@@ -16,6 +17,13 @@ export type Property = {
   address?: string;
   neighborhoodId: string;
   neighborhood?: Neighborhood;
+  ownerId?: string;
+  owner?: Owner;
+  occupancy?: {
+    totalUnits: number;
+    occupiedUnits: number;
+    occupancyRate: number;
+  };
   type: string;
   totalUnits?: number;
   usageDestination?: string;
@@ -35,6 +43,7 @@ export type CreatePropertyPayload = {
   name: string;
   neighborhoodId: string;
   type: string;
+  ownerId?: string;
   code?: string;
   address?: string;
   usageDestination?: string;

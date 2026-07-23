@@ -138,8 +138,7 @@ function GeneratePdfAction({ leaseId }: { leaseId: string }) {
       const res = await contractTemplateService.list();
       const list = Array.isArray(res.data) ? res.data : [];
       setTemplates(list);
-      const def = list.find(t => t.isDefault);
-      if (def) setSelectedId(def.id);
+      // Ne pas pré-sélectionner : selectedId reste "" → templateId omis → backend choisit automatiquement
     } catch {
       // silencieux
     } finally {
@@ -173,7 +172,7 @@ function GeneratePdfAction({ leaseId }: { leaseId: string }) {
                    transition-colors text-primary hover:bg-primary/4 border border-border-custom hover:border-primary/30`}
       >
         <FileCode size={14} />
-        <span style={{ flex: 1 }}>Générer PDF avec template</span>
+        <span style={{ flex: 1 }}>Générer le contrat PDF</span>
         <ChevronDown size={13} style={{
           transition: "transform 0.2s",
           transform: open ? "rotate(180deg)" : "rotate(0deg)",
@@ -208,7 +207,7 @@ function GeneratePdfAction({ leaseId }: { leaseId: string }) {
                 outline: "none",
               }}
             >
-              <option value="">— Template par défaut —</option>
+              <option value="">— Automatique (selon le type de bail) —</option>
               {templates.map(t => (
                 <option key={t.id} value={t.id}>
                   {t.name}{t.isDefault ? " ★" : ""}

@@ -3,12 +3,14 @@ import type {
   ApiResponse,
   MonthlyPerformanceReport,
   AnnualPerformanceReport,
+  SemesterPerformanceReport,
   OutstandingBalancesReport,
   TenantPerformanceReport,
   LatePaymentPrediction,
   ReportDateRangeParams,
   MonthlyReportParams,
   AnnualReportParams,
+  SemesterReportParams,
   OutstandingBalancesParams,
   TenantPerformanceParams,
 } from '@/types';
@@ -53,6 +55,18 @@ export const reportService = {
   ): Promise<ApiResponse<AnnualPerformanceReport>> {
     return api.get<ApiResponse<AnnualPerformanceReport>>(
       `${BASE}/annual-performance${buildQS(params)}`,
+    );
+  },
+
+  /**
+   * Rapport semestriel de performance (nouveau endpoint).
+   * Paramètres requis : year et semester (1 ou 2).
+   */
+  getSemesterPerformance(
+    params: SemesterReportParams,
+  ): Promise<ApiResponse<SemesterPerformanceReport>> {
+    return api.get<ApiResponse<SemesterPerformanceReport>>(
+      `${BASE}/semester-performance${buildQS(params as Record<string, unknown>)}`,
     );
   },
 

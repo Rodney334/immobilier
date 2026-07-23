@@ -7,6 +7,23 @@ export type ProfitabilityMonthlyBreakdown = {
   delta: number;
 };
 
+// ─── Période (renvoyée par l'API quand month/semester est fourni) ─────────────
+
+export type ProfitabilityPeriod = {
+  label: string;           // ex: "S1 2026", "07/2026", "2026"
+  month: number | null;
+  semester: number | null;
+  monthsCount: number;
+};
+
+// ─── Params de filtre ─────────────────────────────────────────────────────────
+
+export type ProfitabilityFilterParams = {
+  year?: number;
+  month?: number;    // 1-12 — prime sur semester si les deux sont fournis
+  semester?: number; // 1 ou 2
+};
+
 // ─── Item (liste globale + détail par propriété) ──────────────────────────────
 
 export type ProfitabilityItem = {
@@ -14,6 +31,7 @@ export type ProfitabilityItem = {
   propertyName: string;
   propertyCode: string;
   year: number;
+  period?: ProfitabilityPeriod;
   generatedAt: string;
   occupancy: {
     totalUnits: number;
