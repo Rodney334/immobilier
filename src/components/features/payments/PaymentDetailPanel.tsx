@@ -17,8 +17,7 @@ import {
 import { paymentService } from "@/lib/services/payment.service";
 import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
-import type { Payment, PaymentStatus } from "@/types";
-import { getPaymentMethodLabel } from "@/lib/constants/payment";
+import { METHOD_LABELS, type Payment, type PaymentStatus } from "@/types";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -239,7 +238,12 @@ export function PaymentDetailPanel({
           <DetailRow
             icon={CreditCard}
             label="Méthode de paiement"
-            value={getPaymentMethodLabel(payment.paymentMethod)}
+            value={
+              payment.paymentMethod
+                ? (METHOD_LABELS[payment.paymentMethod] ??
+                  payment.paymentMethod)
+                : undefined
+            }
           />
           <DetailRow icon={Hash} label="Référence" value={payment.reference} />
           <DetailRow

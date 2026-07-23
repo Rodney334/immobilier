@@ -19,8 +19,12 @@ import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { RowActionMenu } from "@/components/ui/RowActionMenu";
 import { PaginationBar } from "@/components/ui/PaginationBar";
-import type { Payment, PaymentStatus, PaginationMeta } from "@/types";
-import { getPaymentMethodLabel } from "@/lib/constants/payment";
+import {
+  type Payment,
+  type PaymentStatus,
+  type PaginationMeta,
+  METHOD_LABELS,
+} from "@/types";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -90,7 +94,12 @@ function PaymentRowActions({
           onClick: onDownloadReceipt,
           hidden: !alreadyRecorded,
         },
-        { label: "Supprimer", onClick: onDelete, variant: "danger", dividerBefore: true },
+        {
+          label: "Supprimer",
+          onClick: onDelete,
+          variant: "danger",
+          dividerBefore: true,
+        },
       ]}
     />
   );
@@ -130,11 +139,17 @@ function PaymentCard({
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-9 h-9 rounded-full bg-primary/8 flex items-center justify-center shrink-0">
-            <span className="text-[13px] font-semibold text-primary/60">{initials}</span>
+            <span className="text-[13px] font-semibold text-primary/60">
+              {initials}
+            </span>
           </div>
           <div className="min-w-0">
-            <p className="text-[13px] font-semibold text-primary truncate">{tenantName}</p>
-            <p className="text-[12px] text-primary/50 truncate">{payment.reference ?? "—"}</p>
+            <p className="text-[13px] font-semibold text-primary truncate">
+              {tenantName}
+            </p>
+            <p className="text-[12px] text-primary/50 truncate">
+              {payment.reference ?? "—"}
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
@@ -150,20 +165,38 @@ function PaymentCard({
       </div>
       <div className="grid grid-cols-2 gap-x-4 gap-y-2">
         <div>
-          <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">Montant</p>
-          <p className="text-[12px] font-semibold text-primary tabular-nums">{formatAmount(parseFloat(payment.amount))}</p>
+          <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">
+            Montant
+          </p>
+          <p className="text-[12px] font-semibold text-primary tabular-nums">
+            {formatAmount(parseFloat(payment.amount))}
+          </p>
         </div>
         <div>
-          <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">Méthode</p>
-          <p className="text-[12px] text-primary/70">{getPaymentMethodLabel(payment.paymentMethod)}</p>
+          <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">
+            Méthode
+          </p>
+          <p className="text-[12px] text-primary/70">
+            {payment.paymentMethod
+              ? (METHOD_LABELS[payment.paymentMethod] ?? payment.paymentMethod)
+              : "—"}
+          </p>
         </div>
         <div>
-          <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">Référence</p>
-          <p className="text-[12px] text-primary/70 font-mono">{payment.reference ?? "—"}</p>
+          <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">
+            Référence
+          </p>
+          <p className="text-[12px] text-primary/70 font-mono">
+            {payment.reference ?? "—"}
+          </p>
         </div>
         <div>
-          <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">Date</p>
-          <p className="text-[12px] text-primary/70 tabular-nums">{formatDate(payment.paymentDate!)}</p>
+          <p className="text-[10px] text-primary/40 uppercase tracking-wide mb-0.5">
+            Date
+          </p>
+          <p className="text-[12px] text-primary/70 tabular-nums">
+            {formatDate(payment.paymentDate!)}
+          </p>
         </div>
       </div>
     </div>
@@ -210,14 +243,26 @@ function PaymentRow({
           <div className="ep-person-name">{tenantName}</div>
         </div>
       </td>
-      <td className="ep-td ep-amount">{formatAmount(parseFloat(payment.amount))}</td>
+      <td className="ep-td ep-amount">
+        {formatAmount(parseFloat(payment.amount))}
+      </td>
       <td className="ep-td" style={{ fontSize: 13, color: "var(--ink-soft)" }}>
-        {getPaymentMethodLabel(payment.paymentMethod)}
+        {payment.paymentMethod
+          ? (METHOD_LABELS[payment.paymentMethod] ?? payment.paymentMethod)
+          : "—"}
       </td>
       <td className="ep-td ep-mono">{payment.reference ?? "—"}</td>
       <td className="ep-td ep-mono">{formatDate(payment.paymentDate!)}</td>
-      <td className="ep-td"><Badge variant={cfg.variant} stamp>{cfg.label}</Badge></td>
-      <td className="ep-td" style={{ width: 40 }} onClick={(e) => e.stopPropagation()}>
+      <td className="ep-td">
+        <Badge variant={cfg.variant} stamp>
+          {cfg.label}
+        </Badge>
+      </td>
+      <td
+        className="ep-td"
+        style={{ width: 40 }}
+        onClick={(e) => e.stopPropagation()}
+      >
         <PaymentRowActions
           payment={payment}
           onEdit={onEdit}
@@ -338,7 +383,11 @@ export function PaymentsClient() {
       a.click();
       URL.revokeObjectURL(url);
     } catch {
-      toast({ variant: "danger", title: "Impossible de télécharger le reçu", duration: 4000 });
+      toast({
+        variant: "danger",
+        title: "Impossible de télécharger le reçu",
+        duration: 4000,
+      });
     }
   }
 
@@ -362,25 +411,47 @@ export function PaymentsClient() {
   return (
     <>
       <div style={{ display: "flex", height: "100vh", overflow: "hidden" }}>
-        <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        <div
+          style={{
+            flex: 1,
+            minWidth: 0,
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden",
+          }}
+        >
           {/* Topbar */}
           <div className="ep-topbar" style={{ paddingBottom: 20 }}>
             <div>
               <p className="ep-eyebrow">Gestion locative</p>
               <h1 className="ep-page-title">Paiements</h1>
               {pagination && !loading && (
-                <p className="ep-page-desc">{pagination.total} paiement{pagination.total > 1 ? "s" : ""} enregistré{pagination.total > 1 ? "s" : ""}</p>
+                <p className="ep-page-desc">
+                  {pagination.total} paiement{pagination.total > 1 ? "s" : ""}{" "}
+                  enregistré{pagination.total > 1 ? "s" : ""}
+                </p>
               )}
             </div>
             <div className="ep-topbar-actions">
-              <button className="ep-btn ep-btn-primary" onClick={() => setFormOpen(true)}>
+              <button
+                className="ep-btn ep-btn-primary"
+                onClick={() => setFormOpen(true)}
+              >
                 <Plus size={14} /> Enregistrer un paiement
               </button>
             </div>
           </div>
 
           {/* Filtres + recherche */}
-          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "0 32px 16px", flexWrap: "wrap" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "0 32px 16px",
+              flexWrap: "wrap",
+            }}
+          >
             {FILTER_OPTIONS.map((opt) => (
               <button
                 key={opt.value}
@@ -391,62 +462,134 @@ export function PaymentsClient() {
                 {opt.label}
               </button>
             ))}
-            <div className="ep-search" style={{ marginLeft: "auto", minWidth: 220 }}>
+            <div
+              className="ep-search"
+              style={{ marginLeft: "auto", minWidth: 220 }}
+            >
               <Search size={13} style={{ flexShrink: 0, opacity: 0.5 }} />
-              <input type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Rechercher un locataire…" />
+              <input
+                type="search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Rechercher un locataire…"
+              />
             </div>
           </div>
 
           {error && (
-            <div style={{ margin: "0 32px 16px", display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: "var(--r-sm)", background: "var(--rouge-soft)", border: "1px solid var(--rouge)", fontSize: 13, color: "var(--rouge)" }}>
+            <div
+              style={{
+                margin: "0 32px 16px",
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "10px 14px",
+                borderRadius: "var(--r-sm)",
+                background: "var(--rouge-soft)",
+                border: "1px solid var(--rouge)",
+                fontSize: 13,
+                color: "var(--rouge)",
+              }}
+            >
               <AlertTriangle size={14} /> {error}
             </div>
           )}
 
           {/* Table */}
-          <div style={{ flex: 1, overflow: "hidden", padding: "0 32px 32px", display: "flex", flexDirection: "column" }}>
+          <div
+            style={{
+              flex: 1,
+              overflow: "hidden",
+              padding: "0 32px 32px",
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
             {loading ? (
-              <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 60 }}>
-                <Loader2 size={22} className="animate-spin" style={{ color: "var(--ink-soft)" }} />
+              <div
+                style={{
+                  flex: 1,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: 60,
+                }}
+              >
+                <Loader2
+                  size={22}
+                  className="animate-spin"
+                  style={{ color: "var(--ink-soft)" }}
+                />
               </div>
             ) : payments.length === 0 ? (
               <div className="ep-panel" style={{ padding: 24 }}>
                 <EmptyState
                   icon={CreditCard}
                   title="Aucun paiement"
-                  description={statusFilter !== "all" ? "Aucun paiement avec ce statut." : "Enregistrez votre premier paiement."}
-                  actionLabel={statusFilter === "all" ? "Enregistrer un paiement" : undefined}
-                  onAction={statusFilter === "all" ? () => setFormOpen(true) : undefined}
+                  description={
+                    statusFilter !== "all"
+                      ? "Aucun paiement avec ce statut."
+                      : "Enregistrez votre premier paiement."
+                  }
+                  actionLabel={
+                    statusFilter === "all"
+                      ? "Enregistrer un paiement"
+                      : undefined
+                  }
+                  onAction={
+                    statusFilter === "all" ? () => setFormOpen(true) : undefined
+                  }
                 />
               </div>
             ) : (
               <>
                 {/* Table desktop */}
-                <div className="hidden lg:flex ep-panel" style={{ flex: 1, flexDirection: "column", overflow: "hidden" }}>
+                <div
+                  className="hidden lg:flex ep-panel"
+                  style={{
+                    flex: 1,
+                    flexDirection: "column",
+                    overflow: "hidden",
+                  }}
+                >
                   <div style={{ flex: 1, overflowY: "auto" }}>
-                  <table className="ep-table">
-                    <thead>
-                      <tr>
-                        {["Locataire","Montant","Méthode","Référence","Date","Statut",""].map((h, i) => (
-                          <th key={i} className="ep-th">{h}</th>
+                    <table className="ep-table">
+                      <thead>
+                        <tr>
+                          {[
+                            "Locataire",
+                            "Montant",
+                            "Méthode",
+                            "Référence",
+                            "Date",
+                            "Statut",
+                            "",
+                          ].map((h, i) => (
+                            <th key={i} className="ep-th">
+                              {h}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {payments.map((p) => (
+                          <PaymentRow
+                            key={p.id}
+                            payment={p}
+                            selected={selected?.id === p.id}
+                            onClick={() =>
+                              setSelected((prev) =>
+                                prev?.id === p.id ? null : p,
+                              )
+                            }
+                            onEdit={() => setSelected(p)}
+                            onMarkPaid={() => handleMarkPaid(p)}
+                            onDelete={() => setDeleteTarget(p)}
+                            onDownloadReceipt={() => handleDownloadReceipt(p)}
+                          />
                         ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {payments.map((p) => (
-                        <PaymentRow
-                          key={p.id}
-                          payment={p}
-                          selected={selected?.id === p.id}
-                          onClick={() => setSelected((prev) => (prev?.id === p.id ? null : p))}
-                          onEdit={() => setSelected(p)}
-                          onMarkPaid={() => handleMarkPaid(p)}
-                          onDelete={() => setDeleteTarget(p)}
-                          onDownloadReceipt={() => handleDownloadReceipt(p)}
-                        />
-                      ))}
-                    </tbody>
-                  </table>
+                      </tbody>
+                    </table>
                   </div>
                   <PaginationBar
                     total={pagination?.total ?? 0}
@@ -454,7 +597,10 @@ export function PaymentsClient() {
                     limit={limit}
                     itemLabel="paiements"
                     onPage={setPage}
-                    onLimit={(l) => { setLimit(l); setPage(1); }}
+                    onLimit={(l) => {
+                      setLimit(l);
+                      setPage(1);
+                    }}
                   />
                 </div>
                 {/* Cards mobiles */}

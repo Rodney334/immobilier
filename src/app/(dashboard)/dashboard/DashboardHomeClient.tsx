@@ -23,12 +23,12 @@ import { leaseService } from "@/lib/services/lease.service";
 import { reportService } from "@/lib/services/report.service";
 import { paymentService } from "@/lib/services/payment.service";
 import { rentScheduleService } from "@/lib/services/rent-schedule.service";
-import { getPaymentMethodLabel } from "@/lib/constants/payment";
-import type {
-  MonthlyPerformanceReport,
-  AnnualPerformanceReport,
-  Lease,
-  Payment,
+import {
+  type MonthlyPerformanceReport,
+  type AnnualPerformanceReport,
+  type Lease,
+  type Payment,
+  METHOD_LABELS,
 } from "@/types";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -118,17 +118,27 @@ function KpiCard({
         boxShadow: "var(--shadow-card)",
       }}
     >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <p style={{
-          fontFamily: "var(--font-mono)",
-          fontSize: 10.5,
-          textTransform: "uppercase",
-          letterSpacing: "0.07em",
-          color: "var(--ink-soft)",
-        }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <p
+          style={{
+            fontFamily: "var(--font-mono)",
+            fontSize: 10.5,
+            textTransform: "uppercase",
+            letterSpacing: "0.07em",
+            color: "var(--ink-soft)",
+          }}
+        >
           {label}
         </p>
-        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${cls}`}>
+        <div
+          className={`w-8 h-8 rounded-lg flex items-center justify-center ${cls}`}
+        >
           {icon}
         </div>
       </div>
@@ -139,17 +149,26 @@ function KpiCard({
         </div>
       ) : (
         <div>
-          <p style={{
-            fontFamily: "var(--font-display)",
-            fontSize: 27,
-            fontWeight: 600,
-            letterSpacing: "-0.01em",
-            color: "var(--ink)",
-            lineHeight: 1.1,
-          }}>
+          <p
+            style={{
+              fontFamily: "var(--font-display)",
+              fontSize: 27,
+              fontWeight: 600,
+              letterSpacing: "-0.01em",
+              color: "var(--ink)",
+              lineHeight: 1.1,
+            }}
+          >
             {value}
           </p>
-          {sub && <p className="mt-1 text-[11.5px]" style={{ color: "var(--ink-soft)" }}>{sub}</p>}
+          {sub && (
+            <p
+              className="mt-1 text-[11.5px]"
+              style={{ color: "var(--ink-soft)" }}
+            >
+              {sub}
+            </p>
+          )}
         </div>
       )}
     </div>
@@ -177,13 +196,32 @@ function RevenueChart({
   const now = new Date();
   const ticks = [0, 0.25, 0.5, 0.75, 1].map((f) => Math.round(maxVal * f));
   return (
-    <div style={{ background: "var(--paper-raised)", border: "1px solid var(--paper-line)", borderRadius: "var(--r-md)", padding: "20px", boxShadow: "var(--shadow-card)" }}>
+    <div
+      style={{
+        background: "var(--paper-raised)",
+        border: "1px solid var(--paper-line)",
+        borderRadius: "var(--r-md)",
+        padding: "20px",
+        boxShadow: "var(--shadow-card)",
+      }}
+    >
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h2 style={{ fontFamily: "var(--font-display)", fontSize: 16.5, fontWeight: 600, color: "var(--ink)" }}>
+          <h2
+            style={{
+              fontFamily: "var(--font-display)",
+              fontSize: 16.5,
+              fontWeight: 600,
+              color: "var(--ink)",
+            }}
+          >
             Revenus mensuels
           </h2>
-          <p className="text-[12px]" style={{ color: "var(--ink-soft)" }} suppressHydrationWarning>
+          <p
+            className="text-[12px]"
+            style={{ color: "var(--ink-soft)" }}
+            suppressHydrationWarning
+          >
             {now.getFullYear()}
           </p>
         </div>
@@ -563,18 +601,41 @@ export function DashboardHomeClient() {
   const now = new Date();
 
   return (
-    <div className="p-8 space-y-8 max-w-[1320px]">
+    <div className="p-8 space-y-8 max-w-330">
       {/* ── Header ── */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--terracotta)", marginBottom: 6 }}>
+          <p
+            style={{
+              fontFamily: "var(--font-mono)",
+              fontSize: 11,
+              textTransform: "uppercase",
+              letterSpacing: "0.1em",
+              color: "var(--terracotta)",
+              marginBottom: 6,
+            }}
+          >
             Vue d'ensemble
           </p>
-          <h1 style={{ fontFamily: "var(--font-display)", fontSize: 30, fontWeight: 600, letterSpacing: "-0.01em", color: "var(--ink)" }}>
+          <h1
+            style={{
+              fontFamily: "var(--font-display)",
+              fontSize: 30,
+              fontWeight: 600,
+              letterSpacing: "-0.01em",
+              color: "var(--ink)",
+            }}
+          >
             Tableau de bord
           </h1>
           {clientDate && (
-            <p className="text-[14.5px] mt-1 capitalize" style={{ fontFamily: "var(--font-serif)", color: "var(--ink-soft)" }}>
+            <p
+              className="text-[14.5px] mt-1 capitalize"
+              style={{
+                fontFamily: "var(--font-serif)",
+                color: "var(--ink-soft)",
+              }}
+            >
               {clientDate}
             </p>
           )}
@@ -591,7 +652,12 @@ export function DashboardHomeClient() {
           <Link
             href="/dashboard/tenants"
             className="flex items-center gap-2 h-9 px-4 text-[13px] font-semibold transition-colors"
-            style={{ border: "1px solid var(--paper-line)", borderRadius: "var(--r-sm)", color: "var(--ink)", background: "var(--paper-raised)" }}
+            style={{
+              border: "1px solid var(--paper-line)",
+              borderRadius: "var(--r-sm)",
+              color: "var(--ink)",
+              background: "var(--paper-raised)",
+            }}
           >
             <UserPlus size={14} /> Nouveau locataire
           </Link>
@@ -600,7 +666,12 @@ export function DashboardHomeClient() {
             onClick={loadAll}
             disabled={loading}
             className="flex items-center gap-2 px-4 py-2 text-[13px] transition-colors disabled:opacity-40"
-            style={{ border: "1px solid var(--paper-line)", borderRadius: "var(--r-sm)", color: "var(--ink-soft)", background: "var(--paper-raised)" }}
+            style={{
+              border: "1px solid var(--paper-line)",
+              borderRadius: "var(--r-sm)",
+              color: "var(--ink-soft)",
+              background: "var(--paper-raised)",
+            }}
             aria-label="Rafraîchir"
           >
             <RefreshCw
@@ -699,14 +770,30 @@ export function DashboardHomeClient() {
         <RevenueChart annual={data.annual} loading={loading} />
 
         {/* Baux expirant bientôt */}
-        <div className="flex flex-col" style={{ background: "var(--paper-raised)", border: "1px solid var(--paper-line)", borderRadius: "var(--r-md)", padding: "18px 20px", boxShadow: "var(--shadow-card)" }}>
+        <div
+          className="flex flex-col"
+          style={{
+            background: "var(--paper-raised)",
+            border: "1px solid var(--paper-line)",
+            borderRadius: "var(--r-md)",
+            padding: "18px 20px",
+            boxShadow: "var(--shadow-card)",
+          }}
+        >
           <div className="flex items-center gap-2 mb-4">
             <AlertTriangle
               size={15}
               style={{ color: "var(--terracotta)" }}
               aria-hidden="true"
             />
-            <h2 style={{ fontFamily: "var(--font-display)", fontSize: 15, fontWeight: 600, color: "var(--ink)" }}>
+            <h2
+              style={{
+                fontFamily: "var(--font-display)",
+                fontSize: 15,
+                fontWeight: 600,
+                color: "var(--ink)",
+              }}
+            >
               Baux expirant bientôt
             </h2>
             {!loading && data.expiringLeases.length > 0 && (
@@ -764,9 +851,27 @@ export function DashboardHomeClient() {
       {/* ── Bottom row: Paiements récents + Locataires en retard ── */}
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_340px] gap-6">
         {/* Paiements récents */}
-        <div style={{ background: "var(--paper-raised)", border: "1px solid var(--paper-line)", borderRadius: "var(--r-md)", overflow: "hidden", boxShadow: "var(--shadow-card)" }}>
-          <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: "1px solid var(--paper-line)" }}>
-            <h2 style={{ fontFamily: "var(--font-display)", fontSize: 16.5, fontWeight: 600, color: "var(--ink)" }}>
+        <div
+          style={{
+            background: "var(--paper-raised)",
+            border: "1px solid var(--paper-line)",
+            borderRadius: "var(--r-md)",
+            overflow: "hidden",
+            boxShadow: "var(--shadow-card)",
+          }}
+        >
+          <div
+            className="flex items-center justify-between px-5 py-4"
+            style={{ borderBottom: "1px solid var(--paper-line)" }}
+          >
+            <h2
+              style={{
+                fontFamily: "var(--font-display)",
+                fontSize: 16.5,
+                fontWeight: 600,
+                color: "var(--ink)",
+              }}
+            >
               Paiements récents
             </h2>
             <Link
@@ -797,68 +902,87 @@ export function DashboardHomeClient() {
             </div>
           ) : (
             <div style={{ overflowX: "auto" }}>
-            <table className="w-full border-collapse" style={{ minWidth: 600 }}>
-              <thead>
-                <tr style={{ borderBottom: "1px solid var(--paper-line)", background: "rgba(228,220,201,0.25)" }}>
-                  {[
-                    "Date",
-                    "Locataire",
-                    "Montant",
-                    "Mois concerné",
-                    "Méthode",
-                    "Statut",
-                  ].map((h) => (
-                    <th
-                      key={h}
-                      style={{ textAlign: "left", fontFamily: "var(--font-mono)", fontSize: 10.5, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--ink-soft)", padding: "11px 20px", whiteSpace: "nowrap" }}
-                    >
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody style={{ borderTop: "none" }}>
-                {data.recentPayments.map((p) => {
-                  const tenantName =
-                    p.lease?.tenant?.fullName ||
-                    `${p.lease?.tenant?.firstName ?? ""} ${p.lease?.tenant?.lastName ?? ""}`.trim() ||
-                    "—";
-                  const date = p.paymentDate
-                    ? formatShortDate(p.paymentDate)
-                    : "—";
-                  const moisConcerne = p.paymentDate
-                    ? formatMonthYear(p.paymentDate)
-                    : "—";
-                  return (
-                    <tr
-                      key={p.id}
-                      className="hover:bg-primary/2 transition-colors"
-                    >
-                      <td className="px-5 py-3.5 text-[12px] text-primary/50 tabular-nums whitespace-nowrap align-top">
-                        {date}
-                      </td>
-                      <td className="px-5 py-3.5">
-                        <p className="text-[13px] font-medium text-primary">
-                          {tenantName}
-                        </p>
-                      </td>
-                      <td className="px-5 py-3.5 text-[13px] font-semibold text-primary tabular-nums whitespace-nowrap">
-                        {formatXOF(Number(p.amount))}
-                      </td>
-                      <td className="px-5 py-3.5 text-[12px] text-secondary font-medium whitespace-nowrap">
-                        {moisConcerne}
-                      </td>
-                      <td className="px-5 py-3.5 text-[12px] text-primary/60">
-                        {getPaymentMethodLabel(p.paymentMethod)}
-                      </td>
-                      <td className="px-5 py-3.5">
-                        <PaymentStatusBadge status={p.status} />
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+              <table
+                className="w-full border-collapse"
+                style={{ minWidth: 600 }}
+              >
+                <thead>
+                  <tr
+                    style={{
+                      borderBottom: "1px solid var(--paper-line)",
+                      background: "rgba(228,220,201,0.25)",
+                    }}
+                  >
+                    {[
+                      "Date",
+                      "Locataire",
+                      "Montant",
+                      "Mois concerné",
+                      "Méthode",
+                      "Statut",
+                    ].map((h) => (
+                      <th
+                        key={h}
+                        style={{
+                          textAlign: "left",
+                          fontFamily: "var(--font-mono)",
+                          fontSize: 10.5,
+                          textTransform: "uppercase",
+                          letterSpacing: "0.06em",
+                          color: "var(--ink-soft)",
+                          padding: "11px 20px",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody style={{ borderTop: "none" }}>
+                  {data.recentPayments.map((p) => {
+                    const tenantName =
+                      p.lease?.tenant?.fullName ||
+                      `${p.lease?.tenant?.firstName ?? ""} ${p.lease?.tenant?.lastName ?? ""}`.trim() ||
+                      "—";
+                    const date = p.paymentDate
+                      ? formatShortDate(p.paymentDate)
+                      : "—";
+                    const moisConcerne = p.paymentDate
+                      ? formatMonthYear(p.paymentDate)
+                      : "—";
+                    return (
+                      <tr
+                        key={p.id}
+                        className="hover:bg-primary/2 transition-colors"
+                      >
+                        <td className="px-5 py-3.5 text-[12px] text-primary/50 tabular-nums whitespace-nowrap align-top">
+                          {date}
+                        </td>
+                        <td className="px-5 py-3.5">
+                          <p className="text-[13px] font-medium text-primary">
+                            {tenantName}
+                          </p>
+                        </td>
+                        <td className="px-5 py-3.5 text-[13px] font-semibold text-primary tabular-nums whitespace-nowrap">
+                          {formatXOF(Number(p.amount))}
+                        </td>
+                        <td className="px-5 py-3.5 text-[12px] text-secondary font-medium whitespace-nowrap">
+                          {moisConcerne}
+                        </td>
+                        <td className="px-5 py-3.5 text-[12px] text-primary/60">
+                          {p.paymentMethod
+                            ? METHOD_LABELS[p.paymentMethod]
+                            : "—"}
+                        </td>
+                        <td className="px-5 py-3.5">
+                          <PaymentStatusBadge status={p.status} />
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
@@ -875,7 +999,14 @@ export function DashboardHomeClient() {
           <div className="px-5 pt-5 pb-3">
             <div className="flex items-center gap-2">
               <Users size={16} style={{ color: "var(--terracotta)" }} />
-              <h2 style={{ fontFamily: "var(--font-display)", fontSize: 16, fontWeight: 600, color: "var(--paper)" }}>
+              <h2
+                style={{
+                  fontFamily: "var(--font-display)",
+                  fontSize: 16,
+                  fontWeight: 600,
+                  color: "var(--paper)",
+                }}
+              >
                 Locataires en retard
               </h2>
               {!loading && data.overdueItems.length > 0 && (

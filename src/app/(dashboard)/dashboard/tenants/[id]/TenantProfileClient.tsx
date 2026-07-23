@@ -32,15 +32,15 @@ import { TenantFormModal } from "@/components/features/tenants/TenantFormModal";
 import { GuarantorFormModal } from "@/components/features/guarantors/GuarantorFormModal";
 import { Modal } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
-import { getPaymentMethodLabel } from "@/lib/constants/payment";
-import type {
-  Tenant,
-  Lease,
-  RentSchedule,
-  RentScheduleStatus,
-  Payment,
-  Adjustment,
-  Guarantor,
+import {
+  type Tenant,
+  type Lease,
+  type RentSchedule,
+  type RentScheduleStatus,
+  type Payment,
+  type Adjustment,
+  type Guarantor,
+  METHOD_LABELS,
 } from "@/types";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -316,8 +316,12 @@ export function TenantProfileClient({ tenantId }: { tenantId: string }) {
 
   // Garants
   const [guarantorFormOpen, setGuarantorFormOpen] = useState(false);
-  const [editingGuarantor, setEditingGuarantor] = useState<Guarantor | null>(null);
-  const [deletingGuarantorId, setDeletingGuarantorId] = useState<string | null>(null);
+  const [editingGuarantor, setEditingGuarantor] = useState<Guarantor | null>(
+    null,
+  );
+  const [deletingGuarantorId, setDeletingGuarantorId] = useState<string | null>(
+    null,
+  );
   const [deleteGuarantorLoading, setDeleteGuarantorLoading] = useState(false);
 
   // Actions
@@ -416,7 +420,9 @@ export function TenantProfileClient({ tenantId }: { tenantId: string }) {
       guarantorService
         .getByLease(activeLease.id)
         .then((res) => {
-          const list = Array.isArray(res.data) ? res.data : ((res as any).data ?? []);
+          const list = Array.isArray(res.data)
+            ? res.data
+            : ((res as any).data ?? []);
           setTabGuarantors(list);
           loadedTabs.add("guarantors");
         })
@@ -430,7 +436,11 @@ export function TenantProfileClient({ tenantId }: { tenantId: string }) {
   function handleGuarantorSaved(g: Guarantor) {
     setTabGuarantors((prev) => {
       const idx = prev.findIndex((x) => x.id === g.id);
-      if (idx >= 0) { const n = [...prev]; n[idx] = g; return n; }
+      if (idx >= 0) {
+        const n = [...prev];
+        n[idx] = g;
+        return n;
+      }
       return [...prev, g];
     });
     setGuarantorFormOpen(false);
@@ -442,10 +452,16 @@ export function TenantProfileClient({ tenantId }: { tenantId: string }) {
     setDeleteGuarantorLoading(true);
     try {
       await guarantorService.delete(deletingGuarantorId);
-      setTabGuarantors((prev) => prev.filter((g) => g.id !== deletingGuarantorId));
+      setTabGuarantors((prev) =>
+        prev.filter((g) => g.id !== deletingGuarantorId),
+      );
       setDeletingGuarantorId(null);
     } catch {
-      toast({ variant: "danger", title: "Impossible de supprimer ce garant", duration: 4000 });
+      toast({
+        variant: "danger",
+        title: "Impossible de supprimer ce garant",
+        duration: 4000,
+      });
     } finally {
       setDeleteGuarantorLoading(false);
     }
@@ -807,10 +823,10 @@ export function TenantProfileClient({ tenantId }: { tenantId: string }) {
                 <div className="flex border-b border-border-custom px-1">
                   {(
                     [
-                      { id: "overview",     label: "Vue d'ensemble" },
-                      { id: "payments",     label: "Paiements"      },
-                      { id: "adjustments",  label: "Ajustements"    },
-                      { id: "guarantors",   label: "Garants"        },
+                      { id: "overview", label: "Vue d'ensemble" },
+                      { id: "payments", label: "Paiements" },
+                      { id: "adjustments", label: "Ajustements" },
+                      { id: "guarantors", label: "Garants" },
                     ] as const
                   ).map((t) => (
                     <button
@@ -853,8 +869,14 @@ export function TenantProfileClient({ tenantId }: { tenantId: string }) {
                       guarantors={tabGuarantors}
                       loading={tabLoading}
                       activeLease={activeLease}
-                      onAdd={() => { setEditingGuarantor(null); setGuarantorFormOpen(true); }}
-                      onEdit={(g) => { setEditingGuarantor(g); setGuarantorFormOpen(true); }}
+                      onAdd={() => {
+                        setEditingGuarantor(null);
+                        setGuarantorFormOpen(true);
+                      }}
+                      onEdit={(g) => {
+                        setEditingGuarantor(g);
+                        setGuarantorFormOpen(true);
+                      }}
                       onDelete={(id) => setDeletingGuarantorId(id)}
                     />
                   )}
@@ -873,16 +895,23 @@ export function TenantProfileClient({ tenantId }: { tenantId: string }) {
         onSaved={(updated) => {
           setTenant(updated);
           setEditOpen(false);
-          toast({ variant: "success", title: "Profil mis à jour", duration: 3000 });
+          toast({
+            variant: "success",
+            title: "Profil mis à jour",
+            duration: 3000,
+          });
         }}
       />
 
       {/* ── Guarantor form modal ── */}
       <GuarantorFormModal
         isOpen={guarantorFormOpen}
-        onClose={() => { setGuarantorFormOpen(false); setEditingGuarantor(null); }}
+        onClose={() => {
+          setGuarantorFormOpen(false);
+          setEditingGuarantor(null);
+        }}
         onSaved={handleGuarantorSaved}
-        leases={leases.filter(l => l.status === "ACTIVE")}
+        leases={leases.filter((l) => l.status === "ACTIVE")}
         guarantor={editingGuarantor ?? undefined}
       />
 
@@ -893,23 +922,33 @@ export function TenantProfileClient({ tenantId }: { tenantId: string }) {
         title="Supprimer ce garant ?"
         footer={
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
-            <button className="ep-btn ep-btn-ghost" onClick={() => setDeletingGuarantorId(null)}>
+            <button
+              className="ep-btn ep-btn-ghost"
+              onClick={() => setDeletingGuarantorId(null)}
+            >
               Annuler
             </button>
             <button
               className="ep-btn"
-              style={{ background: "var(--rouge)", color: "white", minWidth: 120 }}
+              style={{
+                background: "var(--rouge)",
+                color: "white",
+                minWidth: 120,
+              }}
               onClick={handleDeleteGuarantor}
               disabled={deleteGuarantorLoading}
             >
-              {deleteGuarantorLoading && <Loader2 size={13} className="animate-spin" />}
+              {deleteGuarantorLoading && (
+                <Loader2 size={13} className="animate-spin" />
+              )}
               Supprimer
             </button>
           </div>
         }
       >
         <p style={{ fontSize: 13, color: "var(--ink-soft)" }}>
-          Cette action est irréversible. Le garant sera définitivement retiré du bail.
+          Cette action est irréversible. Le garant sera définitivement retiré du
+          bail.
         </p>
       </Modal>
 
@@ -1079,7 +1118,7 @@ function PaymentsTab({ rows, loading }: { rows: Payment[]; loading: boolean }) {
                   {formatAmount(p.amount)}
                 </td>
                 <td className="px-5 py-3 text-[12px] text-primary/60">
-                  {getPaymentMethodLabel(p.paymentMethod)}
+                  {p.paymentMethod ? METHOD_LABELS[p.paymentMethod] : "—"}
                 </td>
                 <td className="px-5 py-3 text-[12px] font-mono text-primary/40">
                   {p.reference ?? "—"}
@@ -1141,7 +1180,11 @@ function AdjustmentsTab({
                 {ADJ_TYPE_LABELS[a.type] ?? a.type}
               </td>
               <td className="px-5 py-3 text-[13px] font-semibold tabular-nums whitespace-nowrap">
-                <span className={Number(a.amount) < 0 ? "text-danger" : "text-success"}>
+                <span
+                  className={
+                    Number(a.amount) < 0 ? "text-danger" : "text-success"
+                  }
+                >
                   {Number(a.amount) >= 0 ? "+" : ""}
                   {fmt.format(Number(a.amount))} FCFA
                 </span>
@@ -1176,50 +1219,76 @@ function GuarantorCard({
     .toUpperCase();
 
   return (
-    <div style={{
-      background: "var(--paper)",
-      border: "1px solid var(--paper-line)",
-      borderRadius: "var(--r-md)",
-      overflow: "hidden",
-    }}>
+    <div
+      style={{
+        background: "var(--paper)",
+        border: "1px solid var(--paper-line)",
+        borderRadius: "var(--r-md)",
+        overflow: "hidden",
+      }}
+    >
       {/* En-tête */}
-      <div style={{
-        display: "flex", alignItems: "center", gap: 10,
-        padding: "12px 16px",
-        borderBottom: "1px solid var(--paper-line)",
-        background: "var(--paper-raised)",
-      }}>
-        <div style={{
-          width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
-          background: "var(--terracotta-soft)", color: "var(--terracotta)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 13, fontWeight: 700,
-        }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          padding: "12px 16px",
+          borderBottom: "1px solid var(--paper-line)",
+          background: "var(--paper-raised)",
+        }}
+      >
+        <div
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: "50%",
+            flexShrink: 0,
+            background: "var(--terracotta-soft)",
+            color: "var(--terracotta)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 13,
+            fontWeight: 700,
+          }}
+        >
           {initials}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 14, color: "var(--ink)", lineHeight: 1.2 }}>
+          <div
+            style={{
+              fontFamily: "var(--font-display)",
+              fontWeight: 600,
+              fontSize: 14,
+              color: "var(--ink)",
+              lineHeight: 1.2,
+            }}
+          >
             {guarantor.fullName}
           </div>
           {guarantor.relation && (
-            <span style={{
-              display: "inline-block", marginTop: 3,
-              fontFamily: "var(--font-mono)", fontSize: 10,
-              textTransform: "uppercase", letterSpacing: "0.07em",
-              color: "var(--sauge)", background: "var(--sauge-soft)",
-              border: "1px solid var(--sauge)", borderRadius: 10,
-              padding: "1px 7px",
-            }}>
+            <span
+              style={{
+                display: "inline-block",
+                marginTop: 3,
+                fontFamily: "var(--font-mono)",
+                fontSize: 10,
+                textTransform: "uppercase",
+                letterSpacing: "0.07em",
+                color: "var(--sauge)",
+                background: "var(--sauge-soft)",
+                border: "1px solid var(--sauge)",
+                borderRadius: 10,
+                padding: "1px 7px",
+              }}
+            >
               {guarantor.relation}
             </span>
           )}
         </div>
         <div style={{ display: "flex", gap: 4 }}>
-          <button
-            onClick={onEdit}
-            className="ep-icon-btn"
-            title="Modifier"
-          >
+          <button onClick={onEdit} className="ep-icon-btn" title="Modifier">
             <Pencil size={12} />
           </button>
           <button
@@ -1234,29 +1303,72 @@ function GuarantorCard({
       </div>
 
       {/* Infos */}
-      <div style={{ padding: "10px 16px", display: "flex", flexDirection: "column", gap: 5 }}>
+      <div
+        style={{
+          padding: "10px 16px",
+          display: "flex",
+          flexDirection: "column",
+          gap: 5,
+        }}
+      >
         {/* Contact */}
         {guarantor.phone && (
-          <div style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12 }}>
-            <Phone size={11} style={{ color: "var(--ink-soft)", flexShrink: 0 }} />
-            <a href={`tel:${guarantor.phone}`} style={{ color: "var(--terracotta)", textDecoration: "none" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 7,
+              fontSize: 12,
+            }}
+          >
+            <Phone
+              size={11}
+              style={{ color: "var(--ink-soft)", flexShrink: 0 }}
+            />
+            <a
+              href={`tel:${guarantor.phone}`}
+              style={{ color: "var(--terracotta)", textDecoration: "none" }}
+            >
               {guarantor.phone}
             </a>
             {guarantor.secondaryPhone && (
-              <span style={{ color: "var(--ink-soft)" }}>· {guarantor.secondaryPhone}</span>
+              <span style={{ color: "var(--ink-soft)" }}>
+                · {guarantor.secondaryPhone}
+              </span>
             )}
           </div>
         )}
         {guarantor.email && (
-          <div style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12 }}>
-            <Mail size={11} style={{ color: "var(--ink-soft)", flexShrink: 0 }} />
-            <a href={`mailto:${guarantor.email}`} style={{ color: "var(--terracotta)", textDecoration: "none" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 7,
+              fontSize: 12,
+            }}
+          >
+            <Mail
+              size={11}
+              style={{ color: "var(--ink-soft)", flexShrink: 0 }}
+            />
+            <a
+              href={`mailto:${guarantor.email}`}
+              style={{ color: "var(--terracotta)", textDecoration: "none" }}
+            >
               {guarantor.email}
             </a>
           </div>
         )}
         {guarantor.address && (
-          <div style={{ display: "flex", alignItems: "flex-start", gap: 7, fontSize: 12, color: "var(--ink-soft)" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "flex-start",
+              gap: 7,
+              fontSize: 12,
+              color: "var(--ink-soft)",
+            }}
+          >
             <Home size={11} style={{ marginTop: 1, flexShrink: 0 }} />
             {guarantor.address}
           </div>
@@ -1264,12 +1376,30 @@ function GuarantorCard({
 
         {/* Emploi */}
         {(guarantor.employer || guarantor.jobTitle) && (
-          <div style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12, color: "var(--ink-soft)" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 7,
+              fontSize: 12,
+              color: "var(--ink-soft)",
+            }}
+          >
             <Building2 size={11} style={{ flexShrink: 0 }} />
-            {[guarantor.employer, guarantor.jobTitle].filter(Boolean).join(" · ")}
+            {[guarantor.employer, guarantor.jobTitle]
+              .filter(Boolean)
+              .join(" · ")}
             {guarantor.monthlyIncome && (
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--sauge)", marginLeft: 4 }}>
-                {new Intl.NumberFormat("fr-FR").format(guarantor.monthlyIncome)} XOF/mois
+              <span
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  fontSize: 11,
+                  color: "var(--sauge)",
+                  marginLeft: 4,
+                }}
+              >
+                {new Intl.NumberFormat("fr-FR").format(guarantor.monthlyIncome)}{" "}
+                XOF/mois
               </span>
             )}
           </div>
@@ -1277,17 +1407,40 @@ function GuarantorCard({
 
         {/* Identité */}
         {(guarantor.identityType || guarantor.identityNumber) && (
-          <div style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12, color: "var(--ink-soft)" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 7,
+              fontSize: 12,
+              color: "var(--ink-soft)",
+            }}
+          >
             <CreditCard size={11} style={{ flexShrink: 0 }} />
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--ink-soft)" }}>
-              {[guarantor.identityType, guarantor.identityNumber].filter(Boolean).join(" · ")}
+            <span
+              style={{
+                fontFamily: "var(--font-mono)",
+                fontSize: 11,
+                color: "var(--ink-soft)",
+              }}
+            >
+              {[guarantor.identityType, guarantor.identityNumber]
+                .filter(Boolean)
+                .join(" · ")}
             </span>
           </div>
         )}
 
         {/* Notes */}
         {guarantor.notes && (
-          <p style={{ fontSize: 11.5, color: "var(--ink-soft)", marginTop: 2, fontStyle: "italic" }}>
+          <p
+            style={{
+              fontSize: 11.5,
+              color: "var(--ink-soft)",
+              marginTop: 2,
+              fontStyle: "italic",
+            }}
+          >
             {guarantor.notes}
           </p>
         )}
@@ -1316,7 +1469,13 @@ function GuarantorsTab({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       {/* Header avec bouton */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
         <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
           <UserCheck size={14} style={{ color: "var(--ink-soft)" }} />
           <span style={{ fontSize: 13, fontWeight: 600, color: "var(--ink)" }}>
@@ -1324,11 +1483,21 @@ function GuarantorsTab({
           </span>
         </div>
         {activeLease ? (
-          <button className="ep-btn ep-btn-primary" onClick={onAdd} style={{ fontSize: 12, padding: "6px 12px" }}>
+          <button
+            className="ep-btn ep-btn-primary"
+            onClick={onAdd}
+            style={{ fontSize: 12, padding: "6px 12px" }}
+          >
             <Plus size={12} /> Ajouter un garant
           </button>
         ) : (
-          <span style={{ fontSize: 12, color: "var(--ink-soft)", fontStyle: "italic" }}>
+          <span
+            style={{
+              fontSize: 12,
+              color: "var(--ink-soft)",
+              fontStyle: "italic",
+            }}
+          >
             Aucun bail actif
           </span>
         )}
@@ -1336,13 +1505,30 @@ function GuarantorsTab({
 
       {/* Liste */}
       {guarantors.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "30px 0", color: "var(--ink-soft)" }}>
-          <UserCheck size={28} style={{ margin: "0 auto 8px", opacity: 0.25 }} />
+        <div
+          style={{
+            textAlign: "center",
+            padding: "30px 0",
+            color: "var(--ink-soft)",
+          }}
+        >
+          <UserCheck
+            size={28}
+            style={{ margin: "0 auto 8px", opacity: 0.25 }}
+          />
           <p style={{ fontSize: 13 }}>Aucun garant enregistré pour ce bail.</p>
           {activeLease && (
             <button
               onClick={onAdd}
-              style={{ marginTop: 10, fontSize: 12, color: "var(--terracotta)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}
+              style={{
+                marginTop: 10,
+                fontSize: 12,
+                color: "var(--terracotta)",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                textDecoration: "underline",
+              }}
             >
               Ajouter le premier garant
             </button>

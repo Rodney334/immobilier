@@ -14,6 +14,16 @@ export type PaymentMethod =
   | "CARD"
   | "OTHER";
 
+export const METHOD_LABELS: Record<string, string> = {
+  BANK_TRANSFER: "Virement",
+  CASH: "Espèces",
+  CHECK: "Chèque",
+  MOBILE_MONEY: "Mobile Money",
+  MTN_MOMO: "MTN MoMo",
+  MOOV_MONEY: "MOOV MONEY",
+  OTHER: "Autre",
+};
+
 // ─── Entités ──────────────────────────────────────────────────────────────────
 
 export type PaymentAllocation = {
