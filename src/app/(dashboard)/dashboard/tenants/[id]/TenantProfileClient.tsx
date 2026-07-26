@@ -97,26 +97,44 @@ function monthsElapsed(startIso: string): number {
   );
 }
 
+/**
+ * Construit la grille des mois couverts par le bail, de lease.startDate à
+ * min(lease.endDate, aujourd'hui). Ainsi, aucune case "Sans contrat" n'est
+ * générée pour des mois antérieurs à la signature ou postérieurs à la fin
+ * du bail — on ne montre que la période réellement contractuelle.
+ */
 function buildHistoryGrid(
   schedules: RentSchedule[],
+  lease: Lease | null,
 ): Array<{ year: number; month: number; schedule: RentSchedule | null }> {
+  if (!lease?.startDate) return [];
+
   const grid: Array<{
     year: number;
     month: number;
     schedule: RentSchedule | null;
   }> = [];
+
   const now = new Date();
-  for (let i = 13; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const y = d.getFullYear();
-    const m = d.getMonth() + 1;
+  const start = new Date(lease.startDate);
+  const leaseEnd = lease.endDate ? new Date(lease.endDate) : null;
+  const end = leaseEnd && leaseEnd.getTime() < now.getTime() ? leaseEnd : now;
+
+  let cursor = new Date(start.getFullYear(), start.getMonth(), 1);
+  const last = new Date(end.getFullYear(), end.getMonth(), 1);
+
+  while (cursor.getTime() <= last.getTime()) {
+    const y = cursor.getFullYear();
+    const m = cursor.getMonth() + 1;
     const schedule =
       schedules.find((s) => {
         const sd = new Date(s.dueDate);
         return sd.getFullYear() === y && sd.getMonth() + 1 === m;
       }) ?? null;
     grid.push({ year: y, month: m, schedule });
+    cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
   }
+
   return grid;
 }
 
@@ -340,7 +358,10 @@ export function TenantProfileClient({ tenantId }: { tenantId: string }) {
         new Date(b.startDate).getTime() - new Date(a.startDate).getTime(),
     )[0] ?? null;
 
-  const historyGrid = buildHistoryGrid(schedules);
+  // Le bail dont on affiche la grille : le bail actif s'il y en a un,
+  // sinon le dernier bail terminé.
+  const gridLease = activeLease ?? lastPrevLease;
+  const historyGrid = buildHistoryGrid(schedules, gridLease);
   const monthsPresent = activeLease ? monthsElapsed(activeLease.startDate) : 0;
   const isBlacklisted = tenant?.status === "BLACKLISTED";
   const isInactive = tenant?.status === "INACTIVE";

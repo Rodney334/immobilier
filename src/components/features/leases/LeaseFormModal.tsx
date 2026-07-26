@@ -158,6 +158,12 @@ export function LeaseFormModal({ lease, isOpen, onClose, onSaved }: Props) {
           success: false,
         };
       }
+      if (!endDate) {
+        return {
+          error: "La date de fin du contrat est obligatoire.",
+          success: false,
+        };
+      }
       if (
         !monthlyRent ||
         isNaN(Number(monthlyRent)) ||
@@ -168,7 +174,7 @@ export function LeaseFormModal({ lease, isOpen, onClose, onSaved }: Props) {
           success: false,
         };
       }
-      if (endDate && new Date(endDate) <= new Date(startDate)) {
+      if (new Date(endDate) <= new Date(startDate)) {
         return {
           error: "La date de fin doit etre posterieure a la date de debut.",
           success: false,
@@ -179,7 +185,7 @@ export function LeaseFormModal({ lease, isOpen, onClose, onSaved }: Props) {
         tenantId,
         unitId,
         startDate: new Date(startDate).toISOString(),
-        endDate: endDate ? new Date(endDate).toISOString() : undefined,
+        endDate: new Date(endDate).toISOString(),
         monthlyRent,
         periodicity: periodicity || undefined,
         billingDay: billingDay ? parseInt(billingDay, 10) : undefined,
@@ -277,7 +283,8 @@ export function LeaseFormModal({ lease, isOpen, onClose, onSaved }: Props) {
           <Input
             name="endDate"
             type="date"
-            label="Date de fin (optionnel)"
+            label="Date de fin"
+            required
             defaultValue={lease?.endDate?.slice(0, 10)}
           />
         </div>

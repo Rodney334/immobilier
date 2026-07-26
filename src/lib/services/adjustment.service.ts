@@ -6,6 +6,8 @@ import type {
   AdjustmentFilterParams,
   CreateAdjustmentPayload,
   UpdateAdjustmentPayload,
+  WaiveUpcomingPayload,
+  WaiveUpcomingResult,
 } from '@/types';
 
 const BASE = '/api/v1/adjustments';
@@ -48,5 +50,18 @@ export const adjustmentService = {
 
   delete(id: string): Promise<ApiResponse<null>> {
     return api.delete<ApiResponse<null>>(`${BASE}/${id}`);
+  },
+
+  /**
+   * Action groupée : exonère ou réduit plusieurs échéances d'un bail en un
+   * seul appel (prochains mois / échéances précises / tout le reste du bail).
+   */
+  waiveUpcoming(
+    payload: WaiveUpcomingPayload,
+  ): Promise<ApiResponse<WaiveUpcomingResult>> {
+    return api.post<ApiResponse<WaiveUpcomingResult>>(
+      `${BASE}/waive-upcoming`,
+      payload,
+    );
   },
 };

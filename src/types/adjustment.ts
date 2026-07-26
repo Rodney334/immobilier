@@ -50,3 +50,29 @@ export type AdjustmentFilterParams = {
   dateFrom?: string;
   dateTo?: string;
 };
+
+// ─── Action groupée — POST /adjustments/waive-upcoming ───────────────────────
+// 3 façons de cibler les échéances (mutuellement exclusives) :
+//  - monthsCount        → les N prochaines échéances non payées
+//  - rentScheduleIds    → des échéances précises (pas besoin d'être consécutives)
+//  - ni l'un ni l'autre → toutes les échéances restantes du bail
+// "amount" transforme l'exonération totale en remise partielle (chaque
+// échéance est réduite de ce montant, jamais en dessous de 0).
+
+export type WaiveUpcomingPayload = {
+  leaseId: string;
+  monthsCount?: number;
+  rentScheduleIds?: string[];
+  amount?: number;
+  reason?: string;
+  startFromDate?: string;
+};
+
+export type WaiveUpcomingResult = {
+  message?: string;
+  updatedCount?: number;
+  count?: number;
+  totalWaived?: number;
+  rentScheduleIds?: string[];
+  adjustments?: Adjustment[];
+};

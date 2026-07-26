@@ -143,25 +143,32 @@ function PerformanceBarChart({
         })}
       </div>
 
-      {/* Meilleurs / pires mois — mode annuel seulement */}
-      {periodMode === "year" && "bestMonths" in report && report.bestMonths && report.bestMonths.length > 0 && (
-        <div style={{ borderTop: "1px solid var(--paper-line)", paddingTop: 10, marginTop: 10, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-          <div>
-            <p style={{ fontSize: 11, color: "var(--ink-soft)" }}>Meilleur mois</p>
-            <p style={{ fontSize: 13, fontWeight: 600, color: "#0F6E56", marginTop: 2 }}>
-              {MONTH_LABELS[(report.bestMonths[0]?.month ?? 1) - 1]} — {formatAmount(report.bestMonths[0]?.paidAmount ?? 0)}
-            </p>
+      {/* Meilleur / pire mois — calculés depuis les mois affichés (report.months),
+          en ignorant les mois sans aucune échéance (schedulesCount === 0).
+          On n'utilise pas report.bestMonths/worstMonths de l'API : ces tableaux
+          incluent des mois vides (0 FCFA) et faussaient l'affichage. */}
+      {(() => {
+        const withData = months.filter((m) => m.schedulesCount > 0);
+        if (withData.length === 0) return null;
+        const best = withData.reduce((a, b) => (b.paidAmount > a.paidAmount ? b : a));
+        const worst = withData.reduce((a, b) => (b.paidAmount < a.paidAmount ? b : a));
+        return (
+          <div style={{ borderTop: "1px solid var(--paper-line)", paddingTop: 10, marginTop: 10, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            <div>
+              <p style={{ fontSize: 11, color: "var(--ink-soft)" }}>Meilleur mois</p>
+              <p style={{ fontSize: 13, fontWeight: 600, color: "#0F6E56", marginTop: 2 }}>
+                {MONTH_LABELS[best.month - 1]} — {formatAmount(best.paidAmount)}
+              </p>
+            </div>
+            <div>
+              <p style={{ fontSize: 11, color: "var(--ink-soft)" }}>Mois difficile</p>
+              <p style={{ fontSize: 13, fontWeight: 600, color: "#A32D2D", marginTop: 2 }}>
+                {MONTH_LABELS[worst.month - 1]} — {formatAmount(worst.paidAmount)}
+              </p>
+            </div>
           </div>
-          <div>
-            <p style={{ fontSize: 11, color: "var(--ink-soft)" }}>Mois difficile</p>
-            <p style={{ fontSize: 13, fontWeight: 600, color: "#A32D2D", marginTop: 2 }}>
-              {report.worstMonths && report.worstMonths.length > 0
-                ? `${MONTH_LABELS[(report.worstMonths[0]?.month ?? 1) - 1]} — ${formatAmount(report.worstMonths[0]?.paidAmount ?? 0)}`
-                : "—"}
-            </p>
-          </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }
@@ -471,11 +478,20 @@ export function ReportsClient() {
           {periodMode === "year" && annualReport && (() => {
             const cmp = annualReport.comparisonWithPreviousYear;
             if (!cmp) return null;
+
+            // L'API ne renvoie pas de delta de taux de recouvrement directement.
+            // On le déduit à partir des totaux actuels et des deltas fournis :
+            // annéePrécédente = actuel - delta, puis on recalcule son taux.
+            const previousExpected = annualReport.totals.expectedAmount - cmp.expectedAmountDelta;
+            const previousPaid = annualReport.totals.paidAmount - cmp.paidAmountDelta;
+            const previousRecoveryRate = previousExpected > 0 ? (previousPaid / previousExpected) * 100 : 0;
+            const recoveryRateDelta = annualReport.totals.recoveryRate - previousRecoveryRate;
+
             const items = [
               { label: "Revenus encaissés", delta: cmp.paidAmountDelta, fmt: (v: number) => formatAmount(Math.abs(v)) },
               { label: "Revenus attendus", delta: cmp.expectedAmountDelta, fmt: (v: number) => formatAmount(Math.abs(v)) },
               { label: "Taux à temps", delta: cmp.onTimeRateDelta, fmt: (v: number) => pct(Math.abs(v)) },
-              { label: "Taux recouvrement", delta: cmp.overdueCountDelta, fmt: (v: number) => String(Math.abs(v)) + " dossier" + (Math.abs(v) > 1 ? "s" : "") },
+              { label: "Taux recouvrement", delta: recoveryRateDelta, fmt: (v: number) => pct(Math.abs(v)) },
             ];
             return (
               <div style={{ background: "var(--paper-raised)", border: "1px solid var(--paper-line)", borderRadius: "var(--r-md)", boxShadow: "var(--shadow-card)", padding: "14px 18px" }}>

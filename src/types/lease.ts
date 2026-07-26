@@ -52,7 +52,7 @@ export type CreateLeasePayload = {
   tenantId: string;
   contractNumber?: string;
   startDate: string;
-  endDate?: string;
+  endDate: string; // obligatoire — date de fin du contrat
   monthlyRent: string; // string requis par l'API (ex: "150000")
   // depositAmount retiré du payload — calculé automatiquement depuis le local (Unit)
   billingDay?: number;
