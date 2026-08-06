@@ -108,12 +108,25 @@ export type OutstandingSchedule = {
   propertyName: string;
 };
 
+// AS_OF : dette arrêtée à une date donnée (cumule les arriérés antérieurs).
+// PERIOD : uniquement les échéances exigibles pendant la période demandée.
+export type OutstandingBalancesMode = "AS_OF" | "PERIOD";
+
+export type OutstandingBalancesPeriod = {
+  mode: OutstandingBalancesMode;
+  label: string; // ex: "S1 2026", "08/2026", "À aujourd'hui"
+  from: string | null; // null en AS_OF (pas d'intervalle, juste une date d'arrêté)
+  asOf: string;
+  includesPreviousArrears: boolean;
+};
+
 export type OutstandingBalancesReport = {
   generatedAt: string;
   totalOutstandingAmount: number;
   totalOutstandingSchedules: number;
   tenants: OutstandingTenant[];
   schedules: OutstandingSchedule[];
+  period?: OutstandingBalancesPeriod;
 };
 
 // ─── Rapport de performance locataire ────────────────────────────────────────
@@ -181,6 +194,13 @@ export type SemesterPerformanceReport = AnnualPerformanceReport & {
 
 export type OutstandingBalancesParams = {
   asOfDate?: string;
+  year?: number;
+  semester?: 1 | 2; // nécessite year
+  month?: number; // 1-12, nécessite year, prioritaire sur semester
+  mode?: OutstandingBalancesMode; // défaut AS_OF
+  propertyId?: string;
+  neighborhoodId?: string;
+  tenantId?: string;
 };
 
 export type TenantPerformanceParams = {

@@ -35,6 +35,10 @@ function pct(n: number) {
   return `${n.toFixed(1)} %`;
 }
 
+function formatDateLong(iso: string) {
+  return new Date(iso).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+}
+
 type PeriodMode = "year" | "semester";
 
 // ─── KPI card ─────────────────────────────────────────────────────────────────
@@ -180,9 +184,12 @@ function OutstandingTable({ report }: { report: OutstandingBalancesReport }) {
     <div style={{ background: "var(--paper-raised)", border: "1px solid var(--paper-line)", borderRadius: "var(--r-md)", boxShadow: "var(--shadow-card)", overflow: "hidden" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 18px", borderBottom: "1px solid var(--paper-line)" }}>
         <div>
-          <p style={{ fontSize: 13, fontWeight: 600, color: "var(--ink)" }}>Soldes impayés</p>
+          <p style={{ fontSize: 13, fontWeight: 600, color: "var(--ink)" }}>
+            {report.period ? `Dette au ${formatDateLong(report.period.asOf)}` : "Soldes impayés"}
+          </p>
           <p style={{ fontSize: 11, color: "var(--ink-soft)", marginTop: 2 }}>
             {report.totalOutstandingSchedules} échéance{report.totalOutstandingSchedules > 1 ? "s" : ""} · Total : {formatAmount(report.totalOutstandingAmount)}
+            {report.period?.includesPreviousArrears ? " · inclut les arriérés antérieurs" : ""}
           </p>
         </div>
         <AlertCircle size={15} style={{ color: "#A32D2D", opacity: 0.7 }} />
@@ -313,9 +320,17 @@ export function ReportsClient() {
         ? reportService.getSemesterPerformance({ year, semester })
         : reportService.getAnnualPerformance({ year });
 
+      // "AS_OF" = dette arrêtée à la fin de la période (cumule les arriérés
+      // antérieurs) — c'est la lecture comptable attendue pour cette carte.
+      const outstandingPromise = reportService.getOutstandingBalances({
+        year,
+        semester: periodMode === "semester" ? semester : undefined,
+        mode: "AS_OF",
+      });
+
       const [perfRes, outstandingRes, tenantRes] = await Promise.allSettled([
         perfPromise,
-        reportService.getOutstandingBalances(),
+        outstandingPromise,
         reportService.getTenantPerformance({ period: "annual" }),
       ]);
 
@@ -456,9 +471,22 @@ export function ReportsClient() {
                 valueColor={annualReport.totals.outstandingAmount > 0 ? "#A32D2D" : "#0F6E56"}
               />
               <KpiCard
-                label="Soldes impayés"
+                label={
+                  outstanding?.period
+                    ? `Dette au ${formatDateLong(outstanding.period.asOf)}`
+                    : "Soldes impayés"
+                }
                 value={outstanding ? formatAmount(outstanding.totalOutstandingAmount) : "—"}
-                sub={outstanding ? `${outstanding.tenants.length} locataire${outstanding.tenants.length > 1 ? "s" : ""} concerné${outstanding.tenants.length > 1 ? "s" : ""}` : undefined}
+                sub={
+                  outstanding
+                    ? [
+                        `${outstanding.tenants.length} locataire${outstanding.tenants.length > 1 ? "s" : ""} concerné${outstanding.tenants.length > 1 ? "s" : ""}`,
+                        outstanding.period?.includesPreviousArrears ? "inclut les arriérés antérieurs" : null,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")
+                    : undefined
+                }
                 valueColor={!outstanding || outstanding.totalOutstandingAmount === 0 ? "#0F6E56" : "#A32D2D"}
               />
             </div>
