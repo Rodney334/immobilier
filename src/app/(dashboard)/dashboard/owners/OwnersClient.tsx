@@ -20,6 +20,8 @@ import {
 import { ownerService } from "@/lib/services/owner.service";
 import { OwnerFormModal } from "@/components/features/owners/OwnerFormModal";
 import { AttachPropertyModal } from "@/components/features/owners/AttachPropertyModal";
+import { AttachUnitModal } from "@/components/features/owners/AttachUnitModal";
+import { OwnerAccountPanel } from "@/components/features/owners/OwnerAccountPanel";
 import { Modal } from "@/components/ui/Modal";
 import { EmptyState } from "@/components/ui/EmptyState";
 import type { Owner, OwnerReport } from "@/types";
@@ -227,7 +229,9 @@ export function OwnersClient() {
   const [editTarget, setEditTarget] = useState<Owner | null>(null);
 
   const [attachOpen, setAttachOpen] = useState(false);
+  const [attachUnitOpen, setAttachUnitOpen] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [activeTab, setActiveTab] = useState<"apercu" | "compte">("apercu");
 
   const [deleteOwner, setDeleteOwner] = useState<Owner | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -267,6 +271,11 @@ export function OwnersClient() {
   useEffect(() => {
     loadOwners();
   }, [loadOwners]);
+
+  // Revenir à l'onglet Aperçu quand on change de propriétaire sélectionné
+  useEffect(() => {
+    setActiveTab("apercu");
+  }, [selectedOwner?.id]);
 
   useEffect(() => {
     if (!selectedOwner) {
@@ -316,6 +325,19 @@ export function OwnersClient() {
     setOwners((prev) => prev.map((o) => (o.id === knownId ? merged : o)));
     setSelectedOwner(merged);
     setAttachOpen(false);
+  }
+
+  function handleAttachedUnits() {
+    setAttachUnitOpen(false);
+    if (!selectedOwner) return;
+    // Le rattachement de locaux individuels ne change pas la liste des biens
+    // de l'owner, mais modifie les chiffres du rapport/relevé — on recharge.
+    setReportLoading(true);
+    ownerService
+      .getReport(selectedOwner.id, reportParams)
+      .then((res) => setReport(res.data))
+      .catch(() => {})
+      .finally(() => setReportLoading(false));
   }
 
   async function handleDownloadPdf() {
@@ -638,6 +660,38 @@ export function OwnersClient() {
                 );
               })()}
 
+              {/* ── Tabs ── */}
+              <div style={{ padding: "0 32px", display: "flex", gap: 4, borderBottom: "1px solid var(--paper-line)", marginBottom: 24 }}>
+                {([
+                  { key: "apercu" as const, label: "Aperçu" },
+                  { key: "compte" as const, label: "Compte" },
+                ]).map((t) => (
+                  <button
+                    key={t.key}
+                    onClick={() => setActiveTab(t.key)}
+                    style={{
+                      padding: "10px 4px",
+                      marginRight: 20,
+                      background: "none",
+                      border: "none",
+                      borderBottom: activeTab === t.key ? "2px solid var(--terracotta)" : "2px solid transparent",
+                      color: activeTab === t.key ? "var(--ink)" : "var(--ink-soft)",
+                      fontWeight: activeTab === t.key ? 600 : 500,
+                      fontSize: 13,
+                      cursor: "pointer",
+                      transition: "color 0.15s, border-color 0.15s",
+                    }}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+
+              {activeTab === "compte" ? (
+                <div style={{ padding: "0 32px 40px" }}>
+                  <OwnerAccountPanel ownerId={selectedOwner.id} />
+                </div>
+              ) : (
               <div style={{ padding: "0 32px 40px" }}>
                 {/* ── KPI cards ── */}
                 {reportLoading ? (
@@ -810,7 +864,7 @@ export function OwnersClient() {
                       }}
                     >
                       {(report?.properties ?? []).map((p) => {
-                        const unitCount = p.occupancy?.totalUnits ?? 0;
+                        const unitCount = p.unitsCount ?? 0;
                         return (
                           <div
                             key={p.propertyId}
@@ -904,13 +958,23 @@ export function OwnersClient() {
                     </div>
                   )}
 
-                  <button
-                    onClick={() => setAttachOpen(true)}
-                    className="ep-btn ep-btn-ghost"
-                  >
-                    <Plus size={14} aria-hidden="true" />
-                    Rattacher un bien
-                  </button>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button
+                      onClick={() => setAttachOpen(true)}
+                      className="ep-btn ep-btn-ghost"
+                    >
+                      <Plus size={14} aria-hidden="true" />
+                      Rattacher un bien
+                    </button>
+                    <button
+                      onClick={() => setAttachUnitOpen(true)}
+                      className="ep-btn ep-btn-ghost"
+                      title="Rattacher des locaux individuels — cas de copropriété"
+                    >
+                      <Plus size={14} aria-hidden="true" />
+                      Rattacher des locaux
+                    </button>
+                  </div>
                 </div>
 
                 {/* ── Informations complémentaires ── */}
@@ -1056,6 +1120,7 @@ export function OwnersClient() {
                   </div>
                 )}
               </div>
+              )}
             </>
           )}
         </div>
@@ -1079,6 +1144,15 @@ export function OwnersClient() {
           owner={selectedOwner}
           onClose={() => setAttachOpen(false)}
           onAttached={handleAttached}
+        />
+      )}
+
+      {selectedOwner && (
+        <AttachUnitModal
+          isOpen={attachUnitOpen}
+          owner={selectedOwner}
+          onClose={() => setAttachUnitOpen(false)}
+          onAttached={handleAttachedUnits}
         />
       )}
 

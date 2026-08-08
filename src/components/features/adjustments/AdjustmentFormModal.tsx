@@ -98,7 +98,7 @@ export function AdjustmentFormModal({ isOpen, onClose, onSaved }: Props) {
   const [waiverMode, setWaiverMode] = useState<WaiverMode>("fixed");
 
   const [amount, setAmount] = useState("");
-  const [discountValueMode, setDiscountValueMode] = useState<AdjustmentValueMode>("FIXED");
+  const [valueModeChoice, setValueModeChoice] = useState<AdjustmentValueMode>("FIXED");
   const [baseReference, setBaseReference] = useState<AdjustmentBaseReference>("LEASE_MONTHLY_RENT");
   const [monthsCount, setMonthsCount] = useState("3");
   const [startFromDate, setStartFromDate] = useState("");
@@ -117,9 +117,15 @@ export function AdjustmentFormModal({ isOpen, onClose, onSaved }: Props) {
   const rentAmount = selectedLease ? Number(selectedLease.monthlyRent) : 0;
   const unitBaseRent = selectedLease?.unit?.baseRent ? Number(selectedLease.unit.baseRent) : 0;
 
-  // La remise (DISCOUNT) peut être exprimée en % du loyer plutôt qu'en FCFA —
-  // uniquement pour une échéance de loyer (pas de retenue sur caution).
-  const isPercentageMode = type === "DISCOUNT" && !isDeposit && waiverMode === "fixed" && discountValueMode === "PERCENTAGE";
+  // Le montant peut être exprimé en % plutôt qu'en FCFA pour Remise,
+  // Exonération (en mode "montant fixe"), Pénalité et Correction.
+  // Exclu pour Révision loyer (le back fixe le loyer AU résultat du calcul,
+  // pas à une augmentation — mieux vaut rester en FIXED, cf. doc API) et pour
+  // une retenue sur caution (non documenté, on reste prudent en FIXED).
+  const percentageEligible =
+    !isDeposit &&
+    ((isWaiverGroup && waiverMode === "fixed") || type === "PENALTY" || type === "CORRECTION");
+  const isPercentageMode = percentageEligible && valueModeChoice === "PERCENTAGE";
   // Montant FCFA équivalent — utilisé pour l'affichage et pour les portées
   // groupées (waive-upcoming), qui n'acceptent qu'un montant fixe en FCFA.
   const baseAmountForPercentage = baseReference === "UNIT_BASE_RENT" ? unitBaseRent : rentAmount;
@@ -139,7 +145,7 @@ export function AdjustmentFormModal({ isOpen, onClose, onSaved }: Props) {
     setScope("months");
     setWaiverMode("fixed");
     setAmount("");
-    setDiscountValueMode("FIXED");
+    setValueModeChoice("FIXED");
     setBaseReference("LEASE_MONTHLY_RENT");
     setMonthsCount("3");
     setStartFromDate("");
@@ -190,7 +196,7 @@ export function AdjustmentFormModal({ isOpen, onClose, onSaved }: Props) {
   // ── Réinitialiser les champs spécifiques au type quand il change ──
   useEffect(() => {
     setAmount("");
-    setDiscountValueMode("FIXED");
+    setValueModeChoice("FIXED");
     setSelectedScheduleIds([]);
     setSingleScheduleId("");
     if (type === "WAIVER") setWaiverMode("total");
@@ -207,7 +213,7 @@ export function AdjustmentFormModal({ isOpen, onClose, onSaved }: Props) {
     if (!isDeposit) return;
     setScope("single");
     setWaiverMode("fixed");
-    setDiscountValueMode("FIXED");
+    setValueModeChoice("FIXED");
     setSingleScheduleId("");
     setSelectedScheduleIds([]);
     if (type === "RENT_REVISION") setType("CORRECTION");
@@ -283,10 +289,10 @@ export function AdjustmentFormModal({ isOpen, onClose, onSaved }: Props) {
       return `Le loyer mensuel passera à ${fmt.format(amtNum)} FCFA à partir du ${formatDateShort(effectiveDate)}.`;
     }
     if (type === "PENALTY" && amount && singleScheduleId) {
-      return `Une pénalité de ${fmt.format(amtNum)} FCFA sera ajoutée à l'échéance sélectionnée.`;
+      return `Une pénalité de ${reductionLabel} sera ajoutée à l'échéance sélectionnée.`;
     }
     if (type === "CORRECTION" && amount && singleScheduleId) {
-      return `Le montant dû sera ${correctionSign === "-" ? "réduit" : "augmenté"} de ${fmt.format(amtNum)} FCFA.`;
+      return `Le montant dû sera ${correctionSign === "-" ? "réduit" : "augmenté"} de ${reductionLabel}.`;
     }
     return "";
   }, [isDeposit, isWaiverGroup, scope, waiverMode, amount, monthsCount, startFromDate, selectedScheduleIds, singleScheduleId, type, effectiveDate, correctionSign, rentAmount, isPercentageMode, effectiveAmountFcfa]);
@@ -407,18 +413,40 @@ export function AdjustmentFormModal({ isOpen, onClose, onSaved }: Props) {
         // PENALTY / CORRECTION → une seule échéance obligatoire (sauf caution)
         if (!isDeposit && !singleScheduleId) throw new Error("Sélectionnez une échéance à cibler.");
         if (!amount || Number(amount) <= 0) throw new Error("Le montant doit être supérieur à 0.");
-        const signedAmount =
-          type === "CORRECTION" && correctionSign === "-" ? -Number(amount) : Number(amount);
-        await adjustmentService.create({
-          rentScheduleId: isDeposit ? undefined : singleScheduleId,
-          leaseId,
-          type,
-          amount: String(signedAmount),
-          appliesTo: appliesToPayload,
-          incidentId: incidentIdPayload,
-          reason: reason || (type === "PENALTY" ? "Pénalité" : "Correction"),
-          effectiveDate: isoEffectiveDate,
-        });
+
+        if (isPercentageMode) {
+          if (Number(amount) > 100) throw new Error("Le pourcentage ne peut pas dépasser 100%.");
+          // Mode pourcentage : pas de "amount", le back calcule à partir de
+          // percentage + baseReference. Pour la Correction, le signe porte
+          // aussi sur le pourcentage (même logique qu'en mode montant fixe).
+          const signedPercentage =
+            type === "CORRECTION" && correctionSign === "-" ? -Number(amount) : Number(amount);
+          await adjustmentService.create({
+            rentScheduleId: isDeposit ? undefined : singleScheduleId,
+            leaseId,
+            type,
+            valueMode: "PERCENTAGE",
+            percentage: String(signedPercentage),
+            baseReference,
+            appliesTo: appliesToPayload,
+            incidentId: incidentIdPayload,
+            reason: reason || (type === "PENALTY" ? "Pénalité" : "Correction"),
+            effectiveDate: isoEffectiveDate,
+          });
+        } else {
+          const signedAmount =
+            type === "CORRECTION" && correctionSign === "-" ? -Number(amount) : Number(amount);
+          await adjustmentService.create({
+            rentScheduleId: isDeposit ? undefined : singleScheduleId,
+            leaseId,
+            type,
+            amount: String(signedAmount),
+            appliesTo: appliesToPayload,
+            incidentId: incidentIdPayload,
+            reason: reason || (type === "PENALTY" ? "Pénalité" : "Correction"),
+            effectiveDate: isoEffectiveDate,
+          });
+        }
       }
 
       onSaved();
@@ -767,7 +795,7 @@ export function AdjustmentFormModal({ isOpen, onClose, onSaved }: Props) {
         {(showAmountField || (isWaiverGroup && scope === "single")) && (
           <div className="grid grid-cols-2 gap-3">
             {showAmountField && (
-              <div className={type === "CORRECTION" || (type === "DISCOUNT" && !isDeposit) ? "space-y-1.5" : undefined}>
+              <div className={type === "CORRECTION" || percentageEligible ? "space-y-1.5" : undefined}>
                 {type === "CORRECTION" ? (
                   <>
                     <label className="block text-[12px] font-medium uppercase tracking-[0.06em] text-primary/60">
@@ -786,31 +814,43 @@ export function AdjustmentFormModal({ isOpen, onClose, onSaved }: Props) {
                       <input
                         type="number"
                         min={1}
+                        max={valueModeChoice === "PERCENTAGE" ? 100 : undefined}
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
-                        placeholder="ex : 5000"
+                        placeholder={valueModeChoice === "PERCENTAGE" ? "ex : 10" : "ex : 5000"}
                         className="flex-1 h-11 px-3 rounded-lg border border-border-custom bg-white text-[14px] text-primary placeholder:text-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors"
                       />
+                      {percentageEligible && (
+                        <select
+                          value={valueModeChoice}
+                          onChange={(e) => setValueModeChoice(e.target.value as AdjustmentValueMode)}
+                          className="h-11 px-2 rounded-lg border border-border-custom bg-white text-[14px] text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-colors"
+                          style={{ width: 62, flexShrink: 0 }}
+                        >
+                          <option value="FIXED">FCFA</option>
+                          <option value="PERCENTAGE">%</option>
+                        </select>
+                      )}
                     </div>
                   </>
-                ) : type === "DISCOUNT" && !isDeposit ? (
+                ) : percentageEligible ? (
                   <>
                     <label className="block text-[12px] font-medium uppercase tracking-[0.06em] text-primary/60">
-                      Montant de la remise *
+                      {type === "PENALTY" ? "Montant de la pénalité *" : "Montant de la remise *"}
                     </label>
                     <div style={{ display: "flex", gap: 6 }}>
                       <input
                         type="number"
                         min={1}
-                        max={discountValueMode === "PERCENTAGE" ? 100 : undefined}
+                        max={valueModeChoice === "PERCENTAGE" ? 100 : undefined}
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
-                        placeholder={discountValueMode === "PERCENTAGE" ? "ex : 10" : "ex : 20000"}
+                        placeholder={valueModeChoice === "PERCENTAGE" ? "ex : 10" : "ex : 20000"}
                         className="flex-1 h-11 px-3 rounded-lg border border-border-custom bg-white text-[14px] text-primary placeholder:text-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors"
                       />
                       <select
-                        value={discountValueMode}
-                        onChange={(e) => setDiscountValueMode(e.target.value as AdjustmentValueMode)}
+                        value={valueModeChoice}
+                        onChange={(e) => setValueModeChoice(e.target.value as AdjustmentValueMode)}
                         className="h-11 px-2 rounded-lg border border-border-custom bg-white text-[14px] text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-colors"
                         style={{ width: 68, flexShrink: 0 }}
                       >

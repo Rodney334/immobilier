@@ -38,6 +38,9 @@ export class ApiError extends Error {
     public readonly status: number,
     message: string,
     public readonly code?: string,
+    /** Corps JSON brut de l'erreur — utile pour des champs spécifiques
+     * (ex: "missing" sur les rattachements en masse). */
+    public readonly data?: unknown,
   ) {
     super(message);
     this.name = 'ApiError';

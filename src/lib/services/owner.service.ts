@@ -7,6 +7,14 @@ import type {
   CreateOwnerPayload,
   UpdateOwnerPayload,
   OwnerReport,
+  Property,
+  Unit,
+  OwnerPayout,
+  OwnerPayoutFilterParams,
+  CreatePayoutPayload,
+  ResetAccountPayload,
+  OwnerStatement,
+  StatementParams,
 } from '@/types';
 
 const BASE = '/api/v1/owners';
@@ -64,5 +72,57 @@ export const ownerService = {
     params?: { year?: number; month?: number },
   ): Promise<Blob> {
     return api.download(`${BASE}/${ownerId}/report/pdf${buildQS(params)}`);
+  },
+
+  // ─── Rattachement en masse ────────────────────────────────────────────────
+  attachProperties(ownerId: string, propertyIds: string[]): Promise<ApiResponse<Property[]>> {
+    return api.post<ApiResponse<Property[]>>(`${BASE}/${ownerId}/properties/bulk`, { propertyIds });
+  },
+
+  detachProperties(ownerId: string, propertyIds: string[]): Promise<ApiResponse<Property[]>> {
+    return api.delete<ApiResponse<Property[]>>(`${BASE}/${ownerId}/properties/bulk`, { propertyIds });
+  },
+
+  attachUnits(ownerId: string, unitIds: string[]): Promise<ApiResponse<Unit[]>> {
+    return api.post<ApiResponse<Unit[]>>(`${BASE}/${ownerId}/units/bulk`, { unitIds });
+  },
+
+  detachUnits(ownerId: string, unitIds: string[]): Promise<ApiResponse<Unit[]>> {
+    return api.delete<ApiResponse<Unit[]>>(`${BASE}/${ownerId}/units/bulk`, { unitIds });
+  },
+
+  // ─── Compte propriétaire ──────────────────────────────────────────────────
+  getStatement(ownerId: string, params?: StatementParams): Promise<ApiResponse<OwnerStatement>> {
+    return api.get<ApiResponse<OwnerStatement>>(`${BASE}/${ownerId}/statement${buildQS(params)}`);
+  },
+
+  getPayouts(
+    ownerId: string,
+    params?: OwnerPayoutFilterParams,
+  ): Promise<PaginatedResponse<OwnerPayout>> {
+    return api.get<PaginatedResponse<OwnerPayout>>(`${BASE}/${ownerId}/payouts${buildQS(params)}`);
+  },
+
+  createPayout(ownerId: string, payload: CreatePayoutPayload): Promise<ApiResponse<OwnerPayout>> {
+    return api.post<ApiResponse<OwnerPayout>>(`${BASE}/${ownerId}/payouts`, payload);
+  },
+
+  markPayoutPaid(
+    payoutId: string,
+    payload?: { paidAt?: string; amountPaid?: number; method?: string; externalReference?: string },
+  ): Promise<ApiResponse<OwnerPayout>> {
+    return api.patch<ApiResponse<OwnerPayout>>(`${BASE}/payouts/${payoutId}/pay`, payload ?? {});
+  },
+
+  cancelPayout(payoutId: string, reason?: string): Promise<ApiResponse<OwnerPayout>> {
+    return api.patch<ApiResponse<OwnerPayout>>(`${BASE}/payouts/${payoutId}/cancel`, { reason });
+  },
+
+  downloadPayoutReceipt(payoutId: string): Promise<Blob> {
+    return api.download(`${BASE}/payouts/${payoutId}/receipt/pdf`);
+  },
+
+  resetAccount(ownerId: string, payload: ResetAccountPayload): Promise<ApiResponse<OwnerPayout>> {
+    return api.post<ApiResponse<OwnerPayout>>(`${BASE}/${ownerId}/reset`, payload);
   },
 };

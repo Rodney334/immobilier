@@ -152,6 +152,7 @@ export async function apiRequest<T>(
                   retryRes.status,
                   err.error ?? err.message ?? "Erreur serveur",
                   err.code,
+                  err,
                 ),
               );
             } else {
@@ -195,6 +196,7 @@ export async function apiRequest<T>(
       response.status,
       errorData.error ?? errorData.message ?? "Une erreur est survenue",
       errorData.code,
+      errorData,
     );
   }
 

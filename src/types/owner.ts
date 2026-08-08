@@ -68,6 +68,13 @@ export type OwnerReportSummary = {
   collectionRate: number;      // 0–100
   managementFeeAmount: number;
   netPayableToOwner: number;
+  // ─── Ajouts (module reversements/copropriété) ────────────────────────────
+  incidentCharges?: number;
+  incidentsRebilled?: number;   // refacturé au locataire — informatif, hors calcul
+  adjustmentCharges?: number;
+  depositDeductions?: number;   // retenu sur caution — informatif, hors calcul
+  alreadyPaidOut?: number;      // déjà reversé sur la période
+  balanceDue?: number;          // reste à reverser
 };
 
 export type OwnerReportMonthlyBreakdown = {
@@ -77,35 +84,23 @@ export type OwnerReportMonthlyBreakdown = {
   delta: number;
 };
 
+// Forme à plat depuis la mise à jour "copropriété par local" — remplace
+// l'ancienne forme imbriquée (occupancy/revenue/charges/profitability).
 export type OwnerReportProperty = {
   propertyId: string;
   propertyName: string;
-  propertyCode?: string;
-  year: number;
-  period: OwnerReportPeriod;
-  generatedAt: string;
-  occupancy: {
-    totalUnits: number;
-    occupiedUnits: number;
-    occupancyRate: number;
-  };
-  revenue: {
-    totalRentExpected: number;
-    totalRentCollected: number;
-    totalOutstanding: number;
-    collectionRate: number;
-  };
-  charges: {
-    maintenanceCosts: number;
-    adjustmentCharges: number;
-    totalCharges: number;
-  };
-  profitability: {
-    netIncome: number;
-    profitMargin: number;
-    averageMonthlyIncome: number;
-  };
-  monthlyBreakdown: OwnerReportMonthlyBreakdown[];
+  propertyCode?: string | null;
+  unitsCount: number;
+  occupiedUnits: number;
+  occupancyRate: number;      // 0–100
+  rentExpected: number;
+  rentCollected: number;
+  outstanding: number;
+  collectionRate: number;     // 0–100
+  incidentCharges: number;
+  adjustmentCharges: number;
+  totalCharges: number;
+  netBeforeFee: number;
 };
 
 export type OwnerReport = {
@@ -115,4 +110,12 @@ export type OwnerReport = {
   generatedAt: string;
   summary: OwnerReportSummary;
   properties: OwnerReportProperty[];
+  // ─── Ajouts (module reversements/copropriété) — optionnels tant que le
+  // rapport n'est pas repassé par le back sur tous les endpoints ────────────
+  incidents?: import("./owner-statement").StatementIncidentLine[];
+  adjustments?: import("./owner-statement").StatementAdjustmentLine[];
+  rentPayments?: import("./owner-statement").StatementRentLine[];
+  payouts?: import("./owner-payout").OwnerPayout[];
+  account?: OwnerReportSummary;
+  lastCutoff?: import("./owner-statement").StatementCutoff | null;
 };

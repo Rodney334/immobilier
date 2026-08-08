@@ -14,6 +14,7 @@ import {
   Shield,
   Wrench,
   MoreHorizontal,
+  Sparkles,
 } from "lucide-react";
 import { incidentService } from "@/lib/services/incident.service";
 import { IncidentFormModal } from "@/components/features/incidents/IncidentFormModal";
@@ -38,7 +39,6 @@ const STATUS_CONFIG: Record<
   IN_PROGRESS: { label: "En cours", variant: "warning" },
   RESOLVED: { label: "Résolu", variant: "success" },
   CLOSED: { label: "Fermé", variant: "neutral" },
-  CANCELLED: { label: "Annulé", variant: "neutral" },
 };
 
 const PRIORITY_CONFIG: Record<
@@ -72,14 +72,14 @@ const CATEGORY_CONFIG: Record<
     color: "#0F6E56",
     barColor: "#1D9E75",
   },
-  ELECTRICAL: {
+  ELECTRICITY: {
     label: "Électricité",
     Icon: Zap,
     bg: "#FAEEDA",
     color: "#854F0B",
     barColor: "#BA7517",
   },
-  STRUCTURAL: {
+  STRUCTURE: {
     label: "Structure",
     Icon: Building,
     bg: "#FCEBEB",
@@ -106,6 +106,13 @@ const CATEGORY_CONFIG: Record<
     bg: "#E8F0FE",
     color: "#1A56A8",
     barColor: "#3B82F6",
+  },
+  PEST_CONTROL: {
+    label: "Nuisibles",
+    Icon: Sparkles,
+    bg: "#F3E6C4",
+    color: "#6D4B11",
+    barColor: "#C99A3A",
   },
   OTHER: {
     label: "Autre",

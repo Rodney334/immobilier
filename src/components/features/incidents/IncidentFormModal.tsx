@@ -13,6 +13,7 @@ import type {
   IncidentCategory,
   IncidentPriority,
   IncidentStatus,
+  IncidentCostBearer,
   CreateIncidentPayload,
   UpdateIncidentPayload,
 } from "@/types";
@@ -28,11 +29,12 @@ type Props = {
 
 const CATEGORIES: { value: IncidentCategory; label: string }[] = [
   { value: "PLUMBING", label: "Plomberie" },
-  { value: "ELECTRICAL", label: "Électricité" },
-  { value: "STRUCTURAL", label: "Structure" },
+  { value: "ELECTRICITY", label: "Électricité" },
+  { value: "STRUCTURE", label: "Structure" },
   { value: "APPLIANCE", label: "Équipements" },
   { value: "SECURITY", label: "Sécurité" },
   { value: "CLEANING", label: "Nettoyage" },
+  { value: "PEST_CONTROL", label: "Nuisibles" },
   { value: "OTHER", label: "Autre" },
 ];
 
@@ -48,7 +50,12 @@ const STATUSES: { value: IncidentStatus; label: string }[] = [
   { value: "IN_PROGRESS", label: "En cours" },
   { value: "RESOLVED", label: "Résolu" },
   { value: "CLOSED", label: "Fermé" },
-  { value: "CANCELLED", label: "Annulé" },
+];
+
+const COST_BEARERS: { value: IncidentCostBearer; label: string }[] = [
+  { value: "OWNER", label: "Propriétaire" },
+  { value: "TENANT", label: "Locataire" },
+  { value: "AGENCY", label: "Agence" },
 ];
 
 function SubmitButton({ label }: { label: string }) {
@@ -104,6 +111,20 @@ export function IncidentFormModal({ incident, isOpen, onClose, onSaved }: Props)
   const [units, setUnits] = useState<Unit[]>([]);
   const [loadingUnits, setLoadingUnits] = useState(false);
 
+  // costBearer/deductFrom sont pilotés en state (pas de defaultValue simple
+  // sur des selects contrôlés par affichage conditionnel).
+  const [costBearer, setCostBearer] = useState<IncidentCostBearer>(incident?.costBearer ?? "OWNER");
+  const [deductFrom, setDeductFrom] = useState<"RENT" | "DEPOSIT">(incident?.deductFrom ?? "RENT");
+  // Une fois la retenue générée (résolution), on verrouille ces deux champs :
+  // les modifier n'aurait plus d'effet sur une retenue déjà créée.
+  const locked = !!incident?.adjustmentId;
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setCostBearer(incident?.costBearer ?? "OWNER");
+    setDeductFrom(incident?.deductFrom ?? "RENT");
+  }, [isOpen, incident]);
+
   useEffect(() => {
     if (!isOpen || isEdit) return;
     setLoadingUnits(true);
@@ -130,6 +151,8 @@ export function IncidentFormModal({ incident, isOpen, onClose, onSaved }: Props)
           assignedTo: assignedTo || undefined,
           actualCost: actualCost ? Number(actualCost) : undefined,
           resolutionNotes: resolutionNotes || undefined,
+          costBearer: locked ? undefined : costBearer,
+          deductFrom: locked ? undefined : (costBearer === "TENANT" ? deductFrom : undefined),
         };
 
         try {
@@ -162,6 +185,8 @@ export function IncidentFormModal({ incident, isOpen, onClose, onSaved }: Props)
           priority,
           estimatedCost: estimatedCost ? Number(estimatedCost) : undefined,
           assignedTo: assignedTo || undefined,
+          costBearer,
+          deductFrom: costBearer === "TENANT" ? deductFrom : undefined,
         };
 
         try {
@@ -270,6 +295,46 @@ export function IncidentFormModal({ incident, isOpen, onClose, onSaved }: Props)
                 placeholder="ex : Technicien Martin"
               />
             </div>
+
+            {/* Qui paie ? */}
+            <div className={costBearer === "TENANT" ? "grid grid-cols-2 gap-3" : "space-y-1.5"}>
+              <div className="space-y-1.5">
+                <label className="block text-[12px] font-medium uppercase tracking-[0.06em] text-primary/60">
+                  Qui paie ?
+                </label>
+                <select
+                  value={costBearer}
+                  onChange={(e) => setCostBearer(e.target.value as IncidentCostBearer)}
+                  className="w-full h-11 px-3 rounded-lg border border-border-custom bg-white text-[14px] text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors"
+                >
+                  {COST_BEARERS.map((c) => (
+                    <option key={c.value} value={c.value}>{c.label}</option>
+                  ))}
+                </select>
+              </div>
+              {costBearer === "TENANT" && (
+                <div className="space-y-1.5">
+                  <label className="block text-[12px] font-medium uppercase tracking-[0.06em] text-primary/60">
+                    Retenir sur
+                  </label>
+                  <select
+                    value={deductFrom}
+                    onChange={(e) => setDeductFrom(e.target.value as "RENT" | "DEPOSIT")}
+                    className="w-full h-11 px-3 rounded-lg border border-border-custom bg-white text-[14px] text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors"
+                  >
+                    <option value="RENT">Loyer</option>
+                    <option value="DEPOSIT">Caution</option>
+                  </select>
+                </div>
+              )}
+            </div>
+            {costBearer === "TENANT" && (
+              <p className="text-[11.5px] text-primary/45 -mt-2">
+                {deductFrom === "RENT"
+                  ? "Une pénalité sera ajoutée à la prochaine échéance due — le locataire paie plus."
+                  : "Le montant sera retenu sur le dépôt de garantie, déduit à la restitution. Les loyers ne bougent pas."}
+              </p>
+            )}
           </>
         )}
 
@@ -309,6 +374,52 @@ export function IncidentFormModal({ incident, isOpen, onClose, onSaved }: Props)
                 defaultValue={incident.assignedTo ?? ""}
               />
             </div>
+
+            {/* Qui paie ? — verrouillé une fois la retenue générée */}
+            <div className={costBearer === "TENANT" ? "grid grid-cols-2 gap-3" : "space-y-1.5"}>
+              <div className="space-y-1.5">
+                <label className="block text-[12px] font-medium uppercase tracking-[0.06em] text-primary/60">
+                  Qui paie ?
+                </label>
+                <select
+                  value={costBearer}
+                  disabled={locked}
+                  onChange={(e) => setCostBearer(e.target.value as IncidentCostBearer)}
+                  className="w-full h-11 px-3 rounded-lg border border-border-custom bg-white text-[14px] text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 disabled:opacity-50 transition-colors"
+                >
+                  {COST_BEARERS.map((c) => (
+                    <option key={c.value} value={c.value}>{c.label}</option>
+                  ))}
+                </select>
+              </div>
+              {costBearer === "TENANT" && (
+                <div className="space-y-1.5">
+                  <label className="block text-[12px] font-medium uppercase tracking-[0.06em] text-primary/60">
+                    Retenir sur
+                  </label>
+                  <select
+                    value={deductFrom}
+                    disabled={locked}
+                    onChange={(e) => setDeductFrom(e.target.value as "RENT" | "DEPOSIT")}
+                    className="w-full h-11 px-3 rounded-lg border border-border-custom bg-white text-[14px] text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 disabled:opacity-50 transition-colors"
+                  >
+                    <option value="RENT">Loyer</option>
+                    <option value="DEPOSIT">Caution</option>
+                  </select>
+                </div>
+              )}
+            </div>
+            {locked ? (
+              <p className="text-[11.5px] text-primary/45 -mt-2">
+                La retenue a déjà été générée à la résolution — ces champs ne sont plus modifiables.
+              </p>
+            ) : costBearer === "TENANT" ? (
+              <p className="text-[11.5px] text-primary/45 -mt-2">
+                {deductFrom === "RENT"
+                  ? "Une pénalité sera ajoutée à la prochaine échéance due — le locataire paie plus."
+                  : "Le montant sera retenu sur le dépôt de garantie, déduit à la restitution. Les loyers ne bougent pas."}
+              </p>
+            ) : null}
 
             <div className="space-y-1.5">
               <label className="block text-[12px] font-medium uppercase tracking-[0.06em] text-primary/60">

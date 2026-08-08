@@ -1,30 +1,32 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Search, Building2 } from "lucide-react";
-import { propertyService } from "@/lib/services/property.service";
+import { Loader2, Search, Home } from "lucide-react";
+import { unitService } from "@/lib/services/unit.service";
 import { ownerService } from "@/lib/services/owner.service";
 import { Modal } from "@/components/ui/Modal";
 import { ApiError } from "@/types/api";
-import type { Owner, Property } from "@/types";
+import type { Owner, Unit } from "@/types";
 
 type Props = {
   owner: Owner;
   isOpen: boolean;
   onClose: () => void;
-  onAttached: (updatedOwner: Owner) => void;
+  onAttached: () => void;
 };
 
-export function AttachPropertyModal({ owner, isOpen, onClose, onAttached }: Props) {
-  const [properties, setProperties] = useState<Property[]>([]);
+// Rattachement en masse de locaux individuels — cas de copropriété : un
+// immeuble appartient à un propriétaire, mais certains locaux (revendus)
+// appartiennent à quelqu'un d'autre. Par défaut un local suit son immeuble ;
+// on ne s'en sert que pour ce cas précis.
+export function AttachUnitModal({ owner, isOpen, onClose, onAttached }: Props) {
+  const [units, setUnits] = useState<Unit[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [badIds, setBadIds] = useState<string[]>([]);
-
-  const attachedIds = new Set((owner.properties ?? []).map((p) => p.id));
 
   useEffect(() => {
     if (!isOpen) return;
@@ -33,20 +35,18 @@ export function AttachPropertyModal({ owner, isOpen, onClose, onAttached }: Prop
     setError(null);
     setBadIds([]);
     setLoading(true);
-    propertyService
-      .getAll({ limit: 200 })
-      .then((res) => {
-        setProperties(res.data.filter((p) => !attachedIds.has(p.id)));
-      })
+    unitService
+      .getAll({ limit: 500 })
+      .then((res) => setUnits(res.data))
       .catch(() => {})
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
-  const filtered = properties.filter((p) =>
-    p.name.toLowerCase().includes(search.toLowerCase()) ||
-    (p.address ?? "").toLowerCase().includes(search.toLowerCase()),
-  );
+  const filtered = units.filter((u) => {
+    const label = `${u.unitNumber} ${u.label ?? ""} ${u.property?.name ?? ""}`.toLowerCase();
+    return label.includes(search.toLowerCase());
+  });
 
   function toggle(id: string) {
     setSelected((prev) => {
@@ -57,13 +57,6 @@ export function AttachPropertyModal({ owner, isOpen, onClose, onAttached }: Prop
     });
   }
 
-  function toggleAll() {
-    setSelected((prev) => {
-      if (prev.size === filtered.length) return new Set();
-      return new Set(filtered.map((p) => p.id));
-    });
-  }
-
   async function handleAttach() {
     if (selected.size === 0) return;
     setSubmitting(true);
@@ -71,14 +64,8 @@ export function AttachPropertyModal({ owner, isOpen, onClose, onAttached }: Prop
     setBadIds([]);
     const ids = Array.from(selected);
     try {
-      const res = await ownerService.attachProperties(owner.id, ids);
-      // La réponse peut renvoyer soit l'owner mis à jour, soit la liste des
-      // properties rattachées selon l'implémentation back — on gère les deux.
-      const data = res.data as unknown;
-      const updatedOwner: Owner = Array.isArray(data)
-        ? { ...owner, properties: [...(owner.properties ?? []), ...(data as Property[])] }
-        : (data as Owner);
-      onAttached(updatedOwner);
+      await ownerService.attachUnits(owner.id, ids);
+      onAttached();
       onClose();
     } catch (err: unknown) {
       if (err instanceof ApiError) {
@@ -86,7 +73,7 @@ export function AttachPropertyModal({ owner, isOpen, onClose, onAttached }: Prop
         if (missing && missing.length > 0) {
           setBadIds(missing);
           setError(
-            `${missing.length} bien${missing.length > 1 ? "s" : ""} introuvable${missing.length > 1 ? "s" : ""} — rien n'a été rattaché.`,
+            `${missing.length} local${missing.length > 1 ? "ux" : ""} introuvable${missing.length > 1 ? "s" : ""} — rien n'a été rattaché.`,
           );
         } else {
           setError(err.message);
@@ -99,13 +86,11 @@ export function AttachPropertyModal({ owner, isOpen, onClose, onAttached }: Prop
     }
   }
 
-  const allSelected = filtered.length > 0 && selected.size === filtered.length;
-
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Rattacher des biens"
+      title="Rattacher des locaux (copropriété)"
       footer={
         <div className="flex items-center justify-end gap-3">
           <button type="button" onClick={onClose} className="ep-btn ep-btn-ghost">
@@ -126,65 +111,38 @@ export function AttachPropertyModal({ owner, isOpen, onClose, onAttached }: Prop
     >
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         <p style={{ fontSize: 13, color: "var(--ink-soft)", marginTop: -4 }}>
-          Choisissez un ou plusieurs biens à rattacher à{" "}
-          <strong style={{ color: "var(--ink)" }}>{owner.fullName}</strong>.
+          À utiliser seulement quand un local appartient à un propriétaire différent de
+          celui de son immeuble. Un local non rattaché ici suit automatiquement le
+          propriétaire de son immeuble.
         </p>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div className="ep-search" style={{ flex: 1 }}>
-            <Search size={13} style={{ flexShrink: 0, opacity: 0.45 }} aria-hidden="true" />
-            <input
-              type="search"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Rechercher un bien…"
-            />
-          </div>
-          {filtered.length > 0 && (
-            <button
-              type="button"
-              onClick={toggleAll}
-              className="ep-btn ep-btn-ghost"
-              style={{ padding: "6px 10px", fontSize: 12, whiteSpace: "nowrap" }}
-            >
-              {allSelected ? "Tout désélectionner" : "Tout sélectionner"}
-            </button>
-          )}
+        <div className="ep-search">
+          <Search size={13} style={{ flexShrink: 0, opacity: 0.45 }} aria-hidden="true" />
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Rechercher un local (numéro, immeuble)…"
+          />
         </div>
 
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 6,
-            maxHeight: 320,
-            overflowY: "auto",
-          }}
-        >
+        <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: 320, overflowY: "auto" }}>
           {loading ? (
             <div style={{ display: "flex", justifyContent: "center", padding: "28px 0" }}>
               <Loader2 size={18} className="animate-spin" style={{ color: "var(--ink-soft)" }} />
             </div>
           ) : filtered.length === 0 ? (
-            <p
-              style={{
-                textAlign: "center",
-                fontSize: 13,
-                color: "var(--ink-soft)",
-                opacity: 0.65,
-                padding: "24px 0",
-              }}
-            >
-              {search ? "Aucun résultat" : "Aucun bien disponible à rattacher"}
+            <p style={{ textAlign: "center", fontSize: 13, color: "var(--ink-soft)", opacity: 0.65, padding: "24px 0" }}>
+              {search ? "Aucun résultat" : "Aucun local disponible"}
             </p>
           ) : (
-            filtered.map((p) => {
-              const isSelected = selected.has(p.id);
-              const isBad = badIds.includes(p.id);
-              const unitCount = p.units?.length ?? p.totalUnits ?? 0;
+            filtered.map((u) => {
+              const isSelected = selected.has(u.id);
+              const isBad = badIds.includes(u.id);
+              const alreadyOwner = u.ownerId === owner.id;
               return (
                 <label
-                  key={p.id}
+                  key={u.id}
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -201,49 +159,37 @@ export function AttachPropertyModal({ owner, isOpen, onClose, onAttached }: Prop
                       : isSelected
                       ? "rgba(193,98,45,0.05)"
                       : "var(--paper-raised)",
-                    cursor: "pointer",
-                    transition: "border-color 0.15s, background 0.15s",
+                    cursor: alreadyOwner ? "default" : "pointer",
+                    opacity: alreadyOwner ? 0.55 : 1,
                     boxShadow: "var(--shadow-card)",
                   }}
                 >
                   <input
                     type="checkbox"
                     checked={isSelected}
-                    onChange={() => toggle(p.id)}
+                    disabled={alreadyOwner}
+                    onChange={() => toggle(u.id)}
                     style={{ flexShrink: 0, accentColor: "var(--terracotta)" }}
                   />
                   <div
                     style={{
-                      width: 30,
-                      height: 30,
-                      borderRadius: "var(--r-md)",
-                      background: isSelected
-                        ? "rgba(193,98,45,0.1)"
-                        : "rgba(28,43,39,0.05)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      flexShrink: 0,
+                      width: 30, height: 30, borderRadius: "var(--r-md)",
+                      background: isSelected ? "rgba(193,98,45,0.1)" : "rgba(28,43,39,0.05)",
+                      display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
                     }}
                   >
-                    <Building2
-                      size={13}
-                      style={{ color: isSelected ? "var(--terracotta)" : "var(--ink-soft)" }}
-                    />
+                    <Home size={13} style={{ color: isSelected ? "var(--terracotta)" : "var(--ink-soft)" }} />
                   </div>
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <p style={{ fontSize: 13, fontWeight: 500, color: "var(--ink)" }}>
-                      {p.name}
+                      Local {u.unitNumber}{u.label ? ` — ${u.label}` : ""}
                     </p>
                     <p style={{ fontSize: 11.5, color: "var(--ink-soft)" }}>
                       {[
-                        p.address,
-                        `${unitCount} local${unitCount !== 1 ? "x" : ""}`,
-                        !p.ownerId ? "sans propriétaire" : null,
+                        u.property?.name,
+                        alreadyOwner ? "déjà rattaché à ce propriétaire" : null,
                         isBad ? "identifiant invalide" : null,
-                      ]
-                        .filter(Boolean)
-                        .join(" · ")}
+                      ].filter(Boolean).join(" · ")}
                     </p>
                   </div>
                 </label>
@@ -252,9 +198,7 @@ export function AttachPropertyModal({ owner, isOpen, onClose, onAttached }: Prop
           )}
         </div>
 
-        {error && (
-          <p style={{ fontSize: 12, color: "var(--rouge)" }}>{error}</p>
-        )}
+        {error && <p style={{ fontSize: 12, color: "var(--rouge)" }}>{error}</p>}
       </div>
     </Modal>
   );

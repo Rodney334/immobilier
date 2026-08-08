@@ -1,4 +1,5 @@
 import type { Property } from "./property";
+import type { Owner } from "./owner";
 
 // ─── Énumérations ─────────────────────────────────────────────────────────────
 
@@ -22,6 +23,10 @@ export type Unit = {
   _id: string;
   propertyId: string;
   property?: Property;
+  // Copropriété : propriétaire propre au local, distinct de celui de
+  // l'immeuble. undefined/null = le local suit le propriétaire de l'immeuble.
+  ownerId?: string | null;
+  owner?: Owner | null;
   unitNumber: string;
   label?: string;
   description?: string;
@@ -44,6 +49,7 @@ export type Unit = {
 export type CreateUnitPayload = {
   propertyId: string;
   unitNumber?: string; // optionnel — auto-généré par l'API
+  ownerId?: string; // copropriété — laisser vide pour suivre l'immeuble
   label?: string;
   description?: string;
   type?: string;

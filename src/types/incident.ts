@@ -1,22 +1,30 @@
 // ─── Énumérations ─────────────────────────────────────────────────────────────
 
+// "CANCELLED" retiré — n'existe pas côté back (OPEN/IN_PROGRESS/RESOLVED/CLOSED
+// uniquement). Une valeur inconnue envoyée au back retombe silencieusement
+// sur OTHER/valeur par défaut, d'où la correction.
 export type IncidentStatus =
   | "OPEN"
   | "IN_PROGRESS"
   | "RESOLVED"
-  | "CLOSED"
-  | "CANCELLED";
+  | "CLOSED";
 
 export type IncidentPriority = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 
+// ELECTRICAL→ELECTRICITY et STRUCTURAL→STRUCTURE corrigés pour matcher
+// l'enum back ; PEST_CONTROL ajouté (absent du front jusqu'ici).
 export type IncidentCategory =
   | "PLUMBING"
-  | "ELECTRICAL"
-  | "STRUCTURAL"
+  | "ELECTRICITY"
+  | "STRUCTURE"
   | "APPLIANCE"
   | "SECURITY"
   | "CLEANING"
+  | "PEST_CONTROL"
   | "OTHER";
+
+// Qui supporte le coût de l'intervention.
+export type IncidentCostBearer = "OWNER" | "TENANT" | "AGENCY";
 
 // ─── Entité principale ────────────────────────────────────────────────────────
 
@@ -47,6 +55,10 @@ export type Incident = {
   resolutionNotes?: string | null;
   reportedAt?: string | null;
   resolvedAt?: string | null;
+  // Qui paie l'intervention, et — si locataire — sur quoi elle est retenue.
+  costBearer: IncidentCostBearer;    // défaut "OWNER" côté API
+  deductFrom?: "RENT" | "DEPOSIT" | null; // pertinent seulement si TENANT
+  adjustmentId?: string | null;      // lecture seule — rempli à la résolution
   createdAt: string;
   updatedAt: string;
 };
@@ -72,6 +84,8 @@ export type CreateIncidentPayload = {
   priority: IncidentPriority;
   estimatedCost?: number;
   assignedTo?: string;
+  costBearer?: IncidentCostBearer;   // défaut "OWNER"
+  deductFrom?: "RENT" | "DEPOSIT";   // pertinent seulement si costBearer="TENANT"
 };
 
 export type UpdateIncidentPayload = {
@@ -80,6 +94,8 @@ export type UpdateIncidentPayload = {
   assignedTo?: string;
   actualCost?: number;
   resolutionNotes?: string;
+  costBearer?: IncidentCostBearer;
+  deductFrom?: "RENT" | "DEPOSIT";
 };
 
 // ─── Filtres ──────────────────────────────────────────────────────────────────
