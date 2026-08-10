@@ -31,7 +31,9 @@ function SubmitButton() {
       disabled={pending}
       className="w-full h-12 bg-primary text-white rounded-lg text-[15px] font-medium hover:bg-[#263447] active:bg-[#16202C] disabled:opacity-60 disabled:cursor-not-allowed transition-colors duration-150 flex items-center justify-center gap-2"
     >
-      {pending && <Loader2 size={16} className="animate-spin" aria-hidden="true" />}
+      {pending && (
+        <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+      )}
       Se connecter
     </button>
   );
@@ -40,25 +42,37 @@ function SubmitButton() {
 // ─── Composant principal ──────────────────────────────────────────────────────
 
 export function LoginForm() {
-  const router  = useRouter();
+  const router = useRouter();
   const setUser = useAuthStore((s) => s.setUser);
 
   // État séparé pour le renvoi de vérification (indépendant de useActionState)
-  const [resendStatus, setResendStatus] = useState<"idle" | "sending" | "sent">("idle");
+  const [resendStatus, setResendStatus] = useState<"idle" | "sending" | "sent">(
+    "idle",
+  );
 
   const [state, formAction] = useActionState(
     async (_prev: FormState, formData: FormData): Promise<FormState> => {
-      const email    = formData.get("email") as string;
+      const email = formData.get("email") as string;
       const password = formData.get("password") as string;
 
       if (!email || !password) {
-        return { error: "Veuillez remplir tous les champs.", success: false, submittedEmail: email ?? "", emailUnverified: false };
+        return {
+          error: "Veuillez remplir tous les champs.",
+          success: false,
+          submittedEmail: email ?? "",
+          emailUnverified: false,
+        };
       }
 
       try {
         const res = await authService.login({ email, password });
         setUser(res.user);
-        return { error: null, success: true, submittedEmail: email, emailUnverified: false };
+        return {
+          error: null,
+          success: true,
+          submittedEmail: email,
+          emailUnverified: false,
+        };
       } catch (err) {
         // Cas spécial : 403 = email non vérifié
         if (err instanceof ApiError && err.status === 403) {
@@ -74,7 +88,12 @@ export function LoginForm() {
           err instanceof ApiError
             ? err.message
             : "Identifiants invalides. Veuillez réessayer.";
-        return { error: message, success: false, submittedEmail: email, emailUnverified: false };
+        return {
+          error: message,
+          success: false,
+          submittedEmail: email,
+          emailUnverified: false,
+        };
       }
     },
     { error: null, success: false, submittedEmail: "", emailUnverified: false },
@@ -116,7 +135,6 @@ export function LoginForm() {
 
       {/* Formulaire */}
       <form action={formAction} className="space-y-5" noValidate>
-
         {/* Erreur générale */}
         {state.error && !state.emailUnverified && (
           <div
@@ -139,7 +157,10 @@ export function LoginForm() {
             <p className="text-[12px] text-primary/55 leading-snug">
               Vérifiez votre boîte mail
               {state.submittedEmail && (
-                <> (<span className="font-medium">{state.submittedEmail}</span>)</>
+                <>
+                  {" "}
+                  (<span className="font-medium">{state.submittedEmail}</span>)
+                </>
               )}{" "}
               ou renvoyez le lien de confirmation.
             </p>
@@ -157,9 +178,15 @@ export function LoginForm() {
                 className="inline-flex items-center gap-1.5 text-[12px] font-medium text-secondary hover:text-[#C8935E] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {resendStatus === "sending" && (
-                  <Loader2 size={12} className="animate-spin" aria-hidden="true" />
+                  <Loader2
+                    size={12}
+                    className="animate-spin"
+                    aria-hidden="true"
+                  />
                 )}
-                {resendStatus === "sending" ? "Envoi en cours…" : "Renvoyer l'email de vérification"}
+                {resendStatus === "sending"
+                  ? "Envoi en cours…"
+                  : "Renvoyer l'email de vérification"}
               </button>
             )}
           </div>
@@ -203,7 +230,7 @@ export function LoginForm() {
         </div>
 
         {/* Google SSO — TODO: brancher OAuth */}
-        <button
+        {/* <button
           type="button"
           className="w-full h-11 flex items-center justify-center gap-3 border border-border-custom rounded-lg text-[14px] text-primary font-medium hover:bg-primary/4 transition-colors duration-150"
         >
@@ -214,13 +241,16 @@ export function LoginForm() {
             <path fill="#1976D2" d="M43.6 20H24v8h11.3c-.8 2.5-2.4 4.5-4.6 5.9l6.3 5.3C40.6 36.1 44 30.6 44 24c0-1.4-.2-2.7-.4-4z" />
           </svg>
           Continuer avec Google
-        </button>
+        </button> */}
       </form>
 
       {/* Footer */}
       <p className="text-center text-[13px] text-primary/45">
         Pas encore de compte&nbsp;?{" "}
-        <Link href="/register" className="font-semibold text-primary hover:underline">
+        <Link
+          href="/register"
+          className="font-semibold text-primary hover:underline"
+        >
           Créer un compte
         </Link>
       </p>
