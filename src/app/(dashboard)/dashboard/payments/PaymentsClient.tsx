@@ -128,7 +128,7 @@ function PaymentCard({
     ? (tenant.fullName ?? `${tenant.firstName} ${tenant.lastName}`)
     : "—";
   const initials = tenant
-    ? `${tenant.firstName && tenant.firstName[0]}${tenant.lastName && tenant.lastName[0]}`.toUpperCase()
+    ? `${tenant.firstName && tenant.lastName ? `${tenant.firstName && tenant.firstName[0]}${tenant.lastName && tenant.lastName[0]}` : tenant.fullName[0]}`.toUpperCase()
     : "?";
 
   return (

@@ -1,7 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Loader2, Percent, Gift, AlertTriangle, Wrench, TrendingUp, Info } from "lucide-react";
+import {
+  Loader2,
+  Percent,
+  Gift,
+  AlertTriangle,
+  Wrench,
+  TrendingUp,
+  Info,
+} from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
 import { adjustmentService } from "@/lib/services/adjustment.service";
@@ -35,7 +43,11 @@ type WaiverMode = "total" | "fixed";
 
 const fmt = new Intl.NumberFormat("fr-FR");
 
-const TYPE_OPTIONS: { value: AdjustmentType; label: string; icon: React.ElementType }[] = [
+const TYPE_OPTIONS: {
+  value: AdjustmentType;
+  label: string;
+  icon: React.ElementType;
+}[] = [
   { value: "DISCOUNT", label: "Remise", icon: Percent },
   { value: "WAIVER", label: "Exonération", icon: Gift },
   { value: "PENALTY", label: "Pénalité", icon: AlertTriangle },
@@ -44,10 +56,26 @@ const TYPE_OPTIONS: { value: AdjustmentType; label: string; icon: React.ElementT
 ];
 
 const SCOPE_OPTIONS: { value: Scope; label: string; desc: string }[] = [
-  { value: "months", label: "Les prochains mois", desc: "Exonère/réduit les N prochaines échéances non payées" },
-  { value: "specific", label: "Échéances précises", desc: "Choisir des mois non consécutifs (ex: juillet et septembre)" },
-  { value: "single", label: "Une seule échéance", desc: "Cible une échéance déjà existante" },
-  { value: "full", label: "Jusqu'à la fin du bail", desc: "Toutes les échéances restantes, sans limite" },
+  {
+    value: "months",
+    label: "Les prochains mois",
+    desc: "Exonère/réduit les N prochaines échéances non payées",
+  },
+  {
+    value: "specific",
+    label: "Échéances précises",
+    desc: "Choisir des mois non consécutifs (ex: juillet et septembre)",
+  },
+  {
+    value: "single",
+    label: "Une seule échéance",
+    desc: "Cible une échéance déjà existante",
+  },
+  {
+    value: "full",
+    label: "Jusqu'à la fin du bail",
+    desc: "Toutes les échéances restantes, sans limite",
+  },
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -62,18 +90,32 @@ function scheduleBalance(s: RentSchedule): number {
 
 function formatPeriod(iso: string): string {
   const d = new Date(iso);
-  const label = d.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
+  const label = d.toLocaleDateString("fr-FR", {
+    month: "long",
+    year: "numeric",
+  });
   return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
 function formatDateShort(iso: string): string {
-  return new Date(iso).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" });
+  return new Date(iso).toLocaleDateString("fr-FR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
 }
 
 function leaseLabel(l: Lease): string {
-  const ref = l.contractNumber ? `#${l.contractNumber}` : `#${(l.id ?? "").slice(-8).toUpperCase()}`;
-  const tenant = l.tenant ? (l.tenant.fullName ?? `${l.tenant.firstName ?? ""} ${l.tenant.lastName ?? ""}`.trim()) : "";
-  const unit = l.unit ? `${l.unit.property?.name ?? ""} ${l.unit.unitNumber ? `Apt ${l.unit.unitNumber}` : ""}`.trim() : "";
+  const ref = l.contractNumber
+    ? `#${l.contractNumber}`
+    : `#${(l.id ?? "").slice(-8).toUpperCase()}`;
+  const tenant = l.tenant
+    ? (l.tenant.fullName ??
+      `${l.tenant.firstName ?? ""} ${l.tenant.lastName ?? ""}`.trim())
+    : "";
+  const unit = l.unit
+    ? `${l.unit.property?.name ?? ""} ${l.unit.unitNumber ? `Apt ${l.unit.unitNumber}` : ""}`.trim()
+    : "";
   return [ref, tenant, unit].filter(Boolean).join(" — ");
 }
 
@@ -98,14 +140,18 @@ export function AdjustmentFormModal({ isOpen, onClose, onSaved }: Props) {
   const [waiverMode, setWaiverMode] = useState<WaiverMode>("fixed");
 
   const [amount, setAmount] = useState("");
-  const [valueModeChoice, setValueModeChoice] = useState<AdjustmentValueMode>("FIXED");
-  const [baseReference, setBaseReference] = useState<AdjustmentBaseReference>("LEASE_MONTHLY_RENT");
+  const [valueModeChoice, setValueModeChoice] =
+    useState<AdjustmentValueMode>("FIXED");
+  const [baseReference, setBaseReference] =
+    useState<AdjustmentBaseReference>("LEASE_MONTHLY_RENT");
   const [monthsCount, setMonthsCount] = useState("3");
   const [startFromDate, setStartFromDate] = useState("");
   const [selectedScheduleIds, setSelectedScheduleIds] = useState<string[]>([]);
   const [singleScheduleId, setSingleScheduleId] = useState("");
   const [correctionSign, setCorrectionSign] = useState<"+" | "-">("-");
-  const [effectiveDate, setEffectiveDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [effectiveDate, setEffectiveDate] = useState(() =>
+    new Date().toISOString().slice(0, 10),
+  );
   const [reason, setReason] = useState("");
 
   const [submitting, setSubmitting] = useState(false);
@@ -115,7 +161,9 @@ export function AdjustmentFormModal({ isOpen, onClose, onSaved }: Props) {
   const isDeposit = appliesTo === "DEPOSIT";
   const selectedLease = leases.find((l) => l.id === leaseId) ?? null;
   const rentAmount = selectedLease ? Number(selectedLease.monthlyRent) : 0;
-  const unitBaseRent = selectedLease?.unit?.baseRent ? Number(selectedLease.unit.baseRent) : 0;
+  const unitBaseRent = selectedLease?.unit?.baseRent
+    ? Number(selectedLease.unit.baseRent)
+    : 0;
 
   // Le montant peut être exprimé en % plutôt qu'en FCFA pour Remise,
   // Exonération (en mode "montant fixe"), Pénalité et Correction.
@@ -124,11 +172,15 @@ export function AdjustmentFormModal({ isOpen, onClose, onSaved }: Props) {
   // une retenue sur caution (non documenté, on reste prudent en FIXED).
   const percentageEligible =
     !isDeposit &&
-    ((isWaiverGroup && waiverMode === "fixed") || type === "PENALTY" || type === "CORRECTION");
-  const isPercentageMode = percentageEligible && valueModeChoice === "PERCENTAGE";
+    ((isWaiverGroup && waiverMode === "fixed") ||
+      type === "PENALTY" ||
+      type === "CORRECTION");
+  const isPercentageMode =
+    percentageEligible && valueModeChoice === "PERCENTAGE";
   // Montant FCFA équivalent — utilisé pour l'affichage et pour les portées
   // groupées (waive-upcoming), qui n'acceptent qu'un montant fixe en FCFA.
-  const baseAmountForPercentage = baseReference === "UNIT_BASE_RENT" ? unitBaseRent : rentAmount;
+  const baseAmountForPercentage =
+    baseReference === "UNIT_BASE_RENT" ? unitBaseRent : rentAmount;
   const effectiveAmountFcfa = isPercentageMode
     ? Math.round((baseAmountForPercentage * Number(amount || 0)) / 100)
     : Number(amount || 0);
@@ -179,7 +231,10 @@ export function AdjustmentFormModal({ isOpen, onClose, onSaved }: Props) {
         // remontaient dans la liste). On ne garde que celles du bail choisi.
         const list = (res.data ?? [])
           .filter((s) => s.leaseId === leaseId)
-          .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+          .sort(
+            (a, b) =>
+              new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime(),
+          );
         setSchedules(list);
       })
       .catch(() => setSchedules([]))
@@ -224,7 +279,8 @@ export function AdjustmentFormModal({ isOpen, onClose, onSaved }: Props) {
     [schedules],
   );
   const waivableSchedules = useMemo(
-    () => schedules.filter((s) => s.status !== "PAID" && s.status !== "CANCELLED"),
+    () =>
+      schedules.filter((s) => s.status !== "PAID" && s.status !== "CANCELLED"),
     [schedules],
   );
 
@@ -295,7 +351,23 @@ export function AdjustmentFormModal({ isOpen, onClose, onSaved }: Props) {
       return `Le montant dû sera ${correctionSign === "-" ? "réduit" : "augmenté"} de ${reductionLabel}.`;
     }
     return "";
-  }, [isDeposit, isWaiverGroup, scope, waiverMode, amount, monthsCount, startFromDate, selectedScheduleIds, singleScheduleId, type, effectiveDate, correctionSign, rentAmount, isPercentageMode, effectiveAmountFcfa]);
+  }, [
+    isDeposit,
+    isWaiverGroup,
+    scope,
+    waiverMode,
+    amount,
+    monthsCount,
+    startFromDate,
+    selectedScheduleIds,
+    singleScheduleId,
+    type,
+    effectiveDate,
+    correctionSign,
+    rentAmount,
+    isPercentageMode,
+    effectiveAmountFcfa,
+  ]);
 
   function toggleScheduleId(id: string) {
     setSelectedScheduleIds((prev) =>
@@ -318,7 +390,10 @@ export function AdjustmentFormModal({ isOpen, onClose, onSaved }: Props) {
 
       if (isWaiverGroup) {
         const amtRaw = waiverMode === "fixed" ? Number(amount) : undefined;
-        if (waiverMode === "fixed" && (!amount || isNaN(amtRaw as number) || (amtRaw as number) <= 0)) {
+        if (
+          waiverMode === "fixed" &&
+          (!amount || isNaN(amtRaw as number) || (amtRaw as number) <= 0)
+        ) {
           throw new Error("Le montant de la remise doit être supérieur à 0.");
         }
         if (isPercentageMode && (amtRaw as number) > 100) {
@@ -326,15 +401,20 @@ export function AdjustmentFormModal({ isOpen, onClose, onSaved }: Props) {
         }
 
         if (scope === "single") {
-          if (!isDeposit && !singleScheduleId) throw new Error("Sélectionnez une échéance.");
-          const target = !isDeposit ? schedules.find((s) => s.id === singleScheduleId) : undefined;
+          if (!isDeposit && !singleScheduleId)
+            throw new Error("Sélectionnez une échéance.");
+          const target = !isDeposit
+            ? schedules.find((s) => s.id === singleScheduleId)
+            : undefined;
 
           if (waiverMode === "total") {
             // Exonération totale : on calcule le solde restant de l'échéance
             // ciblée (jamais disponible pour une caution — cas exclu par l'UI).
             const finalAmount = target ? scheduleBalance(target) : 0;
             if (!finalAmount || finalAmount <= 0) {
-              throw new Error("Cette échéance ne peut pas être ajustée (montant dû nul).");
+              throw new Error(
+                "Cette échéance ne peut pas être ajustée (montant dû nul).",
+              );
             }
             await adjustmentService.create({
               rentScheduleId: isDeposit ? undefined : singleScheduleId,
@@ -350,7 +430,9 @@ export function AdjustmentFormModal({ isOpen, onClose, onSaved }: Props) {
             // Mode pourcentage : on n'envoie pas "amount", le back le calcule
             // à partir de percentage + baseReference.
             if (!amount || Number(amount) <= 0 || Number(amount) > 100) {
-              throw new Error("Le pourcentage doit être compris entre 0 et 100.");
+              throw new Error(
+                "Le pourcentage doit être compris entre 0 et 100.",
+              );
             }
             await adjustmentService.create({
               rentScheduleId: singleScheduleId,
@@ -387,11 +469,13 @@ export function AdjustmentFormModal({ isOpen, onClose, onSaved }: Props) {
           };
           if (scope === "months") {
             const n = Number(monthsCount);
-            if (!n || n <= 0) throw new Error("Le nombre de mois doit être supérieur à 0.");
+            if (!n || n <= 0)
+              throw new Error("Le nombre de mois doit être supérieur à 0.");
             payload.monthsCount = n;
             if (startFromDate) payload.startFromDate = startFromDate;
           } else if (scope === "specific") {
-            if (selectedScheduleIds.length === 0) throw new Error("Sélectionnez au moins une échéance.");
+            if (selectedScheduleIds.length === 0)
+              throw new Error("Sélectionnez au moins une échéance.");
             payload.rentScheduleIds = selectedScheduleIds;
           } else if (scope === "full") {
             if (startFromDate) payload.startFromDate = startFromDate;
@@ -400,7 +484,9 @@ export function AdjustmentFormModal({ isOpen, onClose, onSaved }: Props) {
         }
       } else if (type === "RENT_REVISION") {
         if (!amount || Number(amount) <= 0) {
-          throw new Error("Le nouveau montant du loyer doit être supérieur à 0.");
+          throw new Error(
+            "Le nouveau montant du loyer doit être supérieur à 0.",
+          );
         }
         await adjustmentService.create({
           leaseId,
@@ -411,16 +497,21 @@ export function AdjustmentFormModal({ isOpen, onClose, onSaved }: Props) {
         });
       } else {
         // PENALTY / CORRECTION → une seule échéance obligatoire (sauf caution)
-        if (!isDeposit && !singleScheduleId) throw new Error("Sélectionnez une échéance à cibler.");
-        if (!amount || Number(amount) <= 0) throw new Error("Le montant doit être supérieur à 0.");
+        if (!isDeposit && !singleScheduleId)
+          throw new Error("Sélectionnez une échéance à cibler.");
+        if (!amount || Number(amount) <= 0)
+          throw new Error("Le montant doit être supérieur à 0.");
 
         if (isPercentageMode) {
-          if (Number(amount) > 100) throw new Error("Le pourcentage ne peut pas dépasser 100%.");
+          if (Number(amount) > 100)
+            throw new Error("Le pourcentage ne peut pas dépasser 100%.");
           // Mode pourcentage : pas de "amount", le back calcule à partir de
           // percentage + baseReference. Pour la Correction, le signe porte
           // aussi sur le pourcentage (même logique qu'en mode montant fixe).
           const signedPercentage =
-            type === "CORRECTION" && correctionSign === "-" ? -Number(amount) : Number(amount);
+            type === "CORRECTION" && correctionSign === "-"
+              ? -Number(amount)
+              : Number(amount);
           await adjustmentService.create({
             rentScheduleId: isDeposit ? undefined : singleScheduleId,
             leaseId,
@@ -435,7 +526,9 @@ export function AdjustmentFormModal({ isOpen, onClose, onSaved }: Props) {
           });
         } else {
           const signedAmount =
-            type === "CORRECTION" && correctionSign === "-" ? -Number(amount) : Number(amount);
+            type === "CORRECTION" && correctionSign === "-"
+              ? -Number(amount)
+              : Number(amount);
           await adjustmentService.create({
             rentScheduleId: isDeposit ? undefined : singleScheduleId,
             leaseId,
@@ -466,8 +559,12 @@ export function AdjustmentFormModal({ isOpen, onClose, onSaved }: Props) {
     type === "PENALTY" ||
     type === "CORRECTION";
   const showSingleScheduleSelect =
-    !isDeposit && ((isWaiverGroup && scope === "single") || type === "PENALTY" || type === "CORRECTION");
-  const showSpecificSchedules = isWaiverGroup && scope === "specific" && !isDeposit;
+    !isDeposit &&
+    ((isWaiverGroup && scope === "single") ||
+      type === "PENALTY" ||
+      type === "CORRECTION");
+  const showSpecificSchedules =
+    isWaiverGroup && scope === "specific" && !isDeposit;
   const showMonthsFields = isWaiverGroup && scope === "months" && !isDeposit;
 
   return (
@@ -478,7 +575,11 @@ export function AdjustmentFormModal({ isOpen, onClose, onSaved }: Props) {
       maxWidth="540px"
       footer={
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
-          <button type="button" onClick={onClose} className="ep-btn ep-btn-ghost">
+          <button
+            type="button"
+            onClick={onClose}
+            className="ep-btn ep-btn-ghost"
+          >
             Annuler
           </button>
           <button
@@ -523,7 +624,9 @@ export function AdjustmentFormModal({ isOpen, onClose, onSaved }: Props) {
             disabled={loadingLeases}
             className="w-full h-11 px-3 rounded-lg border border-border-custom bg-white text-[14px] text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 disabled:opacity-50 disabled:bg-neutral transition-colors"
           >
-            <option value="">{loadingLeases ? "Chargement..." : "Sélectionner un bail"}</option>
+            <option value="">
+              {loadingLeases ? "Chargement..." : "Sélectionner un bail"}
+            </option>
             {leases.map((l) => (
               <option key={l.id} value={l.id}>
                 {leaseLabel(l)}
@@ -539,12 +642,19 @@ export function AdjustmentFormModal({ isOpen, onClose, onSaved }: Props) {
 
         {/* S'applique à — Loyer / Caution */}
         <div>
-          <div style={{ fontSize: 12, color: "var(--ink-soft)", marginBottom: 6 }}>S&apos;applique à</div>
+          <div
+            style={{ fontSize: 12, color: "var(--ink-soft)", marginBottom: 6 }}
+          >
+            S&apos;applique à
+          </div>
           <div style={{ display: "flex", gap: 8 }}>
-            {([
+            {[
               { value: "RENT" as const, label: "Loyer" },
-              { value: "DEPOSIT" as const, label: "Caution (dépôt de garantie)" },
-            ]).map(({ value, label }) => (
+              {
+                value: "DEPOSIT" as const,
+                label: "Caution (dépôt de garantie)",
+              },
+            ].map(({ value, label }) => (
               <button
                 key={value}
                 type="button"
@@ -553,9 +663,16 @@ export function AdjustmentFormModal({ isOpen, onClose, onSaved }: Props) {
                 style={{
                   flex: 1,
                   fontSize: 13,
-                  border: appliesTo === value ? "1px solid rgba(193,98,45,0.4)" : "1px solid var(--paper-line)",
-                  background: appliesTo === value ? "rgba(193,98,45,0.08)" : "var(--paper-raised)",
-                  color: appliesTo === value ? "var(--terracotta)" : "var(--ink)",
+                  border:
+                    appliesTo === value
+                      ? "1px solid rgba(193,98,45,0.4)"
+                      : "1px solid var(--paper-line)",
+                  background:
+                    appliesTo === value
+                      ? "rgba(193,98,45,0.08)"
+                      : "var(--paper-raised)",
+                  color:
+                    appliesTo === value ? "var(--terracotta)" : "var(--ink)",
                 }}
               >
                 {label}
@@ -563,7 +680,9 @@ export function AdjustmentFormModal({ isOpen, onClose, onSaved }: Props) {
             ))}
           </div>
           {isDeposit && (
-            <p style={{ fontSize: 11.5, color: "var(--ink-soft)", marginTop: 6 }}>
+            <p
+              style={{ fontSize: 11.5, color: "var(--ink-soft)", marginTop: 6 }}
+            >
               Une retenue sur caution ne se rattache à aucune échéance de loyer.
             </p>
           )}
@@ -571,8 +690,18 @@ export function AdjustmentFormModal({ isOpen, onClose, onSaved }: Props) {
 
         {/* Type d'ajustement */}
         <div>
-          <div style={{ fontSize: 12, color: "var(--ink-soft)", marginBottom: 6 }}>Type d&apos;ajustement</div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6 }}>
+          <div
+            style={{ fontSize: 12, color: "var(--ink-soft)", marginBottom: 6 }}
+          >
+            Type d&apos;ajustement
+          </div>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(3, 1fr)",
+              gap: 6,
+            }}
+          >
             {TYPE_OPTIONS.map(({ value, label, icon: Icon }) => {
               const active = type === value;
               const disabled = isDeposit && value === "RENT_REVISION";
@@ -582,7 +711,11 @@ export function AdjustmentFormModal({ isOpen, onClose, onSaved }: Props) {
                   type="button"
                   onClick={() => !disabled && setType(value)}
                   disabled={disabled}
-                  title={disabled ? "Non disponible pour une retenue sur caution" : undefined}
+                  title={
+                    disabled
+                      ? "Non disponible pour une retenue sur caution"
+                      : undefined
+                  }
                   style={{
                     display: "flex",
                     flexDirection: "column",
@@ -591,9 +724,17 @@ export function AdjustmentFormModal({ isOpen, onClose, onSaved }: Props) {
                     padding: "10px 4px",
                     fontSize: 12,
                     borderRadius: "var(--r-md)",
-                    border: active ? "1px solid rgba(193,98,45,0.4)" : "1px solid var(--paper-line)",
-                    background: active ? "rgba(193,98,45,0.08)" : "var(--paper-raised)",
-                    color: disabled ? "var(--ink-soft)" : active ? "var(--terracotta)" : "var(--ink)",
+                    border: active
+                      ? "1px solid rgba(193,98,45,0.4)"
+                      : "1px solid var(--paper-line)",
+                    background: active
+                      ? "rgba(193,98,45,0.08)"
+                      : "var(--paper-raised)",
+                    color: disabled
+                      ? "var(--ink-soft)"
+                      : active
+                        ? "var(--terracotta)"
+                        : "var(--ink)",
                     cursor: disabled ? "not-allowed" : "pointer",
                     opacity: disabled ? 0.45 : 1,
                     transition: "border-color 0.15s, background 0.15s",
@@ -610,7 +751,15 @@ export function AdjustmentFormModal({ isOpen, onClose, onSaved }: Props) {
         {/* Portée — Remise / Exonération uniquement (pas pour une caution) */}
         {showScopeSelector && (
           <div>
-            <div style={{ fontSize: 12, color: "var(--ink-soft)", marginBottom: 6 }}>Portée</div>
+            <div
+              style={{
+                fontSize: 12,
+                color: "var(--ink-soft)",
+                marginBottom: 6,
+              }}
+            >
+              Portée
+            </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               {SCOPE_OPTIONS.map(({ value, label, desc }) => {
                 const active = scope === value;
@@ -623,8 +772,12 @@ export function AdjustmentFormModal({ isOpen, onClose, onSaved }: Props) {
                       gap: 10,
                       padding: "10px 12px",
                       borderRadius: "var(--r-md)",
-                      border: active ? "1px solid rgba(193,98,45,0.4)" : "1px solid var(--paper-line)",
-                      background: active ? "rgba(193,98,45,0.05)" : "var(--paper-raised)",
+                      border: active
+                        ? "1px solid rgba(193,98,45,0.4)"
+                        : "1px solid var(--paper-line)",
+                      background: active
+                        ? "rgba(193,98,45,0.05)"
+                        : "var(--paper-raised)",
                       cursor: "pointer",
                       transition: "border-color 0.15s, background 0.15s",
                     }}
@@ -634,11 +787,25 @@ export function AdjustmentFormModal({ isOpen, onClose, onSaved }: Props) {
                       name="scope"
                       checked={active}
                       onChange={() => setScope(value)}
-                      style={{ marginTop: 3, flexShrink: 0, accentColor: "var(--terracotta)" }}
+                      style={{
+                        marginTop: 3,
+                        flexShrink: 0,
+                        accentColor: "var(--terracotta)",
+                      }}
                     />
                     <div>
-                      <div style={{ fontSize: 13, fontWeight: 500, color: "var(--ink)" }}>{label}</div>
-                      <div style={{ fontSize: 12, color: "var(--ink-soft)" }}>{desc}</div>
+                      <div
+                        style={{
+                          fontSize: 13,
+                          fontWeight: 500,
+                          color: "var(--ink)",
+                        }}
+                      >
+                        {label}
+                      </div>
+                      <div style={{ fontSize: 12, color: "var(--ink-soft)" }}>
+                        {desc}
+                      </div>
                     </div>
                   </label>
                 );
@@ -679,17 +846,51 @@ export function AdjustmentFormModal({ isOpen, onClose, onSaved }: Props) {
         {/* Échéances précises (scope = specific) */}
         {showSpecificSchedules && (
           <div>
-            <div style={{ fontSize: 12, color: "var(--ink-soft)", marginBottom: 6 }}>
+            <div
+              style={{
+                fontSize: 12,
+                color: "var(--ink-soft)",
+                marginBottom: 6,
+              }}
+            >
               Échéances à cibler{" "}
-              <span style={{ opacity: 0.7 }}>({selectedScheduleIds.length} sélectionnée{selectedScheduleIds.length > 1 ? "s" : ""})</span>
+              <span style={{ opacity: 0.7 }}>
+                ({selectedScheduleIds.length} sélectionnée
+                {selectedScheduleIds.length > 1 ? "s" : ""})
+              </span>
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 5, maxHeight: 220, overflowY: "auto" }}>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 5,
+                maxHeight: 220,
+                overflowY: "auto",
+              }}
+            >
               {loadingSchedules ? (
-                <div style={{ display: "flex", justifyContent: "center", padding: 20 }}>
-                  <Loader2 size={16} className="animate-spin" style={{ color: "var(--ink-soft)" }} />
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    padding: 20,
+                  }}
+                >
+                  <Loader2
+                    size={16}
+                    className="animate-spin"
+                    style={{ color: "var(--ink-soft)" }}
+                  />
                 </div>
               ) : waivableSchedules.length === 0 ? (
-                <p style={{ fontSize: 12, color: "var(--ink-soft)", opacity: 0.7, padding: "8px 0" }}>
+                <p
+                  style={{
+                    fontSize: 12,
+                    color: "var(--ink-soft)",
+                    opacity: 0.7,
+                    padding: "8px 0",
+                  }}
+                >
                   Aucune échéance non soldée pour ce bail.
                 </p>
               ) : (
@@ -705,21 +906,39 @@ export function AdjustmentFormModal({ isOpen, onClose, onSaved }: Props) {
                         gap: 10,
                         padding: "8px 12px",
                         borderRadius: "var(--r-md)",
-                        border: checked ? "1px solid rgba(193,98,45,0.4)" : "1px solid var(--paper-line)",
-                        background: checked ? "rgba(193,98,45,0.05)" : "var(--paper-raised)",
+                        border: checked
+                          ? "1px solid rgba(193,98,45,0.4)"
+                          : "1px solid var(--paper-line)",
+                        background: checked
+                          ? "rgba(193,98,45,0.05)"
+                          : "var(--paper-raised)",
                         cursor: "pointer",
                       }}
                     >
-                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 10,
+                        }}
+                      >
                         <input
                           type="checkbox"
                           checked={checked}
                           onChange={() => toggleScheduleId(s.id)}
                           style={{ accentColor: "var(--terracotta)" }}
                         />
-                        <span style={{ fontSize: 13, color: "var(--ink)" }}>{formatPeriod(s.dueDate)}</span>
+                        <span style={{ fontSize: 13, color: "var(--ink)" }}>
+                          {formatPeriod(s.dueDate)}
+                        </span>
                       </div>
-                      <span style={{ fontSize: 12, color: "var(--ink-soft)", fontFamily: "var(--font-mono)" }}>
+                      <span
+                        style={{
+                          fontSize: 12,
+                          color: "var(--ink-soft)",
+                          fontFamily: "var(--font-mono)",
+                        }}
+                      >
                         {fmt.format(scheduleBalance(s))} FCFA
                       </span>
                     </label>
@@ -743,13 +962,18 @@ export function AdjustmentFormModal({ isOpen, onClose, onSaved }: Props) {
               className="w-full h-11 px-3 rounded-lg border border-border-custom bg-white text-[14px] text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 disabled:opacity-50 disabled:bg-neutral transition-colors"
             >
               <option value="">
-                {loadingSchedules ? "Chargement..." : "Sélectionner une échéance"}
+                {loadingSchedules
+                  ? "Chargement..."
+                  : "Sélectionner une échéance"}
               </option>
-              {(isWaiverGroup ? waivableSchedules : targetableSchedules).map((s) => (
-                <option key={s.id} value={s.id}>
-                  {formatPeriod(s.dueDate)} — dû {formatDateShort(s.dueDate)} — reste {fmt.format(scheduleBalance(s))} FCFA
-                </option>
-              ))}
+              {(isWaiverGroup ? waivableSchedules : targetableSchedules).map(
+                (s) => (
+                  <option key={s.id} value={s.id}>
+                    {formatPeriod(s.dueDate)} — dû {formatDateShort(s.dueDate)}{" "}
+                    — reste {fmt.format(scheduleBalance(s))} FCFA
+                  </option>
+                ),
+              )}
             </select>
           </div>
         )}
@@ -757,7 +981,15 @@ export function AdjustmentFormModal({ isOpen, onClose, onSaved }: Props) {
         {/* Toggle exonération totale / montant fixe (masqué pour une caution) */}
         {showAmountToggle && !isDeposit && (
           <div>
-            <div style={{ fontSize: 12, color: "var(--ink-soft)", marginBottom: 6 }}>Type de réduction</div>
+            <div
+              style={{
+                fontSize: 12,
+                color: "var(--ink-soft)",
+                marginBottom: 6,
+              }}
+            >
+              Type de réduction
+            </div>
             <div style={{ display: "flex", gap: 8 }}>
               <button
                 type="button"
@@ -766,9 +998,16 @@ export function AdjustmentFormModal({ isOpen, onClose, onSaved }: Props) {
                 style={{
                   flex: 1,
                   fontSize: 13,
-                  border: waiverMode === "total" ? "1px solid rgba(193,98,45,0.4)" : "1px solid var(--paper-line)",
-                  background: waiverMode === "total" ? "rgba(193,98,45,0.08)" : "var(--paper-raised)",
-                  color: waiverMode === "total" ? "var(--terracotta)" : "var(--ink)",
+                  border:
+                    waiverMode === "total"
+                      ? "1px solid rgba(193,98,45,0.4)"
+                      : "1px solid var(--paper-line)",
+                  background:
+                    waiverMode === "total"
+                      ? "rgba(193,98,45,0.08)"
+                      : "var(--paper-raised)",
+                  color:
+                    waiverMode === "total" ? "var(--terracotta)" : "var(--ink)",
                 }}
               >
                 Exonération totale
@@ -780,9 +1019,16 @@ export function AdjustmentFormModal({ isOpen, onClose, onSaved }: Props) {
                 style={{
                   flex: 1,
                   fontSize: 13,
-                  border: waiverMode === "fixed" ? "1px solid rgba(193,98,45,0.4)" : "1px solid var(--paper-line)",
-                  background: waiverMode === "fixed" ? "rgba(193,98,45,0.08)" : "var(--paper-raised)",
-                  color: waiverMode === "fixed" ? "var(--terracotta)" : "var(--ink)",
+                  border:
+                    waiverMode === "fixed"
+                      ? "1px solid rgba(193,98,45,0.4)"
+                      : "1px solid var(--paper-line)",
+                  background:
+                    waiverMode === "fixed"
+                      ? "rgba(193,98,45,0.08)"
+                      : "var(--paper-raised)",
+                  color:
+                    waiverMode === "fixed" ? "var(--terracotta)" : "var(--ink)",
                 }}
               >
                 Montant fixe
@@ -793,20 +1039,22 @@ export function AdjustmentFormModal({ isOpen, onClose, onSaved }: Props) {
 
         {/* Montant / Nouveau loyer + sign correction + date d'effet */}
         {(showAmountField || (isWaiverGroup && scope === "single")) && (
-          <div className="grid grid-cols-2 gap-3">
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             {showAmountField && (
-              <div className={type === "CORRECTION" || percentageEligible ? "space-y-1.5" : undefined}>
+              <div style={{ minWidth: 0 }} className="space-y-1.5">
                 {type === "CORRECTION" ? (
                   <>
                     <label className="block text-[12px] font-medium uppercase tracking-[0.06em] text-primary/60">
                       Montant *
                     </label>
-                    <div style={{ display: "flex", gap: 6 }}>
+                    <div style={{ display: "flex", gap: 6, minWidth: 0 }}>
                       <select
                         value={correctionSign}
-                        onChange={(e) => setCorrectionSign(e.target.value as "+" | "-")}
+                        onChange={(e) =>
+                          setCorrectionSign(e.target.value as "+" | "-")
+                        }
                         className="h-11 px-2 rounded-lg border border-border-custom bg-white text-[14px] text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-colors"
-                        style={{ width: 56, flexShrink: 0 }}
+                        style={{ width: 52, flexShrink: 0 }}
                       >
                         <option value="-">−</option>
                         <option value="+">+</option>
@@ -817,15 +1065,23 @@ export function AdjustmentFormModal({ isOpen, onClose, onSaved }: Props) {
                         max={valueModeChoice === "PERCENTAGE" ? 100 : undefined}
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
-                        placeholder={valueModeChoice === "PERCENTAGE" ? "ex : 10" : "ex : 5000"}
-                        className="flex-1 h-11 px-3 rounded-lg border border-border-custom bg-white text-[14px] text-primary placeholder:text-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors"
+                        placeholder={
+                          valueModeChoice === "PERCENTAGE"
+                            ? "ex : 10"
+                            : "ex : 5000"
+                        }
+                        className="flex-1 min-w-0 h-11 px-3 rounded-lg border border-border-custom bg-white text-[14px] text-primary placeholder:text-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors"
                       />
                       {percentageEligible && (
                         <select
                           value={valueModeChoice}
-                          onChange={(e) => setValueModeChoice(e.target.value as AdjustmentValueMode)}
+                          onChange={(e) =>
+                            setValueModeChoice(
+                              e.target.value as AdjustmentValueMode,
+                            )
+                          }
                           className="h-11 px-2 rounded-lg border border-border-custom bg-white text-[14px] text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-colors"
-                          style={{ width: 62, flexShrink: 0 }}
+                          style={{ width: 76, flexShrink: 0 }}
                         >
                           <option value="FIXED">FCFA</option>
                           <option value="PERCENTAGE">%</option>
@@ -836,27 +1092,37 @@ export function AdjustmentFormModal({ isOpen, onClose, onSaved }: Props) {
                 ) : percentageEligible ? (
                   <>
                     <label className="block text-[12px] font-medium uppercase tracking-[0.06em] text-primary/60">
-                      {type === "PENALTY" ? "Montant de la pénalité *" : "Montant de la remise *"}
+                      {type === "PENALTY"
+                        ? "Montant de la pénalité *"
+                        : "Montant de la remise *"}
                     </label>
-                    <div style={{ display: "flex", gap: 6 }}>
+                    <div style={{ display: "flex", gap: 6, minWidth: 0 }}>
+                      <select
+                        value={valueModeChoice}
+                        onChange={(e) =>
+                          setValueModeChoice(
+                            e.target.value as AdjustmentValueMode,
+                          )
+                        }
+                        className="h-11 px-2 rounded-lg border border-border-custom bg-white text-[14px] text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-colors"
+                        style={{ width: 76, flexShrink: 0 }}
+                      >
+                        <option value="FIXED">FCFA</option>
+                        <option value="PERCENTAGE">%</option>
+                      </select>
                       <input
                         type="number"
                         min={1}
                         max={valueModeChoice === "PERCENTAGE" ? 100 : undefined}
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
-                        placeholder={valueModeChoice === "PERCENTAGE" ? "ex : 10" : "ex : 20000"}
-                        className="flex-1 h-11 px-3 rounded-lg border border-border-custom bg-white text-[14px] text-primary placeholder:text-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors"
+                        placeholder={
+                          valueModeChoice === "PERCENTAGE"
+                            ? "ex : 10"
+                            : "ex : 20000"
+                        }
+                        className="flex-1 min-w-0 h-11 px-3 rounded-lg border border-border-custom bg-white text-[14px] text-primary placeholder:text-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors"
                       />
-                      <select
-                        value={valueModeChoice}
-                        onChange={(e) => setValueModeChoice(e.target.value as AdjustmentValueMode)}
-                        className="h-11 px-2 rounded-lg border border-border-custom bg-white text-[14px] text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-colors"
-                        style={{ width: 68, flexShrink: 0 }}
-                      >
-                        <option value="FIXED">FCFA</option>
-                        <option value="PERCENTAGE">%</option>
-                      </select>
                     </div>
                   </>
                 ) : (
@@ -899,11 +1165,17 @@ export function AdjustmentFormModal({ isOpen, onClose, onSaved }: Props) {
             </label>
             <select
               value={baseReference}
-              onChange={(e) => setBaseReference(e.target.value as AdjustmentBaseReference)}
+              onChange={(e) =>
+                setBaseReference(e.target.value as AdjustmentBaseReference)
+              }
               className="w-full h-11 px-3 rounded-lg border border-border-custom bg-white text-[14px] text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors"
             >
-              <option value="LEASE_MONTHLY_RENT">Loyer du contrat ({fmt.format(rentAmount)} FCFA)</option>
-              <option value="UNIT_BASE_RENT">Loyer de base du local ({fmt.format(unitBaseRent)} FCFA)</option>
+              <option value="LEASE_MONTHLY_RENT">
+                Loyer du contrat ({fmt.format(rentAmount)} FCFA)
+              </option>
+              <option value="UNIT_BASE_RENT">
+                Loyer de base du local ({fmt.format(unitBaseRent)} FCFA)
+              </option>
             </select>
           </div>
         )}
@@ -912,7 +1184,10 @@ export function AdjustmentFormModal({ isOpen, onClose, onSaved }: Props) {
         {isDeposit && (
           <div className="space-y-1.5">
             <label className="block text-[12px] font-medium uppercase tracking-[0.06em] text-primary/60">
-              Incident lié <span className="text-primary/30 font-normal normal-case tracking-normal">(optionnel)</span>
+              Incident lié{" "}
+              <span className="text-primary/30 font-normal normal-case tracking-normal">
+                (optionnel)
+              </span>
             </label>
             <select
               value={incidentId}
@@ -947,7 +1222,10 @@ export function AdjustmentFormModal({ isOpen, onClose, onSaved }: Props) {
               lineHeight: 1.5,
             }}
           >
-            <Info size={15} style={{ flexShrink: 0, marginTop: 1, opacity: 0.6 }} />
+            <Info
+              size={15}
+              style={{ flexShrink: 0, marginTop: 1, opacity: 0.6 }}
+            />
             {infoText}
           </div>
         )}
@@ -955,7 +1233,10 @@ export function AdjustmentFormModal({ isOpen, onClose, onSaved }: Props) {
         {/* Motif */}
         <div className="space-y-1.5">
           <label className="block text-[12px] font-medium uppercase tracking-[0.06em] text-primary/60">
-            Motif <span className="text-primary/30 font-normal normal-case tracking-normal">(optionnel)</span>
+            Motif{" "}
+            <span className="text-primary/30 font-normal normal-case tracking-normal">
+              (optionnel)
+            </span>
           </label>
           <textarea
             value={reason}
