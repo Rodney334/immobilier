@@ -228,7 +228,7 @@ function PaymentRow({
     ? (tenant.fullName ?? `${tenant.firstName} ${tenant.lastName}`)
     : "—";
   const initials = tenant
-    ? `${tenant.firstName && tenant.firstName[0]}${tenant.lastName && tenant.lastName[0]}`.toUpperCase()
+    ? `${tenant.firstName && tenant.lastName ? `${tenant.firstName && tenant.firstName[0]}${tenant.lastName && tenant.lastName[0]}` : tenant.fullName ? `${tenant.fullName && tenant.fullName[0]}` : "A"}`.toUpperCase()
     : "?";
 
   return (
