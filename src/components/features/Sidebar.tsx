@@ -239,6 +239,7 @@ function SidebarContent({
 
   const userRole = user?.role;
   const isSuperAdmin = userRole === "superadmin";
+  const isBasicUser = userRole === "user";
 
   const roleName =
     userRole === "superadmin"
@@ -340,7 +341,14 @@ function SidebarContent({
 
       {/* ─── Navigation ────────────────────────────────────────────── */}
       <nav style={{ flex: 1 }}>
-        {NAV_GROUPS.map((group) => (
+        {NAV_GROUPS.map((group) => {
+          const visibleItems = group.items
+            .filter((item) => !item.superAdminOnly || isSuperAdmin)
+            .filter((item) => !isBasicUser || item.href === "/dashboard");
+
+          if (visibleItems.length === 0) return null;
+
+          return (
           <div key={group.label} style={{ marginBottom: 2 }}>
             {/* Group label — hidden when collapsed */}
             {!collapsed && (
@@ -369,8 +377,7 @@ function SidebarContent({
             )}
 
             {/* Items */}
-            {group.items
-              .filter((item) => !item.superAdminOnly || isSuperAdmin)
+            {visibleItems
               .map(({ label, href, icon: Icon, badge }) => {
                 const active = isActive(href);
                 return (
@@ -469,7 +476,8 @@ function SidebarContent({
                 );
               })}
           </div>
-        ))}
+          );
+        })}
       </nav>
 
       {/* ─── Footer ────────────────────────────────────────────────── */}

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/stores/auth.store';
 import { tokenManager, refreshAccessToken } from '@/lib/api/client';
 
@@ -37,7 +37,9 @@ type CheckState = 'pending' | 'ok' | 'redirecting';
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const logout = useAuthStore((s) => s.logout);
+  const user = useAuthStore((s) => s.user);
   const [checkState, setCheckState] = useState<CheckState>('pending');
 
   // Empêche le double-effet en React StrictMode (dev uniquement)
@@ -91,8 +93,19 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Le rôle "user" n'a accès qu'au tableau de bord : toute autre route est
+  // redirigée, y compris via saisie directe de l'URL ou navigation client.
+  const isRoleRestricted =
+    checkState === 'ok' && user?.role === 'user' && pathname !== '/dashboard';
+
+  useEffect(() => {
+    if (isRoleRestricted) {
+      router.replace('/dashboard');
+    }
+  }, [isRoleRestricted, router]);
+
   // Spinner pendant le check initial
-  if (checkState === 'pending' || checkState === 'redirecting') {
+  if (checkState === 'pending' || checkState === 'redirecting' || isRoleRestricted) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-neutral z-50">
         <div className="flex flex-col items-center gap-4">

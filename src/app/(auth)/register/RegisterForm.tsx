@@ -125,7 +125,7 @@ export function RegisterForm() {
         <Input
           name="phoneNumber"
           type="tel"
-          label="Téléphone (optionnel)"
+          label="Téléphone"
           placeholder="+229 01 23 45 67"
           autoComplete="tel"
         />
