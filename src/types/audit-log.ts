@@ -43,6 +43,10 @@ export type AuditLog = {
   action: AuditAction;
   entityType: string;
   entityId?: string | null;
+  /** Résumé lisible en français, prêt à afficher tel quel. */
+  description?: string | null;
+  /** Libellé lisible de l'entité concernée (ex: "Contrat CTR-2026-014"). */
+  entityLabel?: string | null;
   oldValue?: Record<string, unknown> | null;
   newValue?: Record<string, unknown> | null;
   changes?: Record<string, unknown> | null;

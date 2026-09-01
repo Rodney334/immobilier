@@ -143,6 +143,13 @@ function DetailPanel({ log, onClose }: { log: AuditLog; onClose: () => void }) {
 
       {!loading && (
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
+          {/* Résumé lisible */}
+          {detail.description && (
+            <div className="bg-neutral border border-border-custom rounded-lg p-3">
+              <p className="text-[13px] text-primary leading-relaxed">{detail.description}</p>
+            </div>
+          )}
+
           {/* Meta grid */}
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-neutral border border-border-custom rounded-lg p-3">
@@ -158,7 +165,7 @@ function DetailPanel({ log, onClose }: { log: AuditLog; onClose: () => void }) {
                 <p className="text-[11px] text-primary/40 uppercase tracking-[0.06em]">Entité</p>
               </div>
               <p className="text-[13px] font-medium text-primary">
-                {ENTITY_LABELS[detail.entityType] ?? detail.entityType}
+                {detail.entityLabel ?? ENTITY_LABELS[detail.entityType] ?? detail.entityType}
               </p>
             </div>
             {detail.entityId && (
@@ -575,7 +582,7 @@ export function AuditLogsClient() {
                     Entité
                   </th>
                   <th className="ep-th hidden lg:table-cell">
-                    ID Entité
+                    Description
                   </th>
                   <th className="ep-th hidden lg:table-cell w-32">
                     IP
@@ -608,12 +615,15 @@ export function AuditLogsClient() {
                         <Badge variant={cfg.variant} stamp>{cfg.label}</Badge>
                       </td>
                       <td className="ep-td text-primary/70">
-                        {ENTITY_LABELS[log.entityType] ?? log.entityType}
+                        {log.entityLabel ?? ENTITY_LABELS[log.entityType] ?? log.entityType}
                       </td>
                       <td className="ep-td hidden lg:table-cell">
-                        {log.entityId ? (
-                          <span className="ep-mono text-[12px] text-primary/50 truncate block max-w-[180px]">
-                            {log.entityId}
+                        {log.description ? (
+                          <span
+                            className="text-[12px] text-primary/60 truncate block max-w-[280px]"
+                            title={log.description}
+                          >
+                            {log.description}
                           </span>
                         ) : (
                           <span className="text-primary/25">—</span>
