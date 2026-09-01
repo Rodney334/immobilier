@@ -8,6 +8,7 @@ import type {
   UpdateLeasePayload,
   TerminateLeasePayload,
   TransferLeasePayload,
+  VoidLeasePayload,
 } from '@/types';
 
 const BASE = '/api/v1/leases';
@@ -54,6 +55,17 @@ export const leaseService = {
     payload: TerminateLeasePayload,
   ): Promise<ApiResponse<Lease>> {
     return api.patch<ApiResponse<Lease>>(`${BASE}/${id}/terminate`, payload);
+  },
+
+  /**
+   * Annuler un contrat émis par erreur (échéances générées, aucun paiement).
+   * Le contrat passe en TERMINATED sans être effacé — motif obligatoire.
+   */
+  void(
+    id: string,
+    payload: VoidLeasePayload,
+  ): Promise<ApiResponse<Lease>> {
+    return api.patch<ApiResponse<Lease>>(`${BASE}/${id}/void`, payload);
   },
 
   /**

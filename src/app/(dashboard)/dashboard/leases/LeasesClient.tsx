@@ -9,6 +9,7 @@ import { useToast } from "@/components/ui/Toast";
 import { LeaseDetailPanel } from "@/components/features/leases/LeaseDetailPanel";
 import { LeaseFormModal } from "@/components/features/leases/LeaseFormModal";
 import { LeaseTerminateModal } from "@/components/features/leases/LeaseTerminateModal";
+import { LeaseVoidModal } from "@/components/features/leases/LeaseVoidModal";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { PaginationBar } from "@/components/ui/PaginationBar";
@@ -67,6 +68,7 @@ export function LeasesClient() {
   const [formOpen, setFormOpen]     = useState(false);
   const [editTarget, setEditTarget] = useState<Lease | null>(null);
   const [terminateTarget, setTerminateTarget] = useState<Lease | null>(null);
+  const [voidTarget, setVoidTarget] = useState<Lease | null>(null);
   const [toastShown, setToastShown] = useState(false);
 
   useEffect(() => {
@@ -111,6 +113,15 @@ export function LeasesClient() {
     setLeases(prev => prev.map(x => x.id === l.id ? l : x));
     if (selected?.id === l.id) setSelected(l);
     setTerminateTarget(null);
+  }
+  function handleVoided(l: Lease) {
+    setLeases(prev => prev.map(x => x.id === l.id ? l : x));
+    if (selected?.id === l.id) setSelected(l);
+    setVoidTarget(null);
+  }
+  function handleDeleted(l: Lease) {
+    setLeases(prev => prev.filter(x => x.id !== l.id));
+    if (selected?.id === l.id) setSelected(null);
   }
 
   async function handleDownload(l: Lease) {
@@ -274,6 +285,8 @@ export function LeasesClient() {
             onClose={() => setSelected(null)}
             onEdit={l => { setEditTarget(l); setFormOpen(true); }}
             onTerminate={l => setTerminateTarget(l)}
+            onVoid={l => setVoidTarget(l)}
+            onDeleted={handleDeleted}
             onUpdated={handleSaved}
           />
         )}
@@ -291,6 +304,14 @@ export function LeasesClient() {
           lease={terminateTarget}
           onClose={() => setTerminateTarget(null)}
           onDone={handleTerminated}
+        />
+      )}
+      {voidTarget && (
+        <LeaseVoidModal
+          isOpen={!!voidTarget}
+          lease={voidTarget}
+          onClose={() => setVoidTarget(null)}
+          onDone={handleVoided}
         />
       )}
     </>

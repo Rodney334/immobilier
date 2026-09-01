@@ -78,6 +78,10 @@ export type TerminateLeasePayload = {
   reason?: string;
 };
 
+export type VoidLeasePayload = {
+  reason: string;
+};
+
 export type TransferLeasePayload = {
   newUnitId: string;
   transferDate: string;

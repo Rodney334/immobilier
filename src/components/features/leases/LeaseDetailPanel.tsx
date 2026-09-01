@@ -10,6 +10,7 @@ import {
   CreditCard,
   Pencil,
   XCircle,
+  Trash2,
   FileDown,
   RefreshCw,
   Loader2,
@@ -20,6 +21,7 @@ import {
 import { leaseService } from "@/lib/services/lease.service";
 import { contractTemplateService } from "@/lib/services/contract-template.service";
 import { Badge } from "@/components/ui/Badge";
+import { useToast } from "@/components/ui/Toast";
 import { GuarantorFormModal } from "@/components/features/guarantors/GuarantorFormModal";
 import type { Lease, LeaseStatus, LeasePeriodicity, ContractTemplate, Guarantor } from "@/types";
 
@@ -126,6 +128,7 @@ function ActionButton({
 // ─── Composant : Générer PDF avec sélecteur de template ──────────────────────
 
 function GeneratePdfAction({ leaseId }: { leaseId: string }) {
+  const { toast } = useToast();
   const [templates, setTemplates] = useState<ContractTemplate[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [open, setOpen] = useState(false);
@@ -139,8 +142,9 @@ function GeneratePdfAction({ leaseId }: { leaseId: string }) {
       const list = Array.isArray(res.data) ? res.data : [];
       setTemplates(list);
       // Ne pas pré-sélectionner : selectedId reste "" → templateId omis → backend choisit automatiquement
-    } catch {
-      // silencieux
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Impossible de charger les modèles de contrat.";
+      toast({ variant: "danger", title: msg });
     } finally {
       setLoaded(true);
       setOpen(true);
@@ -157,8 +161,9 @@ function GeneratePdfAction({ leaseId }: { leaseId: string }) {
       a.download = `contrat-${leaseId}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
-    } catch {
-      // silencieux
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Échec de la génération du PDF.";
+      toast({ variant: "danger", title: msg });
     } finally {
       setGenerating(false);
     }
@@ -243,6 +248,8 @@ type Props = {
   onClose: () => void;
   onEdit: (l: Lease) => void;
   onTerminate: (l: Lease) => void;
+  onVoid: (l: Lease) => void;
+  onDeleted: (l: Lease) => void;
   onUpdated: (l: Lease) => void;
 };
 
@@ -251,11 +258,15 @@ export function LeaseDetailPanel({
   onClose,
   onEdit,
   onTerminate,
+  onVoid,
+  onDeleted,
   onUpdated,
 }: Props) {
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<Tab>("details");
   const [generatingScheds, setGeneratingScheds] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [guarantorModalOpen, setGuarantorModalOpen] = useState(false);
 
   const cfg = STATUS_CONFIG[lease.status];
@@ -269,6 +280,7 @@ export function LeaseDetailPanel({
     : lease.unitId;
   const daysLeft = lease.endDate ? daysUntil(lease.endDate) : Infinity;
   const isActive = lease.status === "ACTIVE";
+  const isTerminated = lease.status === "TERMINATED";
 
   async function handleDownloadPdf() {
     setDownloadingPdf(true);
@@ -280,8 +292,9 @@ export function LeaseDetailPanel({
       a.download = `contrat-${lease.id}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
-    } catch {
-      /* silencieux */
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Échec du téléchargement du PDF.";
+      toast({ variant: "danger", title: msg });
     } finally {
       setDownloadingPdf(false);
     }
@@ -291,10 +304,46 @@ export function LeaseDetailPanel({
     setGeneratingScheds(true);
     try {
       await leaseService.generateSchedules(lease.id);
-    } catch {
-      /* silencieux */
+      toast({ variant: "success", title: "Échéances générées." });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Échec de la génération des échéances.";
+      toast({ variant: "danger", title: msg });
     } finally {
       setGeneratingScheds(false);
+    }
+  }
+
+  // Un seul bouton "Supprimer" plutôt que de précalculer si le contrat a des
+  // échéances/paiements : on tente la suppression, et si le back refuse à
+  // cause de dépendances, on bascule automatiquement vers l'annulation
+  // (PATCH /void), qui elle demande un motif.
+  async function handleDelete() {
+    if (
+      !confirm(
+        `Supprimer définitivement le contrat de ${tenantName} ? Cette action est irréversible.`,
+      )
+    ) {
+      return;
+    }
+    setDeleting(true);
+    try {
+      await leaseService.delete(lease.id);
+      toast({ variant: "success", title: "Contrat supprimé." });
+      onDeleted(lease);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Une erreur est survenue.";
+      if (msg.includes("dépendances")) {
+        toast({
+          variant: "warning",
+          title: "Ce contrat a déjà des échéances liées — utilisez l'annulation à la place.",
+          duration: 6000,
+        });
+        onVoid(lease);
+      } else {
+        toast({ variant: "danger", title: msg });
+      }
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -446,6 +495,15 @@ export function LeaseDetailPanel({
                 label="Résilier le contrat"
                 onClick={() => onTerminate(lease)}
                 variant="danger"
+              />
+            )}
+            {!isActive && !isTerminated && (
+              <ActionButton
+                icon={Trash2}
+                label="Supprimer le contrat"
+                onClick={handleDelete}
+                variant="danger"
+                loading={deleting}
               />
             )}
           </div>
