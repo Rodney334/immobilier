@@ -173,14 +173,14 @@ export function IncidentFormModal({ incident, isOpen, onClose, onSaved }: Props)
         const estimatedCost = (formData.get("estimatedCost") as string).trim();
         const assignedTo = (formData.get("assignedTo") as string).trim();
 
-        if (!unitId || !title || !category || !priority) {
-          return { error: "Local, titre, catégorie et priorité sont obligatoires.", success: false };
+        if (!unitId || !title || !description || !category || !priority) {
+          return { error: "Local, titre, description, catégorie et priorité sont obligatoires.", success: false };
         }
 
         const payload: CreateIncidentPayload = {
           unitId,
           title,
-          description: description || undefined,
+          description,
           category,
           priority,
           estimatedCost: estimatedCost ? Number(estimatedCost) : undefined,
@@ -256,11 +256,13 @@ export function IncidentFormModal({ incident, isOpen, onClose, onSaved }: Props)
 
             <div className="space-y-1.5">
               <label className="block text-[12px] font-medium uppercase tracking-[0.06em] text-primary/60">
-                Description (optionnel)
+                Description
+                <span className="text-danger ml-1">*</span>
               </label>
               <textarea
                 name="description"
                 rows={3}
+                required
                 placeholder="Détails supplémentaires..."
                 className="w-full px-3 py-2.5 rounded-lg border border-border-custom bg-white text-[14px] text-primary placeholder:text-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 resize-none transition-colors"
               />

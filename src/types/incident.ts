@@ -79,7 +79,7 @@ export type CreateIncidentPayload = {
   unitId: string;
   leaseId?: string;
   title: string;
-  description?: string;
+  description: string;
   category: IncidentCategory;
   priority: IncidentPriority;
   estimatedCost?: number;
