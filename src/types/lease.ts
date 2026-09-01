@@ -45,6 +45,33 @@ export type Lease = {
   updatedAt: string;
 };
 
+// ─── Historique d'un contrat (GET /leases/:id/events) ─────────────────────────
+
+// Énumération ouverte côté back : seules CREATED/RENT_REVISED/TERMINATED/
+// TRANSFERRED/NOTE_ADDED sont réellement générées aujourd'hui, les autres
+// valeurs existent mais ne sont déclenchées par rien pour l'instant.
+export type LeaseEventType =
+  | "CREATED"
+  | "RENT_REVISED"
+  | "TERMINATED"
+  | "TRANSFERRED"
+  | "NOTE_ADDED"
+  | (string & Record<never, never>);
+
+// Pas de userId : cet historique est métier (pensé pour la fiche contrat),
+// pas d'auteur — pour "qui a fait l'action", voir /audit-logs.
+export type LeaseEvent = {
+  _id: string;
+  id?: string;
+  leaseId: string;
+  eventType: LeaseEventType;
+  eventDate: string;
+  description: string;
+  oldValue?: Record<string, unknown> | null;
+  newValue?: Record<string, unknown> | null;
+  createdAt: string;
+};
+
 // ─── Payloads ─────────────────────────────────────────────────────────────────
 
 export type CreateLeasePayload = {

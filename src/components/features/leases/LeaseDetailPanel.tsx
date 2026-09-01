@@ -17,13 +17,14 @@ import {
   FileCode,
   ChevronDown,
   UserPlus,
+  Clock,
 } from "lucide-react";
 import { leaseService } from "@/lib/services/lease.service";
 import { contractTemplateService } from "@/lib/services/contract-template.service";
 import { Badge } from "@/components/ui/Badge";
 import { useToast } from "@/components/ui/Toast";
 import { GuarantorFormModal } from "@/components/features/guarantors/GuarantorFormModal";
-import type { Lease, LeaseStatus, LeasePeriodicity, ContractTemplate, Guarantor } from "@/types";
+import type { Lease, LeaseStatus, LeasePeriodicity, LeaseEvent, ContractTemplate, Guarantor } from "@/types";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -56,6 +57,34 @@ function formatDate(iso: string) {
     month: "long",
     year: "numeric",
   });
+}
+function formatDateTime(iso: string) {
+  return new Date(iso).toLocaleString("fr-FR", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+// Le back réutilise TERMINATED aussi bien pour une résiliation que pour une
+// annulation (/void) — seule la description les distingue ("ANNULÉ").
+const EVENT_TYPE_CONFIG: Record<
+  string,
+  { label: string; variant: "success" | "warning" | "danger" | "neutral" | "info" }
+> = {
+  CREATED: { label: "Création", variant: "success" },
+  RENT_REVISED: { label: "Loyer révisé", variant: "info" },
+  TERMINATED: { label: "Résilié", variant: "danger" },
+  TRANSFERRED: { label: "Transféré", variant: "warning" },
+  NOTE_ADDED: { label: "Modifié", variant: "neutral" },
+};
+function getEventCfg(ev: LeaseEvent) {
+  if (ev.eventType === "TERMINATED" && ev.description?.toUpperCase().includes("ANNULÉ")) {
+    return { label: "Annulé", variant: "warning" as const };
+  }
+  return EVENT_TYPE_CONFIG[ev.eventType] ?? { label: ev.eventType, variant: "neutral" as const };
 }
 function formatXOF(n: number) {
   return new Intl.NumberFormat("fr-FR").format(n) + " XOF";
@@ -241,7 +270,7 @@ function GeneratePdfAction({ leaseId }: { leaseId: string }) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-type Tab = "details" | "actions";
+type Tab = "details" | "actions" | "history";
 
 type Props = {
   lease: Lease;
@@ -268,6 +297,9 @@ export function LeaseDetailPanel({
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [guarantorModalOpen, setGuarantorModalOpen] = useState(false);
+  const [events, setEvents] = useState<LeaseEvent[]>([]);
+  const [eventsLoading, setEventsLoading] = useState(false);
+  const [eventsLoaded, setEventsLoaded] = useState(false);
 
   const cfg = STATUS_CONFIG[lease.status];
   const tenantName =
@@ -281,6 +313,28 @@ export function LeaseDetailPanel({
   const daysLeft = lease.endDate ? daysUntil(lease.endDate) : Infinity;
   const isActive = lease.status === "ACTIVE";
   const isTerminated = lease.status === "TERMINATED";
+
+  useEffect(() => {
+    setEvents([]);
+    setEventsLoaded(false);
+  }, [lease.id]);
+
+  useEffect(() => {
+    if (activeTab !== "history" || eventsLoaded) return;
+    setEventsLoading(true);
+    leaseService
+      .getEvents(lease.id)
+      .then((res) => setEvents(Array.isArray(res.data) ? res.data : []))
+      .catch((err: unknown) => {
+        const msg = err instanceof Error ? err.message : "Impossible de charger l'historique.";
+        toast({ variant: "danger", title: msg });
+      })
+      .finally(() => {
+        setEventsLoading(false);
+        setEventsLoaded(true);
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, eventsLoaded, lease.id]);
 
   async function handleDownloadPdf() {
     setDownloadingPdf(true);
@@ -378,14 +432,14 @@ export function LeaseDetailPanel({
 
       {/* Tabs */}
       <div className="flex border-b border-border-custom shrink-0">
-        {(["details", "actions"] as const).map((tab) => (
+        {(["details", "history", "actions"] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
             className={`flex-1 py-3 text-[13px] font-medium transition-colors
               ${activeTab === tab ? "text-primary border-b-2 border-primary" : "text-primary/40 hover:text-primary"}`}
           >
-            {tab === "details" ? "Détails" : "Actions"}
+            {tab === "details" ? "Détails" : tab === "history" ? "Historique" : "Actions"}
           </button>
         ))}
       </div>
@@ -461,6 +515,50 @@ export function LeaseDetailPanel({
               </div>
             )}
           </>
+        )}
+
+        {/* History tab */}
+        {activeTab === "history" && (
+          <div className="py-4">
+            {eventsLoading && (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 size={18} className="animate-spin text-primary/40" />
+              </div>
+            )}
+            {!eventsLoading && eventsLoaded && events.length === 0 && (
+              <p className="text-[13px] text-primary/40 text-center py-8">
+                Aucun événement enregistré.
+              </p>
+            )}
+            {!eventsLoading && events.length > 0 && (
+              <div>
+                {events.map((ev) => {
+                  const evCfg = getEventCfg(ev);
+                  return (
+                    <div
+                      key={ev._id ?? ev.id}
+                      className="flex items-start gap-3 py-3 border-b border-border-custom last:border-0"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-primary/5 flex items-center justify-center shrink-0 mt-0.5">
+                        <Clock size={14} className="text-primary/50" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <Badge variant={evCfg.variant}>{evCfg.label}</Badge>
+                          <span className="text-[11px] text-primary/40">
+                            {formatDateTime(ev.eventDate)}
+                          </span>
+                        </div>
+                        <p className="text-[13px] text-primary/80 leading-relaxed">
+                          {ev.description}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         )}
 
         {/* Actions tab */}

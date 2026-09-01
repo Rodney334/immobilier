@@ -9,6 +9,7 @@ import type {
   TerminateLeasePayload,
   TransferLeasePayload,
   VoidLeasePayload,
+  LeaseEvent,
 } from '@/types';
 
 const BASE = '/api/v1/leases';
@@ -66,6 +67,14 @@ export const leaseService = {
     payload: VoidLeasePayload,
   ): Promise<ApiResponse<Lease>> {
     return api.patch<ApiResponse<Lease>>(`${BASE}/${id}/void`, payload);
+  },
+
+  /**
+   * Historique métier du contrat (création, révisions de loyer, résiliation/
+   * annulation, transfert...). Pas d'auteur — voir le journal d'audit pour ça.
+   */
+  getEvents(id: string): Promise<ApiResponse<LeaseEvent[]>> {
+    return api.get<ApiResponse<LeaseEvent[]>>(`${BASE}/${id}/events`);
   },
 
   /**
