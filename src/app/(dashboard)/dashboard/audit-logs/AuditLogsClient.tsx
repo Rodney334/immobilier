@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useState, useCallback, useActionState, useRef } from "react";
+import {
+  useEffect,
+  useState,
+  useCallback,
+  useActionState,
+  useRef,
+} from "react";
 import {
   Activity,
   Plus,
@@ -35,66 +41,112 @@ import type {
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const ACTIONS: AuditAction[] = [
-  "CREATE", "UPDATE", "DELETE", "LOGIN", "LOGOUT",
-  "ARCHIVE", "RESTORE", "TERMINATE", "TRANSFER",
-  "CANCEL", "REFUND", "APPROVE", "REJECT",
+  "CREATE",
+  "UPDATE",
+  "DELETE",
+  "LOGIN",
+  "LOGOUT",
+  "ARCHIVE",
+  "RESTORE",
+  "TERMINATE",
+  "TRANSFER",
+  "CANCEL",
+  "REFUND",
+  "APPROVE",
+  "REJECT",
 ];
 
 const ENTITY_TYPES: AuditEntityType[] = [
-  "USER", "PROPERTY", "UNIT", "TENANT", "LEASE",
-  "PAYMENT", "RENT_SCHEDULE", "ADJUSTMENT", "RECEIPT",
-  "INCIDENT", "DEPOSIT", "NEIGHBORHOOD",
+  "USER",
+  "PROPERTY",
+  "UNIT",
+  "TENANT",
+  "LEASE",
+  "PAYMENT",
+  "RENT_SCHEDULE",
+  "ADJUSTMENT",
+  "RECEIPT",
+  "INCIDENT",
+  "DEPOSIT",
+  "NEIGHBORHOOD",
 ];
 
 type ActionVariant = "success" | "danger" | "warning" | "neutral" | "info";
 
-const ACTION_CONFIG: Record<string, { label: string; variant: ActionVariant }> = {
-  CREATE:    { label: "Création",     variant: "success" },
-  UPDATE:    { label: "Modification", variant: "info" },
-  DELETE:    { label: "Suppression",  variant: "danger" },
-  LOGIN:     { label: "Connexion",    variant: "neutral" },
-  LOGOUT:    { label: "Déconnexion",  variant: "neutral" },
-  ARCHIVE:   { label: "Archivage",    variant: "warning" },
-  RESTORE:   { label: "Restauration", variant: "info" },
-  TERMINATE: { label: "Résiliation",  variant: "danger" },
-  TRANSFER:  { label: "Transfert",    variant: "warning" },
-  CANCEL:    { label: "Annulation",   variant: "warning" },
-  REFUND:    { label: "Remboursement",variant: "info" },
-  APPROVE:   { label: "Approbation",  variant: "success" },
-  REJECT:    { label: "Rejet",        variant: "danger" },
-};
+const ACTION_CONFIG: Record<string, { label: string; variant: ActionVariant }> =
+  {
+    CREATE: { label: "Création", variant: "success" },
+    UPDATE: { label: "Modification", variant: "info" },
+    DELETE: { label: "Suppression", variant: "danger" },
+    LOGIN: { label: "Connexion", variant: "neutral" },
+    LOGOUT: { label: "Déconnexion", variant: "neutral" },
+    ARCHIVE: { label: "Archivage", variant: "warning" },
+    RESTORE: { label: "Restauration", variant: "info" },
+    TERMINATE: { label: "Résiliation", variant: "danger" },
+    TRANSFER: { label: "Transfert", variant: "warning" },
+    CANCEL: { label: "Annulation", variant: "warning" },
+    REFUND: { label: "Remboursement", variant: "info" },
+    APPROVE: { label: "Approbation", variant: "success" },
+    REJECT: { label: "Rejet", variant: "danger" },
+  };
 
 const ENTITY_LABELS: Record<string, string> = {
-  USER: "Utilisateur", PROPERTY: "Propriété", UNIT: "Local",
-  TENANT: "Locataire", LEASE: "Contrat", PAYMENT: "Paiement",
-  RENT_SCHEDULE: "Échéance", ADJUSTMENT: "Ajustement", RECEIPT: "Reçu",
-  INCIDENT: "Incident", DEPOSIT: "Garantie", NEIGHBORHOOD: "Quartier",
+  USER: "Utilisateur",
+  PROPERTY: "Propriété",
+  UNIT: "Local",
+  TENANT: "Locataire",
+  LEASE: "Contrat",
+  PAYMENT: "Paiement",
+  RENT_SCHEDULE: "Échéance",
+  ADJUSTMENT: "Ajustement",
+  RECEIPT: "Reçu",
+  INCIDENT: "Incident",
+  DEPOSIT: "Garantie",
+  NEIGHBORHOOD: "Quartier",
 };
 
 function getActionCfg(action: string) {
-  return ACTION_CONFIG[action] ?? { label: action, variant: "neutral" as ActionVariant };
+  return (
+    ACTION_CONFIG[action] ?? {
+      label: action,
+      variant: "neutral" as ActionVariant,
+    }
+  );
 }
 
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleString("fr-FR", {
-    day: "2-digit", month: "short", year: "numeric",
-    hour: "2-digit", minute: "2-digit",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 }
 
 function fmtDateShort(iso: string) {
   return new Date(iso).toLocaleDateString("fr-FR", {
-    day: "2-digit", month: "short", year: "numeric",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
   });
 }
 
 // ─── JSON diff viewer ─────────────────────────────────────────────────────────
 
-function JsonBlock({ label, data }: { label: string; data: Record<string, unknown> | null | undefined }) {
+function JsonBlock({
+  label,
+  data,
+}: {
+  label: string;
+  data: Record<string, unknown> | null | undefined;
+}) {
   if (!data || Object.keys(data).length === 0) return null;
   return (
     <div>
-      <p className="text-[11px] font-semibold text-primary/40 uppercase tracking-[0.06em] mb-2">{label}</p>
+      <p className="text-[11px] font-semibold text-primary/40 uppercase tracking-[0.06em] mb-2">
+        {label}
+      </p>
       <pre className="bg-neutral border border-border-custom rounded-lg px-4 py-3 text-[12px] text-primary/80 overflow-x-auto whitespace-pre-wrap font-mono leading-relaxed">
         {JSON.stringify(data, null, 2)}
       </pre>
@@ -111,9 +163,14 @@ function DetailPanel({ log, onClose }: { log: AuditLog; onClose: () => void }) {
   useEffect(() => {
     // Fetch full detail (includes oldValue/newValue)
     setLoading(true);
-    auditLogService.getById(log.id || log._id)
-      .then(res => { if (res.data) setDetail(res.data); })
-      .catch(() => {/* keep log as-is */})
+    auditLogService
+      .getById(log.id || log._id)
+      .then((res) => {
+        if (res.data) setDetail(res.data);
+      })
+      .catch(() => {
+        /* keep log as-is */
+      })
       .finally(() => setLoading(false));
   }, [log.id, log._id]);
 
@@ -124,8 +181,12 @@ function DetailPanel({ log, onClose }: { log: AuditLog; onClose: () => void }) {
       {/* Header */}
       <div className="px-5 py-4 border-b border-border-custom shrink-0 flex items-center justify-between">
         <div>
-          <h2 className="text-[15px] font-semibold text-primary">Détail du log</h2>
-          <p className="text-[12px] text-primary/40 mt-0.5">{fmtDate(detail.createdAt)}</p>
+          <h2 className="text-[15px] font-semibold text-primary">
+            Détail du log
+          </h2>
+          <p className="text-[12px] text-primary/40 mt-0.5">
+            {fmtDate(detail.createdAt)}
+          </p>
         </div>
         <button
           onClick={onClose}
@@ -146,7 +207,9 @@ function DetailPanel({ log, onClose }: { log: AuditLog; onClose: () => void }) {
           {/* Résumé lisible */}
           {detail.description && (
             <div className="bg-neutral border border-border-custom rounded-lg p-3">
-              <p className="text-[13px] text-primary leading-relaxed">{detail.description}</p>
+              <p className="text-[13px] text-primary leading-relaxed">
+                {detail.description}
+              </p>
             </div>
           )}
 
@@ -155,53 +218,75 @@ function DetailPanel({ log, onClose }: { log: AuditLog; onClose: () => void }) {
             <div className="bg-neutral border border-border-custom rounded-lg p-3">
               <div className="flex items-center gap-2 mb-1">
                 <Tag size={12} className="text-primary/40" />
-                <p className="text-[11px] text-primary/40 uppercase tracking-[0.06em]">Action</p>
+                <p className="text-[11px] text-primary/40 uppercase tracking-[0.06em]">
+                  Action
+                </p>
               </div>
               <Badge variant={cfg.variant}>{cfg.label}</Badge>
             </div>
             <div className="bg-neutral border border-border-custom rounded-lg p-3">
               <div className="flex items-center gap-2 mb-1">
                 <ClipboardList size={12} className="text-primary/40" />
-                <p className="text-[11px] text-primary/40 uppercase tracking-[0.06em]">Entité</p>
+                <p className="text-[11px] text-primary/40 uppercase tracking-[0.06em]">
+                  Entité
+                </p>
               </div>
               <p className="text-[13px] font-medium text-primary">
-                {detail.entityLabel ?? ENTITY_LABELS[detail.entityType] ?? detail.entityType}
+                {detail.entityLabel ??
+                  ENTITY_LABELS[detail.entityType] ??
+                  detail.entityType}
               </p>
             </div>
             {detail.entityId && (
               <div className="bg-neutral border border-border-custom rounded-lg p-3 col-span-2">
                 <div className="flex items-center gap-2 mb-1">
                   <Hash size={12} className="text-primary/40" />
-                  <p className="text-[11px] text-primary/40 uppercase tracking-[0.06em]">ID de l'entité</p>
+                  <p className="text-[11px] text-primary/40 uppercase tracking-[0.06em]">
+                    ID de l'entité
+                  </p>
                 </div>
-                <p className="text-[12px] font-mono text-primary/70 truncate">{detail.entityId}</p>
+                <p className="text-[12px] font-mono text-primary/70 truncate">
+                  {detail.entityId}
+                </p>
               </div>
             )}
             <div className="bg-neutral border border-border-custom rounded-lg p-3 col-span-2">
               <div className="flex items-center gap-2 mb-1">
                 <UserIcon size={12} className="text-primary/40" />
-                <p className="text-[11px] text-primary/40 uppercase tracking-[0.06em]">Utilisateur</p>
+                <p className="text-[11px] text-primary/40 uppercase tracking-[0.06em]">
+                  Utilisateur
+                </p>
               </div>
               <p className="text-[13px] font-medium text-primary">
                 {detail.user?.name ?? detail.userId ?? "—"}
               </p>
               {detail.user?.email && (
-                <p className="text-[11px] text-primary/40">{detail.user.email}</p>
+                <p className="text-[11px] text-primary/40">
+                  {detail.user.email}
+                </p>
               )}
             </div>
             <div className="bg-neutral border border-border-custom rounded-lg p-3">
               <div className="flex items-center gap-2 mb-1">
                 <Wifi size={12} className="text-primary/40" />
-                <p className="text-[11px] text-primary/40 uppercase tracking-[0.06em]">IP</p>
+                <p className="text-[11px] text-primary/40 uppercase tracking-[0.06em]">
+                  IP
+                </p>
               </div>
-              <p className="text-[12px] font-mono text-primary/70">{detail.ipAddress ?? "—"}</p>
+              <p className="text-[12px] font-mono text-primary/70">
+                {detail.ipAddress ?? "—"}
+              </p>
             </div>
             <div className="bg-neutral border border-border-custom rounded-lg p-3">
               <div className="flex items-center gap-2 mb-1">
                 <Calendar size={12} className="text-primary/40" />
-                <p className="text-[11px] text-primary/40 uppercase tracking-[0.06em]">Date</p>
+                <p className="text-[11px] text-primary/40 uppercase tracking-[0.06em]">
+                  Date
+                </p>
               </div>
-              <p className="text-[12px] text-primary/70">{fmtDateShort(detail.createdAt)}</p>
+              <p className="text-[12px] text-primary/70">
+                {fmtDateShort(detail.createdAt)}
+              </p>
             </div>
           </div>
 
@@ -212,8 +297,13 @@ function DetailPanel({ log, onClose }: { log: AuditLog; onClose: () => void }) {
                 Navigateur / Agent
               </p>
               <div className="bg-neutral border border-border-custom rounded-lg px-4 py-3 flex items-start gap-2">
-                <Monitor size={13} className="text-primary/40 mt-0.5 shrink-0" />
-                <p className="text-[12px] text-primary/60 break-all leading-relaxed">{detail.userAgent}</p>
+                <Monitor
+                  size={13}
+                  className="text-primary/40 mt-0.5 shrink-0"
+                />
+                <p className="text-[12px] text-primary/60 break-all leading-relaxed">
+                  {detail.userAgent}
+                </p>
               </div>
             </div>
           )}
@@ -232,21 +322,31 @@ function DetailPanel({ log, onClose }: { log: AuditLog; onClose: () => void }) {
 
 type KVPair = { key: string; value: string };
 
-function KVBuilder({ label, pairs, onChange }: {
+function KVBuilder({
+  label,
+  pairs,
+  onChange,
+}: {
   label: string;
   pairs: KVPair[];
   onChange: (pairs: KVPair[]) => void;
 }) {
-  function addPair() { onChange([...pairs, { key: "", value: "" }]); }
-  function removePair(i: number) { onChange(pairs.filter((_, idx) => idx !== i)); }
+  function addPair() {
+    onChange([...pairs, { key: "", value: "" }]);
+  }
+  function removePair(i: number) {
+    onChange(pairs.filter((_, idx) => idx !== i));
+  }
   function updatePair(i: number, field: "key" | "value", val: string) {
-    onChange(pairs.map((p, idx) => idx === i ? { ...p, [field]: val } : p));
+    onChange(pairs.map((p, idx) => (idx === i ? { ...p, [field]: val } : p)));
   }
 
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
-        <label className="text-[12px] font-medium text-primary/60">{label}</label>
+        <label className="text-[12px] font-medium text-primary/60">
+          {label}
+        </label>
         <button
           type="button"
           onClick={addPair}
@@ -265,14 +365,14 @@ function KVBuilder({ label, pairs, onChange }: {
               type="text"
               placeholder="Clé"
               value={p.key}
-              onChange={e => updatePair(i, "key", e.target.value)}
+              onChange={(e) => updatePair(i, "key", e.target.value)}
               className="flex-1 h-8 px-3 text-[12px] bg-surface border border-border-custom rounded-lg outline-none focus:border-primary/30"
             />
             <input
               type="text"
               placeholder="Valeur"
               value={p.value}
-              onChange={e => updatePair(i, "value", e.target.value)}
+              onChange={(e) => updatePair(i, "value", e.target.value)}
               className="flex-1 h-8 px-3 text-[12px] bg-surface border border-border-custom rounded-lg outline-none focus:border-primary/30"
             />
             <button
@@ -289,50 +389,62 @@ function KVBuilder({ label, pairs, onChange }: {
   );
 }
 
-function CreateModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+function CreateModal({
+  onClose,
+  onCreated,
+}: {
+  onClose: () => void;
+  onCreated: () => void;
+}) {
   const [oldPairs, setOldPairs] = useState<KVPair[]>([]);
   const [newPairs, setNewPairs] = useState<KVPair[]>([]);
 
   function pairsToObj(pairs: KVPair[]): Record<string, unknown> {
-    return Object.fromEntries(pairs.filter(p => p.key.trim()).map(p => [p.key.trim(), p.value]));
+    return Object.fromEntries(
+      pairs.filter((p) => p.key.trim()).map((p) => [p.key.trim(), p.value]),
+    );
   }
 
-  const [state, action, pending] = useActionState(async (
-    _: { error?: string } | null,
-    formData: FormData,
-  ): Promise<{ error?: string } | null> => {
-    const entityType = formData.get("entityType") as string;
-    const entityId   = (formData.get("entityId") as string).trim();
-    const act        = formData.get("action") as AuditAction;
-    const ipAddress  = (formData.get("ipAddress") as string).trim();
-    const userAgent  = (formData.get("userAgent") as string).trim();
+  const [state, action, pending] = useActionState(
+    async (
+      _: { error?: string } | null,
+      formData: FormData,
+    ): Promise<{ error?: string } | null> => {
+      const entityType = formData.get("entityType") as string;
+      const entityId = (formData.get("entityId") as string).trim();
+      const act = formData.get("action") as AuditAction;
+      const ipAddress = (formData.get("ipAddress") as string).trim();
+      const userAgent = (formData.get("userAgent") as string).trim();
 
-    if (!entityType || !act) {
-      return { error: "Type d'entité et action sont obligatoires." };
-    }
+      if (!entityType || !act) {
+        return { error: "Type d'entité et action sont obligatoires." };
+      }
 
-    const payload: CreateAuditLogPayload = {
-      entityType,
-      action: act,
-      entityId: entityId || undefined,
-      ipAddress: ipAddress || undefined,
-      userAgent: userAgent || undefined,
-    };
-    const old = pairsToObj(oldPairs);
-    const nw  = pairsToObj(newPairs);
-    if (Object.keys(old).length > 0) payload.oldValue = old;
-    if (Object.keys(nw).length > 0)  payload.newValue = nw;
+      const payload: CreateAuditLogPayload = {
+        entityType,
+        action: act,
+        entityId: entityId || undefined,
+        ipAddress: ipAddress || undefined,
+        userAgent: userAgent || undefined,
+      };
+      const old = pairsToObj(oldPairs);
+      const nw = pairsToObj(newPairs);
+      if (Object.keys(old).length > 0) payload.oldValue = old;
+      if (Object.keys(nw).length > 0) payload.newValue = nw;
 
-    try {
-      await auditLogService.create(payload);
-      onCreated();
-      onClose();
-      return null;
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Erreur lors de la création.";
-      return { error: msg };
-    }
-  }, null);
+      try {
+        await auditLogService.create(payload);
+        onCreated();
+        onClose();
+        return null;
+      } catch (err: unknown) {
+        const msg =
+          err instanceof Error ? err.message : "Erreur lors de la création.";
+        return { error: msg };
+      }
+    },
+    null,
+  );
 
   return (
     <form action={action} className="space-y-4">
@@ -354,8 +466,10 @@ function CreateModal({ onClose, onCreated }: { onClose: () => void; onCreated: (
             className="w-full h-10 px-3 text-[13px] bg-surface border border-border-custom rounded-lg outline-none focus:border-primary/30 text-primary"
           >
             <option value="">— Sélectionner —</option>
-            {ENTITY_TYPES.map(e => (
-              <option key={e} value={e}>{ENTITY_LABELS[e] ?? e}</option>
+            {ENTITY_TYPES.map((e) => (
+              <option key={e} value={e}>
+                {ENTITY_LABELS[e] ?? e}
+              </option>
             ))}
           </select>
         </div>
@@ -369,21 +483,43 @@ function CreateModal({ onClose, onCreated }: { onClose: () => void; onCreated: (
             className="w-full h-10 px-3 text-[13px] bg-surface border border-border-custom rounded-lg outline-none focus:border-primary/30 text-primary"
           >
             <option value="">— Sélectionner —</option>
-            {ACTIONS.map(a => (
-              <option key={a} value={a}>{getActionCfg(a).label} ({a})</option>
+            {ACTIONS.map((a) => (
+              <option key={a} value={a}>
+                {getActionCfg(a).label} ({a})
+              </option>
             ))}
           </select>
         </div>
       </div>
 
-      <Input name="entityId" label="ID de l'entité (optionnel)" placeholder="ex: 64f3b2a1..." />
+      <Input
+        name="entityId"
+        label="ID de l'entité (optionnel)"
+        placeholder="ex: 64f3b2a1..."
+      />
 
-      <KVBuilder label="Ancienne valeur (oldValue)" pairs={oldPairs} onChange={setOldPairs} />
-      <KVBuilder label="Nouvelle valeur (newValue)" pairs={newPairs} onChange={setNewPairs} />
+      <KVBuilder
+        label="Ancienne valeur (oldValue)"
+        pairs={oldPairs}
+        onChange={setOldPairs}
+      />
+      <KVBuilder
+        label="Nouvelle valeur (newValue)"
+        pairs={newPairs}
+        onChange={setNewPairs}
+      />
 
       <div className="grid grid-cols-2 gap-3">
-        <Input name="ipAddress" label="Adresse IP (optionnel)" placeholder="ex: 192.168.1.1" />
-        <Input name="userAgent" label="User Agent (optionnel)" placeholder="ex: Mozilla/5.0..." />
+        <Input
+          name="ipAddress"
+          label="Adresse IP (optionnel)"
+          placeholder="ex: 192.168.1.1"
+        />
+        <Input
+          name="userAgent"
+          label="User Agent (optionnel)"
+          placeholder="ex: Mozilla/5.0..."
+        />
       </div>
 
       <div className="flex justify-end gap-2 pt-2">
@@ -412,39 +548,47 @@ function CreateModal({ onClose, onCreated }: { onClose: () => void; onCreated: (
 export function AuditLogsClient() {
   const { toast } = useToast();
 
-  const [logs, setLogs]           = useState<AuditLog[]>([]);
-  const [meta, setMeta]           = useState<PaginationMeta>({ page: 1, limit: 20, total: 0, totalPages: 1 });
-  const [loading, setLoading]     = useState(true);
-  const [error, setError]         = useState<string | null>(null);
-  const [search, setSearch]       = useState("");
+  const [logs, setLogs] = useState<AuditLog[]>([]);
+  const [meta, setMeta] = useState<PaginationMeta>({
+    page: 1,
+    limit: 20,
+    total: 0,
+    totalPages: 1,
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
   const [filterAction, setFilterAction] = useState<AuditAction | "">("");
   const [filterEntity, setFilterEntity] = useState<string>("");
-  const [page, setPage]           = useState(1);
+  const [page, setPage] = useState(1);
 
-  const [selectedLog, setSelectedLog]   = useState<AuditLog | null>(null);
-  const [showCreate, setShowCreate]     = useState(false);
+  const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
 
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const load = useCallback(async (p: number, s: string, a: string, e: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await auditLogService.getAll({
-        page: p,
-        limit: 20,
-        user: s || undefined,
-        action: (a as AuditAction) || undefined,
-        entityType: e || undefined,
-      });
-      setLogs(res.data ?? []);
-      if (res.meta) setMeta(res.meta);
-    } catch {
-      setError("Impossible de charger les logs d'audit.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const load = useCallback(
+    async (p: number, s: string, a: string, e: string) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await auditLogService.getAll({
+          page: p,
+          limit: 20,
+          user: s || undefined,
+          action: (a as AuditAction) || undefined,
+          entityType: e || undefined,
+        });
+        setLogs(res.data ?? []);
+        if (res.meta) setMeta(res.meta);
+      } catch {
+        setError("Impossible de charger les logs d'audit.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
     if (searchTimer.current) clearTimeout(searchTimer.current);
@@ -452,12 +596,14 @@ export function AuditLogsClient() {
       setPage(1);
       load(1, search, filterAction, filterEntity);
     }, 300);
-    return () => { if (searchTimer.current) clearTimeout(searchTimer.current); };
+    return () => {
+      if (searchTimer.current) clearTimeout(searchTimer.current);
+    };
   }, [search, filterAction, filterEntity, load]);
 
   useEffect(() => {
     load(page, search, filterAction, filterEntity);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
   function handleCreated() {
@@ -467,12 +613,12 @@ export function AuditLogsClient() {
 
   const FILTER_ACTIONS = [
     { label: "Toutes les actions", value: "" },
-    ...ACTIONS.map(a => ({ label: getActionCfg(a).label, value: a })),
+    ...ACTIONS.map((a) => ({ label: getActionCfg(a).label, value: a })),
   ];
 
   const FILTER_ENTITIES = [
     { label: "Toutes les entités", value: "" },
-    ...ENTITY_TYPES.map(e => ({ label: ENTITY_LABELS[e] ?? e, value: e })),
+    ...ENTITY_TYPES.map((e) => ({ label: ENTITY_LABELS[e] ?? e, value: e })),
   ];
 
   return (
@@ -505,35 +651,50 @@ export function AuditLogsClient() {
               type="search"
               placeholder="Rechercher par utilisateur…"
               value={search}
-              onChange={e => setSearch(e.target.value)}
+              onChange={(e) => setSearch(e.target.value)}
             />
           </div>
 
           {/* Action filter */}
           <select
             value={filterAction}
-            onChange={e => { setFilterAction(e.target.value as AuditAction | ""); setPage(1); }}
+            onChange={(e) => {
+              setFilterAction(e.target.value as AuditAction | "");
+              setPage(1);
+            }}
             className="h-9 px-3 bg-neutral border border-border-custom rounded-lg text-[13px] text-primary outline-none focus:border-primary/30"
           >
-            {FILTER_ACTIONS.map(o => (
-              <option key={o.value} value={o.value}>{o.label}</option>
+            {FILTER_ACTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
             ))}
           </select>
 
           {/* Entity filter */}
           <select
             value={filterEntity}
-            onChange={e => { setFilterEntity(e.target.value); setPage(1); }}
+            onChange={(e) => {
+              setFilterEntity(e.target.value);
+              setPage(1);
+            }}
             className="h-9 px-3 bg-neutral border border-border-custom rounded-lg text-[13px] text-primary outline-none focus:border-primary/30"
           >
-            {FILTER_ENTITIES.map(o => (
-              <option key={o.value} value={o.value}>{o.label}</option>
+            {FILTER_ENTITIES.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
             ))}
           </select>
 
           {(filterAction || filterEntity || search) && (
             <button
-              onClick={() => { setSearch(""); setFilterAction(""); setFilterEntity(""); setPage(1); }}
+              onClick={() => {
+                setSearch("");
+                setFilterAction("");
+                setFilterEntity("");
+                setPage(1);
+              }}
               className="flex items-center gap-1.5 h-9 px-3 text-[12px] text-primary/50 hover:text-primary border border-border-custom rounded-lg hover:bg-primary/4 transition-colors"
             >
               <X size={12} /> Effacer
@@ -565,79 +726,81 @@ export function AuditLogsClient() {
           )}
           {!loading && !error && logs.length > 0 && (
             <div className="px-4 lg:px-6 py-3">
-            <div className="ep-panel">
-            <table className="w-full text-[13px]">
-              <thead>
-                <tr className="border-b border-border-custom">
-                  <th className="ep-th w-40">
-                    Date
-                  </th>
-                  <th className="ep-th">
-                    Utilisateur
-                  </th>
-                  <th className="ep-th w-36">
-                    Action
-                  </th>
-                  <th className="ep-th w-36">
-                    Entité
-                  </th>
-                  <th className="ep-th hidden lg:table-cell">
-                    Description
-                  </th>
-                  <th className="ep-th hidden lg:table-cell w-32">
-                    IP
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {logs.map((log) => {
-                  const cfg = getActionCfg(log.action);
-                  const isActive = selectedLog?.id === log.id || selectedLog?._id === log._id;
-                  return (
-                    <tr
-                      key={log.id || log._id}
-                      onClick={() => setSelectedLog(isActive ? null : log)}
-                      className="ep-tr"
-                      style={isActive ? { background: "var(--primary-soft)" } : undefined}
-                    >
-                      <td className="ep-td ep-mono text-primary/50 whitespace-nowrap">
-                        {fmtDate(log.createdAt)}
-                      </td>
-                      <td className="ep-td">
-                        <p className="font-medium text-primary truncate max-w-[160px]">
-                          {log.user?.name ?? log.userId ?? "—"}
-                        </p>
-                        {log.user?.email && (
-                          <p className="text-[11px] text-primary/40 truncate max-w-[160px]">{log.user.email}</p>
-                        )}
-                      </td>
-                      <td className="ep-td">
-                        <Badge variant={cfg.variant} stamp>{cfg.label}</Badge>
-                      </td>
-                      <td className="ep-td text-primary/70">
-                        {log.entityLabel ?? ENTITY_LABELS[log.entityType] ?? log.entityType}
-                      </td>
-                      <td className="ep-td hidden lg:table-cell">
-                        {log.description ? (
-                          <span
-                            className="text-[12px] text-primary/60 truncate block max-w-[280px]"
-                            title={log.description}
-                          >
-                            {log.description}
-                          </span>
-                        ) : (
-                          <span className="text-primary/25">—</span>
-                        )}
-                      </td>
-                      <td className="ep-td hidden lg:table-cell ep-mono text-[12px] text-primary/40">
-                        {log.ipAddress ?? "—"}
-                      </td>
+              <div className="ep-panel">
+                <table className="w-full text-[13px]">
+                  <thead>
+                    <tr className="border-b border-border-custom">
+                      <th className="ep-th w-40">Date</th>
+                      <th className="ep-th">Utilisateur</th>
+                      <th className="ep-th w-36">Action</th>
+                      <th className="ep-th w-36">Entité</th>
+                      <th className="ep-th hidden lg:table-cell">
+                        Description
+                      </th>
+                      <th className="ep-th hidden lg:table-cell w-32">IP</th>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {logs.map((log) => {
+                      const cfg = getActionCfg(log.action);
+                      const isActive =
+                        selectedLog?.id === log.id ||
+                        selectedLog?._id === log._id;
+                      return (
+                        <tr
+                          key={log.id || log._id}
+                          onClick={() => setSelectedLog(isActive ? null : log)}
+                          className="ep-tr"
+                          style={
+                            isActive
+                              ? { background: "var(--primary-soft)" }
+                              : undefined
+                          }
+                        >
+                          <td className="ep-td ep-mono text-primary/50 whitespace-nowrap">
+                            {fmtDate(log.createdAt)}
+                          </td>
+                          <td className="ep-td">
+                            <p className="font-medium text-primary truncate max-w-40">
+                              {log.user?.name ?? log.userId ?? "—"}
+                            </p>
+                            {log.user?.email && (
+                              <p className="text-[11px] text-primary/40 truncate max-w-40">
+                                {log.user.email}
+                              </p>
+                            )}
+                          </td>
+                          <td className="ep-td">
+                            <Badge variant={cfg.variant} stamp>
+                              {cfg.label}
+                            </Badge>
+                          </td>
+                          <td className="ep-td text-primary/70">
+                            {log.entityLabel ??
+                              ENTITY_LABELS[log.entityType] ??
+                              log.entityType}
+                          </td>
+                          <td className="ep-td hidden lg:table-cell">
+                            {log.description ? (
+                              <span
+                                className="text-[12px] text-primary/60 truncate block max-w-70"
+                                title={log.description}
+                              >
+                                {log.description}
+                              </span>
+                            ) : (
+                              <span className="text-primary/25">—</span>
+                            )}
+                          </td>
+                          <td className="ep-td hidden lg:table-cell ep-mono text-[12px] text-primary/40">
+                            {log.ipAddress ?? "—"}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>
@@ -645,11 +808,33 @@ export function AuditLogsClient() {
         {/* Pagination */}
         {meta.totalPages > 1 && (
           <div className="ep-pagination">
-            <span>{meta.total} résultat{meta.total > 1 ? "s" : ""}</span>
+            <span>
+              {meta.total} résultat{meta.total > 1 ? "s" : ""}
+            </span>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <button className="ep-page-btn" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={meta.page <= 1}><ChevronLeft size={13} /></button>
-              <span style={{ fontSize: 12, fontFamily: "var(--font-mono)", padding: "0 8px" }}>Page {meta.page} / {meta.totalPages}</span>
-              <button className="ep-page-btn" onClick={() => setPage(p => Math.min(meta.totalPages, p + 1))} disabled={meta.page >= meta.totalPages}><ChevronRight size={13} /></button>
+              <button
+                className="ep-page-btn"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={meta.page <= 1}
+              >
+                <ChevronLeft size={13} />
+              </button>
+              <span
+                style={{
+                  fontSize: 12,
+                  fontFamily: "var(--font-mono)",
+                  padding: "0 8px",
+                }}
+              >
+                Page {meta.page} / {meta.totalPages}
+              </span>
+              <button
+                className="ep-page-btn"
+                onClick={() => setPage((p) => Math.min(meta.totalPages, p + 1))}
+                disabled={meta.page >= meta.totalPages}
+              >
+                <ChevronRight size={13} />
+              </button>
             </div>
           </div>
         )}
@@ -667,9 +852,11 @@ export function AuditLogsClient() {
         isOpen={showCreate}
         onClose={() => setShowCreate(false)}
         title="Créer un log manuellement"
-
       >
-        <CreateModal onClose={() => setShowCreate(false)} onCreated={handleCreated} />
+        <CreateModal
+          onClose={() => setShowCreate(false)}
+          onCreated={handleCreated}
+        />
       </Modal>
     </div>
   );
