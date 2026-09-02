@@ -152,9 +152,18 @@ export function LeaseFormModal({ lease, isOpen, onClose, onSaved }: Props) {
       const periodicity = formData.get("periodicity") as LeasePeriodicity | "";
       const billingDay = (formData.get("billingDay") as string).trim();
 
-      if (!tenantId || !unitId || !startDate) {
+      // En édition, locataire/local sont non modifiables : leurs <select>
+      // sont "disabled", donc absents du FormData — ne pas les exiger ici,
+      // d'autant qu'ils ne font pas partie du payload envoyé à l'update.
+      if (!isEdit && (!tenantId || !unitId)) {
         return {
-          error: "Locataire, local et date de debut sont obligatoires.",
+          error: "Locataire et local sont obligatoires.",
+          success: false,
+        };
+      }
+      if (!startDate) {
+        return {
+          error: "La date de debut est obligatoire.",
           success: false,
         };
       }

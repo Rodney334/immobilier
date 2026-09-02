@@ -312,7 +312,6 @@ export function LeaseDetailPanel({
     : lease.unitId;
   const daysLeft = lease.endDate ? daysUntil(lease.endDate) : Infinity;
   const isActive = lease.status === "ACTIVE";
-  const isTerminated = lease.status === "TERMINATED";
 
   useEffect(() => {
     setEvents([]);
@@ -595,15 +594,13 @@ export function LeaseDetailPanel({
                 variant="danger"
               />
             )}
-            {!isActive && !isTerminated && (
-              <ActionButton
-                icon={Trash2}
-                label="Supprimer le contrat"
-                onClick={handleDelete}
-                variant="danger"
-                loading={deleting}
-              />
-            )}
+            <ActionButton
+              icon={Trash2}
+              label="Supprimer le contrat"
+              onClick={handleDelete}
+              variant="danger"
+              loading={deleting}
+            />
           </div>
         )}
       </div>
