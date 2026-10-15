@@ -17,6 +17,7 @@ import type {
   CreateIncidentPayload,
   UpdateIncidentPayload,
 } from "@/types";
+import { formatUnitName } from "@/lib/utils/unit";
 
 type FormState = { error: string | null; success: boolean };
 
@@ -231,7 +232,7 @@ export function IncidentFormModal({ incident, isOpen, onClose, onSaved }: Props)
             </option>
             {units.map((u) => (
               <option key={u._id} value={u._id}>
-                {`Local ${u.unitNumber}${u.property ? ` - ${u.property.name}` : ""}${u.label ? ` (${u.label})` : ""}`}
+                {`${formatUnitName(u)}${u.property ? ` - ${u.property.name}` : ""}`}
               </option>
             ))}
           </SelectField>
@@ -240,7 +241,7 @@ export function IncidentFormModal({ incident, isOpen, onClose, onSaved }: Props)
         {isEdit && (
           <div className="px-3 py-2.5 rounded-lg bg-neutral border border-border-custom text-[13px] text-primary/60">
             Local : {incident.unit
-              ? `${incident.unit.unitNumber}${incident.unit.property ? ` — ${incident.unit.property.name}` : ""}`
+              ? `${formatUnitName(incident.unit)}${incident.unit.property ? ` — ${incident.unit.property.name}` : ""}`
               : incident.unitId}
           </div>
         )}

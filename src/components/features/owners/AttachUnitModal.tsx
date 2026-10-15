@@ -7,6 +7,7 @@ import { ownerService } from "@/lib/services/owner.service";
 import { Modal } from "@/components/ui/Modal";
 import { ApiError } from "@/types/api";
 import type { Owner, Unit } from "@/types";
+import { formatUnitName } from "@/lib/utils/unit";
 
 type Props = {
   owner: Owner;
@@ -182,7 +183,7 @@ export function AttachUnitModal({ owner, isOpen, onClose, onAttached }: Props) {
                   </div>
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <p style={{ fontSize: 13, fontWeight: 500, color: "var(--ink)" }}>
-                      Local {u.unitNumber}{u.label ? ` — ${u.label}` : ""}
+                      {formatUnitName(u)}
                     </p>
                     <p style={{ fontSize: 11.5, color: "var(--ink-soft)" }}>
                       {[

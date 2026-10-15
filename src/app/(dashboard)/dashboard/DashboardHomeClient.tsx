@@ -30,6 +30,7 @@ import {
   type Payment,
   METHOD_LABELS,
 } from "@/types";
+import { formatUnitName } from "@/lib/utils/unit";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -333,7 +334,7 @@ function AlertItem({ lease }: { lease: Lease }) {
           {lease.tenant?.fullName ?? lease.tenantId}
         </p>
         <p className="text-[12px] text-primary/45">
-          Local {lease.unit?.unitNumber ?? lease.unitId} · expire dans{" "}
+          {lease.unit ? formatUnitName(lease.unit) : `Local ${lease.unitId}`} · expire dans{" "}
           <span
             className={`font-semibold ${urgent ? "text-danger" : "text-secondary"}`}
           >
@@ -542,7 +543,7 @@ export function DashboardHomeClient() {
               `${lease.tenant.firstName ?? ""} ${lease.tenant.lastName ?? ""}`.trim() ||
               "—",
             unitLabel: lease.unit
-              ? `${lease.unit.property?.name ? `${lease.unit.property.name} – ` : ""}Unité ${lease.unit.unitNumber}`
+              ? `${lease.unit.property?.name ? `${lease.unit.property.name} – ` : ""}${formatUnitName(lease.unit)}`
               : `Bail ${leaseId.slice(-6)}`,
             overdueMonths: count,
           });

@@ -27,6 +27,7 @@ import type {
   IncidentCategory,
   IncidentStats,
 } from "@/types";
+import { formatUnitName } from "@/lib/utils/unit";
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
@@ -225,7 +226,7 @@ function IncidentRow({
           </p>
           <p className="text-[11px] text-primary/50 truncate">
             {incident.unit
-              ? `${incident.unit.property?.name ?? ""} · ${incident.unit.unitNumber}`
+              ? `${incident.unit.property?.name ? `${incident.unit.property.name} — ` : ""}${formatUnitName(incident.unit)}`
               : "—"}
             {incident.createdAt && ` · ${formatDate(incident.createdAt)}`}
           </p>

@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/Badge";
 import { RowActionMenu } from "@/components/ui/RowActionMenu";
 import { PaginationBar } from "@/components/ui/PaginationBar";
 import type { RentSchedule, RentScheduleStatus, PaginationMeta } from "@/types";
+import { formatUnitName } from "@/lib/utils/unit";
 
 const MONTHS_FR = [
   "Janv",
@@ -433,7 +434,7 @@ export function SchedulesClient() {
                         </td>
                         <td className="ep-td text-primary/70">
                           {unit ? (
-                            unit.unitNumber
+                            formatUnitName(unit)
                           ) : (
                             <span className="text-primary/30">—</span>
                           )}

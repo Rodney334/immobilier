@@ -25,6 +25,7 @@ import { Badge } from "@/components/ui/Badge";
 import { useToast } from "@/components/ui/Toast";
 import { GuarantorFormModal } from "@/components/features/guarantors/GuarantorFormModal";
 import type { Lease, LeaseStatus, LeasePeriodicity, LeaseEvent, ContractTemplate, Guarantor } from "@/types";
+import { formatUnitName } from "@/lib/utils/unit";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -308,7 +309,7 @@ export function LeaseDetailPanel({
       ? `${lease.tenant.firstName} ${lease.tenant.lastName}`
       : lease.tenantId);
   const unitLabel = lease.unit
-    ? `Local ${lease.unit.unitNumber}`
+    ? formatUnitName(lease.unit)
     : lease.unitId;
   const daysLeft = lease.endDate ? daysUntil(lease.endDate) : Infinity;
   const isActive = lease.status === "ACTIVE";

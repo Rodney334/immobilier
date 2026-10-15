@@ -15,6 +15,7 @@ import type {
   LeasePeriodicity,
   CreateLeasePayload,
 } from "@/types";
+import { formatUnitName } from "@/lib/utils/unit";
 
 const PERIODICITIES: { value: LeasePeriodicity; label: string }[] = [
   { value: "DAILY", label: "Journalier" },
@@ -275,7 +276,7 @@ export function LeaseFormModal({ lease, isOpen, onClose, onSaved }: Props) {
           </option>
           {units.map((u, i) => (
             <option key={u._id + i} value={u._id}>
-              {`Local ${u.unitNumber}${u.property ? ` - ${u.property.name}` : ""}`}
+              {`${formatUnitName(u)}${u.property ? ` - ${u.property.name}` : ""}`}
             </option>
           ))}
         </SelectField>

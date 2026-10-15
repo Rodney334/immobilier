@@ -17,6 +17,7 @@ import {
 import { unitService } from "@/lib/services/unit.service";
 import { Badge } from "@/components/ui/Badge";
 import type { Unit, UnitStatus } from "@/types";
+import { formatUnitName } from "@/lib/utils/unit";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -114,7 +115,7 @@ export function UnitDetailPanel({
   return (
     <aside
       className="flex flex-col w-105 shrink-0 bg-surface border-l border-border-custom h-screen sticky top-0 overflow-hidden"
-      aria-label={`Détails : Local ${unit.unitNumber}`}
+      aria-label={`Détails : ${formatUnitName(unit)}`}
     >
       {/* Header */}
       <div className="flex items-start justify-between px-5 pt-5 pb-4 border-b border-border-custom shrink-0">
@@ -128,7 +129,7 @@ export function UnitDetailPanel({
           </div>
           <div className="min-w-0">
             <h2 className="font-semibold text-[18px] text-primary truncate">
-              Local {unit.unitNumber}
+              {formatUnitName(unit)}
             </h2>
             {unit.property && (
               <p className="text-[12px] text-primary/50 truncate">

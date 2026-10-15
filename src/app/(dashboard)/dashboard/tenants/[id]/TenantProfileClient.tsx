@@ -42,6 +42,7 @@ import {
   type Guarantor,
   METHOD_LABELS,
 } from "@/types";
+import { formatUnitName } from "@/lib/utils/unit";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -737,8 +738,8 @@ export function TenantProfileClient({ tenantId }: { tenantId: string }) {
                     <div className="rounded-lg border border-border-custom p-3 mb-2">
                       <p className="text-[13px] font-medium text-primary">
                         {activeLease.unit.property?.name
-                          ? `${activeLease.unit.property.name}, Apt ${activeLease.unit.unitNumber}`
-                          : `Local ${activeLease.unit.unitNumber}`}
+                          ? `${activeLease.unit.property.name}, ${formatUnitName(activeLease.unit)}`
+                          : formatUnitName(activeLease.unit)}
                       </p>
                       <p className="text-[12px] text-secondary font-medium mt-0.5">
                         {formatAmount(activeLease.monthlyRent)} / mois

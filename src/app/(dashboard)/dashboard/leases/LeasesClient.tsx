@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { PaginationBar } from "@/components/ui/PaginationBar";
 import type { Lease, LeaseStatus, LeasePeriodicity, PaginationMeta } from "@/types";
+import { formatUnitName } from "@/lib/utils/unit";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -218,7 +219,7 @@ export function LeasesClient() {
                     <tbody>
                       {leases.map(l => {
                         const tenantName = l.tenant?.fullName ?? (l.tenant ? `${l.tenant.firstName} ${l.tenant.lastName}` : "—");
-                        const unitLabel  = l.unit ? `${l.unit.property?.name ? l.unit.property.name + " — " : ""}Unité ${l.unit.unitNumber}` : "—";
+                        const unitLabel  = l.unit ? `${l.unit.property?.name ? l.unit.property.name + " — " : ""}${formatUnitName(l.unit)}` : "—";
                         const daysLeft   = l.endDate ? daysUntil(l.endDate) : Infinity;
                         const nearExpiry = l.status === "ACTIVE" && daysLeft <= 30 && daysLeft >= 0;
                         const cfg        = STATUS_CONFIG[l.status];

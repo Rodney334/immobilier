@@ -23,6 +23,7 @@ import type {
   AddDeductionPayload,
   RefundDepositPayload,
 } from "@/types";
+import { formatUnitName } from "@/lib/utils/unit";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -490,7 +491,7 @@ export function DepositsClient() {
     const tenant =
       l.tenant?.fullName ??
       `${l.tenant?.firstName ?? ""} ${l.tenant?.lastName ?? ""}`.trim();
-    const unit = l.unit ? `Local ${l.unit.unitNumber}` : "";
+    const unit = l.unit ? formatUnitName(l.unit) : "";
     return (
       [tenant, unit].filter(Boolean).join(" — ") || l.contractNumber || l.id
     );

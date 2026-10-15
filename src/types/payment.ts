@@ -73,16 +73,22 @@ export type CancelPaymentPayload = {
   reason: string;
 };
 
+// Format confirmé par le back (POST /payments/with-allocations).
+// createdById n'est pas envoyé : le back le déduit du JWT.
+export type PaymentAllocationInput = {
+  rentScheduleId: string;
+  allocatedAmount: string;
+};
+
 export type CreatePaymentWithAllocationsPayload = {
   leaseId: string;
-  amount: number;
-  method: PaymentMethod;
-  paidAt?: string;
+  paymentDate: string; // ISO date-time
+  amount: string; // somme des allocatedAmount
+  status?: PaymentStatus;
+  paymentMethod: PaymentMethod;
+  reference?: string;
   notes?: string;
-  allocations: Array<{
-    rentScheduleId: string;
-    amount: number;
-  }>;
+  allocations: PaymentAllocationInput[];
 };
 
 export type AutoAllocatePaymentPayload = {

@@ -17,6 +17,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { RowActionMenu } from "@/components/ui/RowActionMenu";
 import { PaginationBar } from "@/components/ui/PaginationBar";
 import type { Unit, UnitStatus, PaginationMeta } from "@/types";
+import { formatUnitName } from "@/lib/utils/unit";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -111,7 +112,7 @@ function UnitCard({
             <DoorOpen size={16} className="text-primary/50" />
           </div>
           <div className="min-w-0">
-            <p className="text-[13px] font-semibold text-primary truncate">Local {unit.unitNumber}</p>
+            <p className="text-[13px] font-semibold text-primary truncate">{formatUnitName(unit)}</p>
             <p className="text-[12px] text-primary/50 truncate">{unit.property?.name ?? "—"}</p>
           </div>
         </div>
@@ -179,7 +180,7 @@ function UnitRow({
           </div>
           <div className="min-w-0">
             <p className="text-[13px] font-medium text-primary truncate">
-              Local {unit.unitNumber}
+              {formatUnitName(unit)}
             </p>
             {unit.property && (
               <p className="text-[11px] text-primary/40 truncate">
@@ -517,7 +518,7 @@ export function UnitsClient() {
           <p className="text-[14px] text-primary/70 leading-relaxed">
             Vous êtes sur le point de supprimer{" "}
             <span className="font-semibold text-primary">
-              Local {deleteTarget?.unitNumber}
+              {deleteTarget && formatUnitName(deleteTarget)}
             </span>
             . Cette action est irréversible.
           </p>

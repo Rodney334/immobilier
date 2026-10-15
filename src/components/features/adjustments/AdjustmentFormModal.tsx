@@ -26,6 +26,7 @@ import type {
   RentSchedule,
   WaiveUpcomingPayload,
 } from "@/types";
+import { formatUnitName } from "@/lib/utils/unit";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -114,7 +115,7 @@ function leaseLabel(l: Lease): string {
       `${l.tenant.firstName ?? ""} ${l.tenant.lastName ?? ""}`.trim())
     : "";
   const unit = l.unit
-    ? `${l.unit.property?.name ?? ""} ${l.unit.unitNumber ? `Apt ${l.unit.unitNumber}` : ""}`.trim()
+    ? [l.unit.property?.name, formatUnitName(l.unit)].filter(Boolean).join(", ")
     : "";
   return [ref, tenant, unit].filter(Boolean).join(" — ");
 }

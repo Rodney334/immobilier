@@ -53,6 +53,7 @@ import type {
   ContractVariable,
   Lease,
 } from "@/types";
+import { formatUnitName } from "@/lib/utils/unit";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -1106,7 +1107,7 @@ function PreviewModal({
               {leases.map((l) => {
                 const label = [
                   l.contractNumber,
-                  l.unit?.unitNumber ?? l.unit?.label,
+                  l.unit && formatUnitName(l.unit),
                   l.tenant?.fullName ??
                     `${l.tenant?.firstName ?? ""} ${l.tenant?.lastName ?? ""}`.trim(),
                 ]

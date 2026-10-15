@@ -15,6 +15,7 @@ import {
 import { unitService } from "@/lib/services/unit.service";
 import { Badge } from "@/components/ui/Badge";
 import type { Property, Unit, UnitStatus } from "@/types";
+import { formatUnitName } from "@/lib/utils/unit";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -96,7 +97,7 @@ function UnitRow({ unit }: { unit: Unit }) {
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-[13px] font-medium text-primary">
-          Local {unit.unitNumber}
+          {formatUnitName(unit)}
           <span className="ml-1.5 text-[11px] font-normal text-primary/40">
             {UNIT_TYPE_LABELS[unit.type!] ?? unit.type}
             {unit.area ? ` · ${unit.area} m²` : ""}

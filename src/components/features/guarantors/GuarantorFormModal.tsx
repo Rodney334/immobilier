@@ -6,6 +6,7 @@ import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
 import { guarantorService } from "@/lib/services/guarantor.service";
 import type { Guarantor, GuarantorPayload, Lease } from "@/types";
+import { formatUnitName } from "@/lib/utils/unit";
 
 // ─── Options ──────────────────────────────────────────────────────────────────
 
@@ -33,8 +34,7 @@ const IDENTITY_TYPE_OPTIONS = [
 function leaseLabel(l: Lease): string {
   const parts: string[] = [];
   if (l.contractNumber) parts.push(l.contractNumber);
-  if (l.unit?.unitNumber) parts.push(l.unit?.unitNumber);
-  else if (l.unit?.label) parts.push(l.unit.label);
+  if (l.unit) parts.push(formatUnitName(l.unit));
   const start = new Date(l.startDate).toLocaleDateString("fr-FR", {
     month: "short",
     year: "numeric",
