@@ -19,7 +19,12 @@ export type TenantSummaryData = {
   unpaidSchedules: RentSchedule[];
   adjustments: Adjustment[];
   schedules: RentSchedule[];
+  // Baux ACTIVE/SUSPENDED uniquement — ne pas utiliser pour une liste
+  // "historique des contrats" (les baux clôturés en seraient absents).
   activeLeases: Lease[];
+  // Tous les baux du locataire, tous statuts confondus (actif, clôturé,
+  // résilié, annulé...) — à utiliser pour afficher l'historique complet.
+  allLeases: Lease[];
 };
 
 const BASE = '/api/v1/tenants';

@@ -392,10 +392,14 @@ export function TenantProfileClient({ tenantId }: { tenantId: string }) {
 
       const summary = summaryRes.data;
 
-      // Leases (ACTIVE + SUSPENDED from summary)
-      const ls = Array.isArray(summary.activeLeases)
-        ? summary.activeLeases
-        : [];
+      // Historique complet des contrats du locataire (tous statuts) —
+      // utiliser allLeases et non activeLeases, sinon les baux clôturés
+      // disparaissent de la fiche locataire.
+      const ls = Array.isArray(summary.allLeases)
+        ? summary.allLeases
+        : Array.isArray(summary.activeLeases)
+          ? summary.activeLeases
+          : [];
       setLeases(ls);
 
       // Schedules
