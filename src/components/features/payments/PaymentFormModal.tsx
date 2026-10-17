@@ -148,7 +148,7 @@ export function PaymentFormModal({ isOpen, onClose, onSaved }: Props) {
 
     setLoadingSchedules(true);
     try {
-      const res = await rentScheduleService.getAll({ lease: id, limit: 200 });
+      const res = await rentScheduleService.getAll({ leaseId: id, limit: 200 });
       if (requestId !== schedulesRequest.current) return;
       const payable = (Array.isArray(res.data) ? res.data : [])
         .filter(

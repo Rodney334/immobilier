@@ -38,7 +38,13 @@ export type RentScheduleFilterParams = {
   page?: number;
   limit?: number;
   status?: RentScheduleStatus;
-  lease?: string;
+  // Le back attend "leaseId", pas "lease" — un appel avec "lease" est
+  // silencieusement ignoré côté back (le filtre ne s'applique pas du
+  // tout), et la pagination renvoie alors les échéances les plus
+  // récentes de TOUTE la base plutôt que celles du bail demandé. Les
+  // échéances anciennes d'un bail donné (ex: 2021) peuvent alors
+  // disparaître des listes qui dépendent de ce filtre.
+  leaseId?: string;
   month?: number;
   year?: number;
   property?: string;

@@ -225,11 +225,10 @@ export function AdjustmentFormModal({ isOpen, onClose, onSaved }: Props) {
     }
     setLoadingSchedules(true);
     rentScheduleService
-      .getAll({ lease: leaseId, limit: 500 })
+      .getAll({ leaseId, limit: 500 })
       .then((res) => {
-        // Filtre de sécurité : le paramètre "lease" de l'API ne semble pas
-        // toujours appliqué côté serveur (des échéances d'autres baux
-        // remontaient dans la liste). On ne garde que celles du bail choisi.
+        // Filtre de sécurité (le back est maintenant bien filtré par
+        // leaseId, mais on garde ce filtre au cas où).
         const list = (res.data ?? [])
           .filter((s) => s.leaseId === leaseId)
           .sort(
