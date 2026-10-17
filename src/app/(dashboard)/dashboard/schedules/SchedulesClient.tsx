@@ -32,6 +32,31 @@ const MONTHS_FR = [
   "Dec",
 ];
 
+const MONTHS_FR_FULL = [
+  "Janvier",
+  "Fevrier",
+  "Mars",
+  "Avril",
+  "Mai",
+  "Juin",
+  "Juillet",
+  "Aout",
+  "Septembre",
+  "Octobre",
+  "Novembre",
+  "Decembre",
+];
+
+// Jusqu'a 15 ans en arriere par rapport a l'annee courante, pour couvrir
+// les baux les plus anciens sans avoir a cliquer "precedent" des dizaines
+// de fois (ce qui finissait par declencher le rate limiter de l'API).
+function buildYearOptions(): number[] {
+  const current = new Date().getFullYear();
+  const years: number[] = [];
+  for (let y = current + 1; y >= current - 15; y--) years.push(y);
+  return years;
+}
+
 // L'API peut retourner des montants en string ("25000.00") — on force en number
 function toNum(v?: number | string | null): number {
   if (v == null) return 0;
@@ -254,8 +279,13 @@ export function SchedulesClient() {
       });
       setSchedules(Array.isArray(res.data) ? res.data : []);
       setPagination(res.meta ?? null);
-    } catch {
-      setError("Impossible de charger les echeances.");
+    } catch (e: any) {
+      const status = e?.response?.status ?? e?.status;
+      if (status === 429) {
+        setError("Trop de requetes envoyees d'un coup — patientez quelques instants puis reessayez.");
+      } else {
+        setError("Impossible de charger les echeances.");
+      }
     } finally {
       setLoading(false);
     }
@@ -284,6 +314,8 @@ export function SchedulesClient() {
       setMarking(false);
     }
   }
+
+  const yearOptions = buildYearOptions();
 
   function prevMonth() {
     if (month === 1) {
@@ -348,6 +380,35 @@ export function SchedulesClient() {
           >
             <ChevronRight size={14} />
           </button>
+        </div>
+
+        {/* Choix direct mois/annee — evite de cliquer "precedent" des
+            dizaines de fois pour remonter a un bail ancien (ex: 2021) */}
+        <div className="flex items-center gap-1.5">
+          <select
+            value={month}
+            onChange={(e) => setMonth(Number(e.target.value))}
+            className="text-[13px] font-medium text-primary bg-white border border-border-custom rounded-lg px-2 py-1.5 cursor-pointer"
+            aria-label="Mois"
+          >
+            {MONTHS_FR_FULL.map((m, i) => (
+              <option key={m} value={i + 1}>
+                {m}
+              </option>
+            ))}
+          </select>
+          <select
+            value={year}
+            onChange={(e) => setYear(Number(e.target.value))}
+            className="text-[13px] font-medium text-primary bg-white border border-border-custom rounded-lg px-2 py-1.5 cursor-pointer"
+            aria-label="Annee"
+          >
+            {yearOptions.map((y) => (
+              <option key={y} value={y}>
+                {y}
+              </option>
+            ))}
+          </select>
         </div>
         <div className="flex items-center gap-1.5 flex-wrap">
           {FILTERS.map((f) => (
