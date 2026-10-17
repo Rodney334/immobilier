@@ -49,6 +49,22 @@ export const leaseService = {
   },
 
   /**
+   * Suppression TOTALE et DÉFINITIVE d'un contrat — y compris paiements,
+   * reçus, échéances, ajustements, garants déjà enregistrés dessus.
+   * IRRÉVERSIBLE. `confirmContractNumber` doit correspondre exactement au
+   * numéro de contrat affiché (deuxième barrière après l'avertissement
+   * côté UI).
+   */
+  forceDelete(
+    id: string,
+    confirmContractNumber: string,
+  ): Promise<ApiResponse<null>> {
+    return api.delete<ApiResponse<null>>(`${BASE}/${id}/force`, {
+      confirmContractNumber,
+    });
+  },
+
+  /**
    * Résilier un contrat de location.
    */
   terminate(

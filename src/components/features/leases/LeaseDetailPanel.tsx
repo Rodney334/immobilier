@@ -18,12 +18,14 @@ import {
   ChevronDown,
   UserPlus,
   Clock,
+  ShieldAlert,
 } from "lucide-react";
 import { leaseService } from "@/lib/services/lease.service";
 import { contractTemplateService } from "@/lib/services/contract-template.service";
 import { Badge } from "@/components/ui/Badge";
 import { useToast } from "@/components/ui/Toast";
 import { GuarantorFormModal } from "@/components/features/guarantors/GuarantorFormModal";
+import { LeaseForceDeleteModal } from "@/components/features/leases/LeaseForceDeleteModal";
 import type { Lease, LeaseStatus, LeasePeriodicity, LeaseEvent, ContractTemplate, Guarantor } from "@/types";
 import { formatUnitName } from "@/lib/utils/unit";
 
@@ -298,6 +300,7 @@ export function LeaseDetailPanel({
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [guarantorModalOpen, setGuarantorModalOpen] = useState(false);
+  const [forceDeleteModalOpen, setForceDeleteModalOpen] = useState(false);
   const [events, setEvents] = useState<LeaseEvent[]>([]);
   const [eventsLoading, setEventsLoading] = useState(false);
   const [eventsLoaded, setEventsLoaded] = useState(false);
@@ -602,6 +605,12 @@ export function LeaseDetailPanel({
               variant="danger"
               loading={deleting}
             />
+            <ActionButton
+              icon={ShieldAlert}
+              label="Supprimer définitivement (avec données)"
+              onClick={() => setForceDeleteModalOpen(true)}
+              variant="danger"
+            />
           </div>
         )}
       </div>
@@ -614,6 +623,19 @@ export function LeaseDetailPanel({
           setGuarantorModalOpen(false);
         }}
         leases={[lease]}
+      />
+
+      {/* Modal suppression définitive — action dangereuse, nécessite de
+          retaper le numéro de contrat avant que le bouton ne soit actif. */}
+      <LeaseForceDeleteModal
+        lease={lease}
+        isOpen={forceDeleteModalOpen}
+        onClose={() => setForceDeleteModalOpen(false)}
+        onDeleted={() => {
+          setForceDeleteModalOpen(false);
+          toast({ variant: "success", title: "Contrat supprimé définitivement." });
+          onDeleted(lease);
+        }}
       />
     </aside>
   );
